@@ -1,5 +1,7 @@
 Paper Tiger:
 
+The Paper Tiger code has a liberal MIT license. It uses various other open-source programs.
+
 Planned architecture/functionality:
 - scanning documents using sane into TIFF documents
 - OCR/text recognition using Tesseract
