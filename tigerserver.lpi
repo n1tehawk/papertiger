@@ -51,12 +51,17 @@
         <FormatVersion Value="1"/>
       </local>
     </RunParams>
-    <Units Count="1">
+    <Units Count="2">
       <Unit0>
         <Filename Value="tigerserver.lpr"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="tigerserver"/>
       </Unit0>
+      <Unit1>
+        <Filename Value="scan.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="scan"/>
+      </Unit1>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
