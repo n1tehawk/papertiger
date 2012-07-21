@@ -27,8 +27,8 @@ unit scan;
 interface
 
 uses
-  Classes, SysUtils;
-//todo: add support for pascalsane/using libsane instead of wrapping sane command line
+  Classes, SysUtils, process;
+//todo: add support for pascalsane/using libsane instead of wrapping sane command line?
 
 type
 
@@ -38,9 +38,16 @@ type
   private
     FFileName: string;
     FScanDevice: string;
+    procedure RunCommand(Command: string);
   public
+    // File where scanned image should be or has been stored
+    //todo: how to deal with existing files?
     property FileName: string read FFileName write FFileName;
+    // Device to be used to scan with; e.g. genesys:libusb:001:002
     property ScanDevice: string read FScanDevice write FScanDevice;
+    // Interrogate scanner software for a list of installed devices
+    procedure ShowDevices(DeviceList: TStringList);
+    // Scan paper to image
     procedure Scan;
     constructor Create;
     destructor Destroy; override;
@@ -49,14 +56,38 @@ implementation
 
 { TScanner }
 
+procedure TScanner.RunCommand(Command: string);
+
+begin
+
+end;
+
+procedure TScanner.ShowDevices(DeviceList: TStringList);
+begin
+  //todo:
+  //scanimage --list-devices
+  {
+  --list-devices         show available scanner devices
+  --formatted-device-list=FORMAT similar to -L, but the FORMAT of the output
+                             can be specified: %d (device name), %v (vendor),
+                             %m (model), %t (type), %i (index number), and
+                             %n (newline)
+  }
+end;
+
 procedure TScanner.Scan;
 begin
   //todo: call runprocess scanimage... etc
+  //Example call:
+  //scanimage --device genesys:libusb:001:002 --mode=Color --swdeskew=yes --swcrop=yes --format=tiff > /tmp/testscan.tiff
+  ;
 end;
 
 constructor TScanner.Create;
 begin
   inherited Create;
+  FFileName:=Sysutils.GetTempFileName(GetTempDir(false),'SCN');
+  //todo: check whether sane works by --version ??
 end;
 
 destructor TScanner.Destroy;
