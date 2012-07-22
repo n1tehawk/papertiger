@@ -27,7 +27,7 @@ unit scan;
 interface
 
 uses
-  Classes, SysUtils, process;
+  Classes, SysUtils;
 //todo: add support for pascalsane/using libsane instead of wrapping sane command line?
 
 type
@@ -41,7 +41,6 @@ type
     FResolution: integer;
     FScanDevice: string;
     FColorType: ScanType;
-    procedure RunCommand(Command: string);
   public
     // Black & white, grayscale or colour scan?
     property ColorType: ScanType read FColorType write FColorType;
@@ -69,12 +68,6 @@ const
   ScanCommand='/opt/tigerserver/scanwrap.sh';
 
 { TScanner }
-
-procedure TScanner.RunCommand(Command: string);
-
-begin
-
-end;
 
 procedure TScanner.ShowDevices(DeviceList: TStringList);
 const
@@ -117,6 +110,7 @@ begin
   scanadf --depth=8 --resolution=600 --mode=Gray --start-count=1 --end-count=1 --output-file=/tmp/scan.tiff
   }
   //todo: device-specific correction factors -> get from scanimage --help?
+  //todo: later on, compress TIFF??
   case FColorType of
     stLineArt: ScanType:='Lineart';
     stGray: ScanType:='Gray';
@@ -145,7 +139,8 @@ constructor TScanner.Create;
 begin
   inherited Create;
   FColorType:=stLineArt; //Lineart is suitable for OCR for black & white docments
-  FFileName:=Sysutils.GetTempFileName(GetTempDir(false),'SCN');
+  // Tesseract requires a tif extension
+  FFileName:=Sysutils.GetTempFileName(GetTempDir(false),'SCN')+'.tif';
   FResolution:=300;
   //todo: check whether sane works by --version ??
 end;
