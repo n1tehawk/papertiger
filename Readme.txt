@@ -29,7 +29,7 @@ Architecture and development principles
 
 Installation instructions:
 - prerequisites: have sane installed and configured for your scanner. E.g.:
-  aptitude install sane
+  aptitude install sane-utils
 - prerequisites: have tesseract installed and configured. E.g.:
   aptitude install tesseract-ocr tesseract-ocr-eng #for English language support
 - copy server program e.g. to /opt/tigerserver/
