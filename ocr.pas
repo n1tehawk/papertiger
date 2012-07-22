@@ -32,6 +32,10 @@ uses
   Classes, SysUtils;
 
 type
+  // Orientation of scanned image versus the "right side up".
+  // E.g. TurnedAntiClock means the scanned image should be rotated 90 degrees
+  // clockwise to get the correct orientation
+  Orientation=(orNormal,orUpsideDown,orTurnedClock,orTurnedAntiClock,orUnknown);
 
   { TOCR }
 
@@ -39,6 +43,7 @@ type
   private
     FImageFile: string;
     FLanguage: string;
+    FOrientation: Orientation;
     //todo: unicode??
     FText: string;
   public
@@ -47,6 +52,8 @@ type
     // Input image
     property ImageFile: string write FImageFile;
     property Language: string read FLanguage write FLanguage;
+    // Rotation (if any) of scanned image versus reality
+    property Orientation: Orientation read FOrientation write FOrientation;
     // Text recognized in image
     //todo: add outputfile property?!?!!
     property Text: string read FText write FText;
@@ -73,6 +80,7 @@ begin
   begin
     writeln('Result:');
     // tesseract sticks results in outputfile+.txt
+    //todo: upside down detection? OCR 2x, higher detection rate is right orientation
     Results:=TStringList.Create;
     try
       Results.LoadFromFile(OutputFile+'.txt');
@@ -90,6 +98,7 @@ end;
 constructor TOCR.Create;
 begin
   inherited Create;
+  FRotation:=orUnknown;
   FLanguage:='nld'; //Let's test with Dutch.
 end;
 

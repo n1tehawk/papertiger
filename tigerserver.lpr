@@ -83,12 +83,15 @@ begin
   Scanner:=TScanner.Create;
   try
     Scanner.Scan;
+    //todo: figure out if grayscale/lineart works better for OCR; convert if necessary
+    //todo: lineart or grayscale default for docs? 600DPI lineart perhaps?
     ImageFile:=Scanner.FileName;
     writeln('Image file: '+ImageFile);
     //todo: add teventlog logging support
   finally
     Scanner.Free;
   end;
+  //todo: add preprocess unit??! despeckle, deskew etc? ScanTailor?
   OCR:=TOCR.Create;
   try
     if ImageFile<>'' then
@@ -101,6 +104,9 @@ begin
   finally
     OCR.Free;
   end;
+  // Need Tesseract 3 for hocr output?
+  // Create searchable PDF using exactimage
+  //hocr2pdf -i scan.tiff -s -o test.pdf < cuneiform-out.hocr
 end;
 
 constructor TTigerServer.Create(TheOwner: TComponent);
