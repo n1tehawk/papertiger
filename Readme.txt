@@ -1,4 +1,5 @@
 Paper Tiger:
+scanning, text recognition and archiving of paper documents... with GUI clients but from the command line if necessary 
 
 The Paper Tiger code has a liberal MIT license. It uses various other open-source programs.
 
@@ -15,10 +16,22 @@ Further possible refinements:
 - using image cleanup tools such as unpaper
 - using WIA etc on Windows to support Windows scanners
 
+Architecture and development principles
+- use other people's work if possible - the Unix way...
+- if possible, build using modules: e.g. allow use of multiple OCR engines etc
+- store OCR text in the PDF as well as the tiff to enable external tools to work with the PDFs, use the PDFs in other applications etc.
+- save all OCR text in database or file (e.g. a Lucene index) in order to allow fast search across all documents
+- this means synchronizing PDF text with the full text archive may be required
+- develop towards a single point of control: tigerserver, which may speak multiple protocols, e.g. via plugins
+- however, use standard methods of storing data (e.g. full text search components), normalized database schema in order to allow programs/tools that don't speak the protocols mentioned above to get data easily
+- these 2 principles clash; the code will need to stabilize until it is wise to directly try to access e.g. the databsse. Even then, breaking changes cannot and will not be avoided (if e.g. cleanness of design would be compromised)
+
 
 Installation instructions:
-- prerequisites: have sane installed:
+- prerequisites: have sane installed and configured for your scanner. E.g.:
   aptitude install sane
+- prerequisites: have tesseract installed and configured. E.g.:
+  aptitude install tesseract-ocr tesseract-ocr-eng #for English language support
 - copy server program e.g. to /opt/tigerserver/
 - copy scanwrap.sh to server directory
 - go to the server directory, run:
