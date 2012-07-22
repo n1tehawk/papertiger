@@ -31,24 +31,32 @@ uses
 //todo: add support for pascalsane/using libsane instead of wrapping sane command line?
 
 type
+  ScanType=(stColor,stGray,stLineArt);
 
   { TScanner }
 
   TScanner = class(TObject)
   private
     FFileName: string;
+    FResolution: integer;
     FScanDevice: string;
+    FColorType: ScanType;
     procedure RunCommand(Command: string);
   public
+    // Black & white, grayscale or colour scan?
+    property ColorType: ScanType read FColorType write FColorType;
     // File where scanned image should be or has been stored
     //todo: how to deal with existing files?
     property FileName: string read FFileName write FFileName;
+    // Scan resolution in DPI; default 300
+    property Resolution: integer read FResolution write FResolution;
     // Device to be used to scan with; e.g. genesys:libusb:001:002
     property ScanDevice: string read FScanDevice write FScanDevice;
     // Interrogate scanner software for a list of installed devices
     procedure ShowDevices(DeviceList: TStringList);
     // Scan paper to image
     procedure Scan;
+
     constructor Create;
     destructor Destroy; override;
   end;
@@ -72,7 +80,7 @@ procedure TScanner.ShowDevices(DeviceList: TStringList);
 const
   ScanListCommand='scanimage';
 var
-  Output: string;
+  Output: string='';
 begin
   //todo:
   //scanimage --list-devices
@@ -97,15 +105,30 @@ end;
 procedure TScanner.Scan;
 var
   Options: string;
+  ScanDevicePart: string;
+  ScanType: string;
 begin
   //todo: call runprocess scanimage... etc
-  //Example call:
-  //scanimage --device-name=genesys:libusb:001:002 --mode=Color --swdeskew=yes --swcrop=yes --format=tiff > /tmp/testscan.tiff
-  // color= argument is device dependent
+  {Example call:
+  scanimage --device-name=genesys:libusb:001:002 --mode=Color --swdeskew=yes --swcrop=yes --format=tiff > /tmp/testscan.tiff
+  swdeskew, swcrop, color arguments are device dependent
+  }
+  { Alternative: while scanadf has a file output option, you can't specify file format:
+  scanadf --depth=8 --resolution=600 --mode=Gray --start-count=1 --end-count=1 --output-file=/tmp/scan.tiff
+  }
+  //todo: device-specific correction factors -> get from scanimage --help?
+  case FColorType of
+    stLineArt: ScanType:='Lineart';
+    stGray: ScanType:='Gray';
+    stColor: ScanType:='Color';
+    else ScanType:='Lineart';
+  end;
   if FScanDevice='' then
-    Options:=' "'+FFileName+'"  --mode=Color --resolution=300 --swdeskew=yes --swcrop=yes --format=tiff'
+    ScanDevicePart:=''
   else
-    Options:=' "'+FFileName+'" --device-name='+FScanDevice+' --mode=Color --resolution=300 --swdeskew=yes --swcrop=yes --format=tiff';
+    ScanDevicePart:='--device-name='+FScanDevice;
+
+  Options:=' "'+FFileName+'" '+ScanDevicePart+' --mode='+ScanType+' --resolution='+inttostr(FResolution)+' --swdeskew=yes --swcrop=yes --format=tiff';
   writeln('Executing:');
   writeln(ScanCommand+Options);
   if ExecuteCommand(ScanCommand+Options,false)=0 then
@@ -121,7 +144,9 @@ end;
 constructor TScanner.Create;
 begin
   inherited Create;
+  FColorType:=stLineArt; //Lineart is suitable for OCR for black & white docments
   FFileName:=Sysutils.GetTempFileName(GetTempDir(false),'SCN');
+  FResolution:=300;
   //todo: check whether sane works by --version ??
 end;
 
