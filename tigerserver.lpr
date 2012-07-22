@@ -28,7 +28,7 @@ uses
   {$IFDEF UNIX}{$IFDEF UseCThreads}
   cthreads,
   {$ENDIF}{$ENDIF}
-  Classes, SysUtils, CustApp, scan;
+  Classes, SysUtils, CustApp, scan, ocr;
 
 type
 
@@ -77,6 +77,7 @@ procedure TTigerServer.DoScan;
 // Performs the document scan
 var
   ImageFile: string;
+  OCR: TOCR;
   Scanner: TScanner;
 begin
   Scanner:=TScanner.Create;
@@ -87,6 +88,18 @@ begin
     //todo: add teventlog logging support
   finally
     Scanner.Free;
+  end;
+  OCR:=TOCR.Create;
+  try
+    if ImageFile<>'' then
+    begin
+      OCR.ImageFile:=ImageFile;
+      OCR.RecognizeText;
+      writeln('Got this text:');
+      writeln(OCR.Text);
+    end;
+  finally
+    OCR.Free;
   end;
 end;
 
