@@ -14,3 +14,14 @@ Further possible refinements:
 - support for other databases (sqlite, PostgreSQL, MS SQL Server)
 - using image cleanup tools such as unpaper
 - using WIA etc on Windows to support Windows scanners
+
+
+Installation instructions:
+- prerequisites: have sane installed:
+  aptitude install sane
+- copy server program e.g. to /opt/tigerserver/
+- copy scanwrap.sh to server directory
+- go to the server directory, run:
+  chmod u+rx tigerserver
+  chmod u+rx scanwrap.sh
+  

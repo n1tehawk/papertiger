@@ -83,6 +83,7 @@ begin
   try
     Scanner.Scan;
     ImageFile:=Scanner.FileName;
+    writeln('Image file: '+ImageFile);
     //todo: add teventlog logging support
   finally
     Scanner.Free;
@@ -103,6 +104,7 @@ end;
 procedure TTigerServer.WriteHelp;
 begin
   writeln('Usage: ',ExeName,' -h');
+  writeln('-s --scan: scan');
 end;
 
 var
