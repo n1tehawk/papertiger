@@ -54,6 +54,12 @@ type
   end;
 implementation
 
+uses processutils;
+
+const
+  //todo: fix hardcoded path; perhaps also write FPC wrapper instead of bash scanwrap.sh
+  ScanCommand='/opt/tigerserver/scanwrap.sh';
+
 { TScanner }
 
 procedure TScanner.RunCommand(Command: string);
@@ -63,6 +69,10 @@ begin
 end;
 
 procedure TScanner.ShowDevices(DeviceList: TStringList);
+const
+  ScanListCommand='scanimage';
+var
+  Output: string;
 begin
   //todo:
   //scanimage --list-devices
@@ -73,14 +83,39 @@ begin
                              %m (model), %t (type), %i (index number), and
                              %n (newline)
   }
+  if ExecuteCommand(ScanListCommand + ' --list-devices',Output,false)=0 then
+  begin
+    writeln('Result:');
+    writeln(Output);
+  end
+  else
+  begin
+    writeln('Error running command.');
+  end;
 end;
 
 procedure TScanner.Scan;
+var
+  Options: string;
 begin
   //todo: call runprocess scanimage... etc
   //Example call:
-  //scanimage --device genesys:libusb:001:002 --mode=Color --swdeskew=yes --swcrop=yes --format=tiff > /tmp/testscan.tiff
-  ;
+  //scanimage --device-name=genesys:libusb:001:002 --mode=Color --swdeskew=yes --swcrop=yes --format=tiff > /tmp/testscan.tiff
+  // color= argument is device dependent
+  if FScanDevice='' then
+    Options:=' "'+FFileName+'"  --mode=Color --resolution=300 --swdeskew=yes --swcrop=yes --format=tiff'
+  else
+    Options:=' "'+FFileName+'" --device-name='+FScanDevice+' --mode=Color --resolution=300 --swdeskew=yes --swcrop=yes --format=tiff';
+  writeln('Executing:');
+  writeln(ScanCommand+Options);
+  if ExecuteCommand(ScanCommand+Options,false)=0 then
+  begin
+    writeln('Scan succeeded.');
+  end
+  else
+  begin
+    writeln('Error running command.');
+  end;
 end;
 
 constructor TScanner.Create;
