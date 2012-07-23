@@ -33,9 +33,40 @@ Installation instructions:
 - prerequisites: have tesseract installed and configured. E.g.:
   aptitude install tesseract-ocr tesseract-ocr-eng #for English language support
   Note: we need version 3 because of hOCR support needed for getting searchable PDFs.
+- prerequisites: have exactimage installed (for hocr2pdf), e.g.:
+  aptitude install exactimage
+- todo: check if specifying hocr works, too - we seem to get language problems?!?
+  Tesseract must/can then be configured to output hocr, e.g.:
+  cat >> /usr/local/share/tessdata/configs/hocr << "EOF_DOCUMENT"
+  tessedit_create_hocr 1
+  EOF_DOCUMENT
 - copy server program e.g. to /opt/tigerserver/
 - copy scanwrap.sh to server directory
 - go to the server directory, run:
   chmod u+rx tigerserver
   chmod u+rx scanwrap.sh
+
   
+Preliminary notes for building Tesseract 3 on Debian aqueeze
+sources:
+http://ubuntuforums.org/showthread.php?t=1647350
+aptitude install build-essential leptonica libleptonica-dev libpng-dev libjpeg-dev libtiff-dev zlib1g-dev
+
+# as root:
+cd ~
+wget https://tesseract-ocr.googlecode.com/files/tesseract-3.01.tar.gz
+tar -zxvf tesseract-3.01.tar.gz
+cd tesseract-3.01
+./runautoconf
+./configure
+make
+checkinstall (follow the prompts and type "y" to create documentation directory. Enter a brief description then press enter twice)
+ldconfig
+
+#language/training data, e.g. for Dutch and English:
+#todo: check dir
+cd /usr/local/share/tessdata
+wget https://tesseract-ocr.googlecode.com/files/nld.traineddata.gz
+gunzip nld.traineddata.gz
+wget https://tesseract-ocr.googlecode.com/files/tesseract-ocr-3.01.eng.tar.gz
+gunzip tesseract-ocr-3.01.eng.tar.gz
