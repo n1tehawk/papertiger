@@ -35,8 +35,7 @@ Installation instructions:
   Note: we need version 3 because of hOCR support needed for getting searchable PDFs.
 - prerequisites: have exactimage installed (for hocr2pdf), e.g.:
   aptitude install exactimage
-- todo: check if specifying hocr works, too - we seem to get language problems?!?
-  Tesseract must/can then be configured to output hocr, e.g.:
+- Tesseract must/can then be configured to output hocr, e.g.:
   check you have this file present (adjust config directory to your situation):
   cat /usr/local/share/tessdata/configs/hocr
   If not (again, adjust config file location to your situation):
