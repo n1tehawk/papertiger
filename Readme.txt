@@ -24,7 +24,7 @@ Architecture and development principles
 - this means synchronizing PDF text with the full text archive may be required
 - develop towards a single point of control: tigerserver, which may speak multiple protocols, e.g. via plugins
 - however, use standard methods of storing data (e.g. full text search components), normalized database schema in order to allow programs/tools that don't speak the protocols mentioned above to get data easily
-- these 2 principles clash; the code will need to stabilize until it is wise to directly try to access e.g. the databsse. Even then, breaking changes cannot and will not be avoided (if e.g. cleanness of design would be compromised)
+- these 2 principles clash; the code will need to stabilize until it is wise to directly try to access e.g. the databsse. Even then, breaking changes will not be avoided if e.g. cleanness of design would be compromised
 
 
 Installation instructions:
@@ -37,6 +37,9 @@ Installation instructions:
   aptitude install exactimage
 - todo: check if specifying hocr works, too - we seem to get language problems?!?
   Tesseract must/can then be configured to output hocr, e.g.:
+  check you have this file present (adjust config directory to your situation):
+  cat /usr/local/share/tessdata/configs/hocr
+  If not (again, adjust config file location to your situation):
   cat >> /usr/local/share/tessdata/configs/hocr << "EOF_DOCUMENT"
   tessedit_create_hocr 1
   EOF_DOCUMENT
