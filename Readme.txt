@@ -32,6 +32,7 @@ Installation instructions:
   aptitude install sane-utils
 - prerequisites: have tesseract installed and configured. E.g.:
   aptitude install tesseract-ocr tesseract-ocr-eng #for English language support
+  Note: we need version 3 because of hOCR support needed for getting searchable PDFs.
 - copy server program e.g. to /opt/tigerserver/
 - copy scanwrap.sh to server directory
 - go to the server directory, run:

@@ -37,7 +37,8 @@ type
   TTigerServer = class(TCustomApplication)
   protected
     procedure DoRun; override;
-    procedure DoScan;
+    procedure ProcessImage(ImageFile: string);
+    procedure ScanAndProcess;
   public
     constructor Create(TheOwner: TComponent); override;
     destructor Destroy; override;
@@ -51,46 +52,40 @@ var
   ErrorMsg: String;
 begin
   // quick check parameters
-  ErrorMsg:=CheckOptions('hs','help scan');
-  if ErrorMsg<>'' then begin
+  ErrorMsg:=CheckOptions('hi:s','help image: scan');
+  if ErrorMsg<>'' then
+  begin
     ShowException(Exception.Create(ErrorMsg));
     Terminate;
     Exit;
   end;
 
   // parse parameters
-  if HasOption('h','help') then begin
+  if HasOption('h','help') then
+  begin
     WriteHelp;
     Terminate;
     Exit;
   end;
 
-  if HasOption('s','scan') then begin
-    DoScan;
+  if HasOption('i','image') then
+  begin
+    ProcessImage(GetOptionValue('i','image'));
+  end;
+
+  if HasOption('s','scan') then
+  begin
+    ScanAndProcess;
   end;
 
   // stop program loop
   Terminate;
 end;
 
-procedure TTigerServer.DoScan;
-// Performs the document scan
+procedure TTigerServer.ProcessImage(ImageFile: string);
 var
-  ImageFile: string;
   OCR: TOCR;
-  Scanner: TScanner;
 begin
-  Scanner:=TScanner.Create;
-  try
-    Scanner.Scan;
-    //todo: figure out if grayscale/lineart works better for OCR; convert if necessary
-    //todo: lineart or grayscale default for docs? 600DPI lineart perhaps?
-    ImageFile:=Scanner.FileName;
-    writeln('Image file: '+ImageFile);
-    //todo: add teventlog logging support
-  finally
-    Scanner.Free;
-  end;
   //todo: add preprocess unit??! despeckle, deskew etc? ScanTailor?
   OCR:=TOCR.Create;
   try
@@ -109,6 +104,26 @@ begin
   //hocr2pdf -i scan.tiff -s -o test.pdf < cuneiform-out.hocr
 end;
 
+procedure TTigerServer.ScanAndProcess;
+// Performs the document scan, and process result
+var
+  ImageFile: string;
+  Scanner: TScanner;
+begin
+  Scanner:=TScanner.Create;
+  try
+    Scanner.Scan;
+    //todo: figure out if grayscale/lineart works better for OCR; convert if necessary
+    //todo: lineart or grayscale default for docs? 600DPI lineart perhaps?
+    ImageFile:=Scanner.FileName;
+    writeln('Image file: '+ImageFile);
+    //todo: add teventlog logging support
+  finally
+    Scanner.Free;
+  end;
+  ProcessImage(ImageFile);
+end;
+
 constructor TTigerServer.Create(TheOwner: TComponent);
 begin
   inherited Create(TheOwner);
@@ -123,7 +138,10 @@ end;
 procedure TTigerServer.WriteHelp;
 begin
   writeln('Usage: ',ExeName,' -h');
+  writeln('-i --image <image>');
+  writeln(' Process image.');
   writeln('-s --scan: scan');
+  writeln(' Scan document, process.');
 end;
 
 var
