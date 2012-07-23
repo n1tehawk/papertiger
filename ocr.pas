@@ -98,7 +98,7 @@ end;
 constructor TOCR.Create;
 begin
   inherited Create;
-  FRotation:=orUnknown;
+  FOrientation:=orUnknown;
   FLanguage:='nld'; //Let's test with Dutch.
 end;
 
