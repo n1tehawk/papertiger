@@ -51,7 +51,7 @@
         <FormatVersion Value="1"/>
       </local>
     </RunParams>
-    <Units Count="3">
+    <Units Count="4">
       <Unit0>
         <Filename Value="tigerserver.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -67,6 +67,11 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="ocr"/>
       </Unit2>
+      <Unit3>
+        <Filename Value="pdf.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="pdf"/>
+      </Unit3>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

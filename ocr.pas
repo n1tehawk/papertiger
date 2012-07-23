@@ -23,6 +23,11 @@ unit ocr;
   IN THE SOFTWARE.
 }
 
+{
+This needs Tesseract version 3 or higher for hocr output.
+//todo: test for that
+}
+
 {$i tigerserver.inc}
 
 
