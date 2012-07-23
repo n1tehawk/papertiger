@@ -81,6 +81,7 @@ begin
     writeln('Result:');
     // tesseract sticks results in outputfile+.txt
     //todo: upside down detection? OCR 2x, higher detection rate is right orientation
+    //=> we can use tesseract 3 -pam parameter perhaps?
     Results:=TStringList.Create;
     try
       Results.LoadFromFile(OutputFile+'.txt');
