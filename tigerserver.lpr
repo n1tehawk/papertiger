@@ -37,7 +37,11 @@ type
   TTigerServer = class(TCustomApplication)
   protected
     procedure DoRun; override;
-    procedure ProcessImage(ImageFile: string);
+    // Process existing (TIFF) image; should be named <image>.tif
+    // Specify resolution override to indicate resolution to hocr2pdf
+    // Specify 0 to leave alone and let hocr detect resolution or fallback to 300dpi
+    procedure ProcessImage(ImageFile: string; Resolution: integer);
+    // Scan an document and process it.
     procedure ScanAndProcess;
   public
     constructor Create(TheOwner: TComponent); override;
@@ -70,7 +74,7 @@ begin
 
   if HasOption('i','image') then
   begin
-    ProcessImage(GetOptionValue('i','image'));
+    ProcessImage(GetOptionValue('i','image'),0);
   end;
 
   if HasOption('s','scan') then
@@ -82,8 +86,9 @@ begin
   Terminate;
 end;
 
-procedure TTigerServer.ProcessImage(ImageFile: string);
+procedure TTigerServer.ProcessImage(ImageFile: string; Resolution: integer);
 var
+  HOCRFile: string;
   OCR: TOCR;
   PDF: TPDF;
 begin
@@ -94,6 +99,7 @@ begin
     begin
       OCR.ImageFile:=ImageFile;
       OCR.RecognizeText;
+      HOCRFile:=OCR.HOCRFile;
       writeln('Got this text:');
       writeln(OCR.Text);
     end;
@@ -105,6 +111,10 @@ begin
   try
     if ImageFile<>'' then
     begin
+      // Only pass on overrides on resolution
+      if Resolution>0 then
+        PDF.ImageResolution:=Resolution;
+      PDF.HOCRFile:=HOCRFile;
       PDF.ImageFile:=ImageFile;
       //todo: add metadata stuff to pdf unit
       //todo: add compression to pdf unit?
@@ -155,20 +165,23 @@ procedure TTigerServer.ScanAndProcess;
 // Performs the document scan, and process result
 var
   ImageFile: string;
+  Resolution: integer;
   Scanner: TScanner;
 begin
+  // Try a 600dpi scan
+  Resolution:=600;
   Scanner:=TScanner.Create;
   try
+    Scanner.Resolution:=Resolution;
+    Scanner.ColorType:=stLineArt;
     Scanner.Scan;
-    //todo: figure out if grayscale/lineart works better for OCR; convert if necessary
-    //todo: lineart or grayscale default for docs? 600DPI lineart perhaps?
     ImageFile:=Scanner.FileName;
     writeln('Image file: '+ImageFile);
     //todo: add teventlog logging support
   finally
     Scanner.Free;
   end;
-  ProcessImage(ImageFile);
+  ProcessImage(ImageFile, Resolution);
 end;
 
 constructor TTigerServer.Create(TheOwner: TComponent);

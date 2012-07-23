@@ -42,11 +42,14 @@ Installation instructions:
   cat >> /usr/local/share/tessdata/configs/hocr << "EOF_DOCUMENT"
   tessedit_create_hocr 1
   EOF_DOCUMENT
-- copy server program e.g. to /opt/tigerserver/
+- copy hocrwrap.sh to server directory (e.g. /opt/tigerserver/)
+- copy tigerserver to server directory
 - copy scanwrap.sh to server directory
-- go to the server directory, run:
-  chmod u+rx tigerserver
+- go to the server directory and make files executable, e.g. (replace directory with your own if necessary):
+  cd /opt/tigerserver/
+  chmod u+rx hocrwrap.sh
   chmod u+rx scanwrap.sh
+  chmod u+rx tigerserver
 
   
 Preliminary notes for building Tesseract 3 on Debian aqueeze
@@ -72,3 +75,16 @@ wget https://tesseract-ocr.googlecode.com/files/nld.traineddata.gz
 gunzip nld.traineddata.gz
 wget https://tesseract-ocr.googlecode.com/files/tesseract-ocr-3.01.eng.tar.gz
 gunzip tesseract-ocr-3.01.eng.tar.gz
+
+
+Getting PDF viewers to open a certain page:
+Adobe Acrobat Reader
+http://www.adobe.com/content/dam/Adobe/en/devnet/acrobat/pdfs/pdf_open_parameters.pdf
+acrobat.exe /A "page=<pageNo>"
+could also use "nameddest=<named destination>"
+
+SumatraPDF
+https://code.google.com/p/sumatrapdf/wiki/CommandLineArguments
+sumatrapdf -reuse-instance -page <pageNo>
+Scrolls the first indicated file to the indicated page.
+Tells an already open SumatraPDF to load the indicated files. If there are several running instances, behavior is undefined.

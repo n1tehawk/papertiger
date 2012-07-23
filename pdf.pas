@@ -38,6 +38,7 @@ type
   private
     FHOCRFile: string;
     FImageFile: string;
+    FImageResolution: integer;
     FPDFFile: string;
 
   public
@@ -45,7 +46,11 @@ type
     property HOCRFile: string write FHOCRFile;
     // Input image
     property ImageFile: string write FImageFile;
+    // Output PDF file
     property PDFFile: string read FPDFFile write FPDFFile;
+    // Manual override/sepcification of image resolution. Enter 0 for no override.
+    // Used for passing to hocr2pdf
+    property ImageResolution: integer write FImageResolution;
     procedure CreatePDF;
     constructor Create;
     destructor Destroy; override;
@@ -59,14 +64,20 @@ uses processutils;
 procedure TPDF.CreatePDF;
 // Create searchable PDF using exactimage (using -s for aligning text better)
 const
-  Command='hocr2pdf';
+  Command='hocrwrap.sh';
 var
   Options:string;
+  ResolutionOption: string;
 begin
   if FPDFFile='' then
     FPDFFile:=ChangeFileExt(FImageFile,'.pdf');
 
-  Options:=' -i "'+FImageFile+'" -o "'+FPDFFile+'" --sloppy-text';
+  // hocrwrap.sh expects hocr file as 1st parameter
+  // Specifying --sloppy-text or not doesn't really seem to help; we get a lot of extraneous characters
+  // todo: check doing the text output with
+  if FImageResolution>0 then
+    ResolutionOption:=' --resolution '+inttostr(FImageResolution);
+  Options:=' "'+FHOCRFile+'" -i "'+FImageFile+'" -o "'+FPDFFile+'"'+ResolutionOption+' --sloppy-text';
   writeln('PDF generation: running '+Command+Options);
   if ExecuteCommand(Command+Options,false)=0 then
   begin

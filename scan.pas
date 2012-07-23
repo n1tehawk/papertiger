@@ -31,6 +31,7 @@ uses
 //todo: add support for pascalsane/using libsane instead of wrapping sane command line?
 
 type
+  // Colour/color, grayscale and lineart/black & white scan modes
   ScanType=(stColor,stGray,stLineArt);
 
   { TScanner }
@@ -47,12 +48,12 @@ type
     // File where scanned image should be or has been stored
     //todo: how to deal with existing files?
     property FileName: string read FFileName write FFileName;
-    // Scan resolution in DPI; default 300
+    // Scan resolution in DPI
     property Resolution: integer read FResolution write FResolution;
     // Device to be used to scan with; e.g. genesys:libusb:001:002
     property ScanDevice: string read FScanDevice write FScanDevice;
     // Interrogate scanner software for a list of installed devices
-    procedure ShowDevices(DeviceList: TStringList);
+    procedure ShowDevices(var DeviceList: TStringList);
     // Scan paper to image
     procedure Scan;
 
@@ -64,12 +65,12 @@ implementation
 uses processutils;
 
 const
-  //todo: fix hardcoded path; perhaps also write FPC wrapper instead of bash scanwrap.sh
-  ScanCommand='/opt/tigerserver/scanwrap.sh';
+  //todo: perhaps write FPC wrapper instead of bash scanwrap.sh
+  ScanCommand='./scanwrap.sh';
 
 { TScanner }
 
-procedure TScanner.ShowDevices(DeviceList: TStringList);
+procedure TScanner.ShowDevices(var DeviceList: TStringList);
 const
   ScanListCommand='scanimage';
 var
@@ -87,6 +88,7 @@ begin
   if ExecuteCommand(ScanListCommand + ' --list-devices',Output,false)=0 then
   begin
     writeln('Result:');
+    DeviceList.Text:=Output;
     writeln(Output);
   end
   else
@@ -138,7 +140,8 @@ end;
 constructor TScanner.Create;
 begin
   inherited Create;
-  FColorType:=stLineArt; //Lineart is suitable for OCR for black & white docments
+  FColorType:=stLineArt; //Lineart is suitable for OCR for black & white docments?!?
+  //todo: we would like to scan graphics in B&W or even colour, then text as lineart. This would probably require fiddling with the hOCR output to get the text areas etc???
   // Tesseract requires a tif extension
   FFileName:=Sysutils.GetTempFileName(GetTempDir(false),'SCN')+'.tif';
   FResolution:=300;
