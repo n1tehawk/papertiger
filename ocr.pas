@@ -26,6 +26,8 @@ unit ocr;
 {
 This needs Tesseract version 3 or higher for hocr output.
 //todo: test for that
+
+cuneiform alternative: cuneiform -l <language> -o hocr.html imagefile.bmp
 }
 
 {$i tigerserver.inc}

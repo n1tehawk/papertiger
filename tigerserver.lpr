@@ -22,6 +22,21 @@ program tigerserver;
   IN THE SOFTWARE.
 }
 
+{
+//todo:
+- look at getting ocrfeeder (text mode) instead of the scan/ocr/pdf processes
+http://git.gnome.org/browse/ocrfeeder
+- run multiple scan engines, compare results. Differences should be marked for manual intervention
+- get confidence output from tesseract (e.g. in the hocr)=>also assign manual intervention score
+- run through dictionary (e.g. aspell -l en -c file.txt ...) and calculate confidence level there
+- trigram analysis?!?!
+- address (to, from), date detection in letters=>requires heuristics/processing text blocks (search term: data capture)
+- if we can find out where logos are: extract embedded text using e.g. groundtruth
+- recognize barcodes with zxing? exactimage tools?
+
+=> if this is working, tell the guys at watchocr.com (they use cuneiform); perhaps they're interested
+}
+
 {$i tigerserver.inc}
 
 uses
@@ -92,7 +107,10 @@ var
   OCR: TOCR;
   PDF: TPDF;
 begin
-  //todo: add preprocess unit??! despeckle, deskew etc? ScanTailor?
+  {todo: add preprocess unit??! despeckle, deskew etc? ScanTailor?
+  Scantailor: more for letters/documents; unpaper more for books
+  scantailor new version: https://sourceforge.net/projects/scantailor/files/scantailor-devel/enhanced/
+  unpaper input.ppm output.ppm => perhaps more formats than ppm? use eg. exactimage's econvert for format conversion}
   OCR:=TOCR.Create;
   try
     if ImageFile<>'' then
@@ -168,8 +186,8 @@ var
   Resolution: integer;
   Scanner: TScanner;
 begin
-  // Try a 600dpi scan
-  Resolution:=600;
+  // Try a 300dpi scan, probably best for normal sized letters on paper
+  Resolution:=300;
   Scanner:=TScanner.Create;
   try
     Scanner.Resolution:=Resolution;
