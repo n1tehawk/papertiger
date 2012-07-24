@@ -109,10 +109,10 @@ begin
   swdeskew, swcrop, color arguments are device dependent
   }
   { Alternative: while scanadf has a file output option, you can't specify file format:
-  scanadf --depth=8 --resolution=600 --mode=Gray --start-count=1 --end-count=1 --output-file=/tmp/scan.tiff
+  scanadf --depth=8 --resolution=300 --mode=Gray --start-count=1 --end-count=1 --output-file=/tmp/scan.tiff
   }
-  //todo: device-specific correction factors -> get from scanimage --help?
-  //todo: later on, compress TIFF??
+  //todo: device-specific parameters -> get from scanimage --help?
+  //Compress TIFF?? => no, not really useful, wil be compressed in PDF
   case FColorType of
     stLineArt: ScanType:='Lineart';
     stGray: ScanType:='Gray';
