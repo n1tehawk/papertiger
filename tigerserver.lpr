@@ -43,13 +43,20 @@ uses
   {$IFDEF UNIX}{$IFDEF UseCThreads}
   cthreads,
   {$ENDIF}{$ENDIF}
-  Classes, SysUtils, CustApp, scan, ocr, pdf, tigerdb;
+  Classes, SysUtils, CustApp, scan, ocr, pdf, tigerdb, inifiles;
+
+const
+  // todo: create separate settings class
+  SettingsFile = 'tigerserver.ini';
 
 type
 
   { TTigerServer }
 
   TTigerServer = class(TCustomApplication)
+  private
+    FImageDirectory: string;
+    FTigerDB: TTigerDB;
   protected
     procedure DoRun; override;
     // Process existing (TIFF) image; should be named <image>.tif
@@ -69,6 +76,7 @@ type
 procedure TTigerServer.DoRun;
 var
   ErrorMsg: String;
+  Settings: TINIFile;
 begin
   // quick check parameters
   ErrorMsg:=CheckOptions('hi:s','help image: scan');
@@ -87,6 +95,26 @@ begin
     Exit;
   end;
 
+  FTigerDB:=TTigerDB.Create;
+  if FileExists(SettingsFile) then
+  begin
+    Settings := TINIFile.Create(SettingsFile);
+    try
+      FImageDirectory:=Settings.ReadString('General', 'ImageDirectory', ''); //Default to current directory
+    finally
+      Settings.Free;
+    end;
+  end
+  else
+  begin
+    // Set up defaults
+    FImageDirectory:='';
+  end;
+
+  if FImageDirectory='' then FImageDirectory:=ExtractFilePath(SettingsFile);
+  //Make sure there's a trailing / or \
+  FImageDirectory:=IncludeLeadingPathDelimiter(FImageDirectory);
+
   if HasOption('i','image') then
   begin
     ProcessImage(GetOptionValue('i','image'),0);
@@ -97,6 +125,8 @@ begin
     ScanAndProcess;
   end;
 
+  if Assigned(FTigerDB) then
+    FTigerDB.Free;
   // stop program loop
   Terminate;
 end;
@@ -140,6 +170,9 @@ begin
       writeln('Got PDF:');
       writeln(PDF.PDFFile);
     end;
+
+    // Add to database
+    FTigerDB.InsertScan('test',ImageFile,'',Now);
   finally
     PDF.Free;
   end;
@@ -192,6 +225,7 @@ begin
   try
     Scanner.Resolution:=Resolution;
     Scanner.ColorType:=stLineArt;
+    Scanner.FileName:=FImageDirectory+FormatDateTime('yyyymmddhhnnss', Now())+'.tif';
     Scanner.Scan;
     ImageFile:=Scanner.FileName;
     writeln('Image file: '+ImageFile);
