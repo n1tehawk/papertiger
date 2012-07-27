@@ -43,7 +43,7 @@ uses
   {$IFDEF UNIX}{$IFDEF UseCThreads}
   cthreads,
   {$ENDIF}{$ENDIF}
-  Classes, SysUtils, CustApp, scan, ocr, pdf;
+  Classes, SysUtils, CustApp, scan, ocr, pdf, tigerdb;
 
 type
 
