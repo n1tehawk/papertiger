@@ -56,10 +56,12 @@ type
   TTigerServer = class(TCustomApplication)
   private
     FImageDirectory: string;
-    //Directory where scanned images must be/are stored
+    // Directory where scanned images must be/are stored
+    // Has trailing path delimiter.
     //todo: perhaps publish property?
     FPDFDirectory: string;
-    //Directory where resulting PDFs must be stored
+    // Directory where resulting PDFs must be stored
+    // Has trailing path delimiter.
     FTigerDB: TTigerDB;
   protected
     procedure DoRun; override;
@@ -106,8 +108,8 @@ begin
     Settings := TINIFile.Create(SettingsFile);
     try
       // When reading the settings, expand ~ to home directory etc
-      FImageDirectory:=ExpandFileName(Settings.ReadString('General', 'ImageDirectory', '~/scans')); //Default to current directory
-      FPDFDirectory:=ExpandFileName(Settings.ReadString('General', 'PDFDirectory', '~/pdfs')); //Default to current directory
+      FImageDirectory:=IncludeTrailingPathDelimiter(ExpandFileName(Settings.ReadString('General', 'ImageDirectory', '~/scans'))); //Default to current directory
+      FPDFDirectory:=IncludeTrailingPathDelimiter(ExpandFileName(Settings.ReadString('General', 'PDFDirectory', '~/pdfs'))); //Default to current directory
     finally
       Settings.Free;
     end;
@@ -116,11 +118,11 @@ begin
   begin
     // Set up defaults
     FImageDirectory:='';
+    FPDFDirectory:='';
   end;
 
-  if FImageDirectory='' then FImageDirectory:=ExtractFilePath(SettingsFile);
-  //Make sure there's a trailing / or \
-  FImageDirectory:=IncludeLeadingPathDelimiter(FImageDirectory);
+  if FImageDirectory='' then FImageDirectory:=IncludeTrailingPathDelimiter(ExtractFilePath(SettingsFile));
+  if FPDFDirectory='' then FPDFDirectory:=FImageDirectory;
 
   if HasOption('i','image') then
   begin
@@ -171,7 +173,9 @@ begin
         PDF.ImageResolution:=Resolution;
       PDF.HOCRFile:=HOCRFile;
       PDF.ImageFile:=ImageFile;
-      PDF.PDFFile:=IncludeTrailingPathDelimiter(FPDFDirectory)+ChangeFileExt(ExtractFileName(ImageFile),'.pdf');
+      writeln('pdfdirectory: '+FPDFDirectory);
+      PDF.PDFFile:=IncludeTrailingPathDelimiter(FPDFDirectory)+
+        ChangeFileExt(ExtractFileName(ImageFile),'.pdf');
       //todo: add metadata stuff to pdf unit
       //todo: add compression to pdf unit?
       PDF.CreatePDF;
