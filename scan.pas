@@ -27,8 +27,12 @@ unit scan;
 interface
 
 uses
-  Classes, SysUtils;
+  Classes, SysUtils, inifiles;
 //todo: add support for pascalsane/using libsane instead of wrapping sane command line?
+
+const
+  // todo: create separate settings class
+  SettingsFile = 'tigerserver.ini';
 
 type
   // Colour/color, grayscale and lineart/black & white scan modes
@@ -43,20 +47,21 @@ type
     FScanDevice: string;
     FColorType: ScanType;
   public
-    // Black & white, grayscale or colour scan?
     property ColorType: ScanType read FColorType write FColorType;
+    // Black & white, grayscale or colour scan?
+    property FileName: string read FFileName write FFileName;
     // File where scanned image should be or has been stored
     //todo: how to deal with existing files?
-    property FileName: string read FFileName write FFileName;
-    // Scan resolution in DPI
     property Resolution: integer read FResolution write FResolution;
-    // Device to be used to scan with; e.g. genesys:libusb:001:002
+    // Scan resolution in DPI
     property ScanDevice: string read FScanDevice write FScanDevice;
-    // Interrogate scanner software for a list of installed devices
+    // Device to be used to scan with; e.g. genesys:libusb:001:002
+    // Specify e.g. net:192.168.0.4:genesys:libusb:001:002 for a sane network
+    // scanner
     procedure ShowDevices(var DeviceList: TStringList);
-    // Scan paper to image
+    // Interrogate scanner software for a list of installed devices
     procedure Scan;
-
+    // Scan paper to image
     constructor Create;
     destructor Destroy; override;
   end;
@@ -107,6 +112,9 @@ begin
   {Example call:
   scanimage --device-name=genesys:libusb:001:002 --mode=Color --swdeskew=yes --swcrop=yes --format=tiff > /tmp/testscan.tiff
   swdeskew, swcrop, color arguments are device dependent
+  Network:
+  scanimage --device-name=net:192.168.0.1:genesys:libusb:001:002
+  and the arguments are the same
   }
   { Alternative: while scanadf has a file output option, you can't specify file format:
   scanadf --depth=8 --resolution=300 --mode=Gray --start-count=1 --end-count=1 --output-file=/tmp/scan.tiff
@@ -138,6 +146,8 @@ begin
 end;
 
 constructor TScanner.Create;
+var
+  Settings: TINIFile;
 begin
   inherited Create;
   FColorType:=stLineArt; //Lineart is suitable for OCR for black & white docments?!?
@@ -146,6 +156,16 @@ begin
   FFileName:=Sysutils.GetTempFileName(GetTempDir(false),'SCN')+'.tif';
   FResolution:=300;
   //todo: check whether sane works by --version ??
+
+  if FileExists(SettingsFile) then
+  begin
+    Settings := TINIFile.Create(SettingsFile);
+    try
+      FScanDevice:=Settings.ReadString('Sane', 'DeviceName', '');
+    finally
+      Settings.Free;
+    end;
+  end
 end;
 
 destructor TScanner.Destroy;

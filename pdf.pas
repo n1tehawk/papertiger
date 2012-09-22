@@ -42,15 +42,15 @@ type
     FPDFFile: string;
 
   public
-    // File with hOCR: position and text in image
     property HOCRFile: string write FHOCRFile;
-    // Input image
+    // File with hOCR: position and text in image
     property ImageFile: string write FImageFile;
-    // Output PDF file
+    // Input image
     property PDFFile: string read FPDFFile write FPDFFile;
-    // Manual override/sepcification of image resolution. Enter 0 for no override.
-    // Used for passing to hocr2pdf
+    // Output PDF file
     property ImageResolution: integer write FImageResolution;
+    // Manual override/specification of image resolution. Enter 0 for no override.
+    // Used for passing to hocr2pdf
     procedure CreatePDF;
     constructor Create;
     destructor Destroy; override;
@@ -95,6 +95,7 @@ begin
   inherited Create;
   FImageFile:='';
   FHOCRFile:='';
+  FPDFFile:='';
 end;
 
 destructor TPDF.Destroy;
