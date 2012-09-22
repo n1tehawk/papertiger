@@ -54,9 +54,9 @@ begin
       FInsertScan.ParamByName('DOCUMENTNAME').AsString:=DocumentName;
     if DocumentPath='' then
       // NULL
-      FInsertScan.ParamByName('DOCUMENTPATH').Clear
+      FInsertScan.ParamByName('PATH').Clear
     else
-      FInsertScan.ParamByName('DOCUMENTPATH').AsString:=DocumentPath;
+      FInsertScan.ParamByName('PATH').AsString:=DocumentPath;
     if DocumentHash='' then
       // NULL
       FInsertScan.ParamByName('DOCUMENTHASH').Clear
