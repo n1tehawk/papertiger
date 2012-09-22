@@ -56,15 +56,20 @@ type
   TTigerServer = class(TCustomApplication)
   private
     FImageDirectory: string;
+    //Directory where scanned images must be/are stored
+    //todo: perhaps publish property?
+    FPDFDirectory: string;
+    //Directory where resulting PDFs must be stored
     FTigerDB: TTigerDB;
   protected
     procedure DoRun; override;
-    // Process existing (TIFF) image; should be named <image>.tif
-    // Specify resolution override to indicate resolution to hocr2pdf
-    // Specify 0 to leave alone and let hocr detect resolution or fallback to 300dpi
+    // Main entry point into the program
     procedure ProcessImage(ImageFile: string; Resolution: integer);
-    // Scan an document and process it.
+    // Process existing (TIFF) image; should be named <image>.tif
+    // Specify resolution override to indicate image resolution to hocr2pdf
+    // Specify 0 to leave alone and let hocr detect resolution or fallback to 300dpi
     procedure ScanAndProcess;
+    // Scan a document and process it.
   public
     constructor Create(TheOwner: TComponent); override;
     destructor Destroy; override;
@@ -100,7 +105,9 @@ begin
   begin
     Settings := TINIFile.Create(SettingsFile);
     try
-      FImageDirectory:=Settings.ReadString('General', 'ImageDirectory', ''); //Default to current directory
+      // When reading the settings, expand ~ to home directory etc
+      FImageDirectory:=ExpandFileName(Settings.ReadString('General', 'ImageDirectory', '~/scans')); //Default to current directory
+      FPDFDirectory:=ExpandFileName(Settings.ReadString('General', 'PDFDirectory', '~/pdfs')); //Default to current directory
     finally
       Settings.Free;
     end;
@@ -164,6 +171,7 @@ begin
         PDF.ImageResolution:=Resolution;
       PDF.HOCRFile:=HOCRFile;
       PDF.ImageFile:=ImageFile;
+      PDF.PDFFile:=IncludeTrailingPathDelimiter(FPDFDirectory)+ChangeFileExt(ExtractFileName(ImageFile),'.pdf');
       //todo: add metadata stuff to pdf unit
       //todo: add compression to pdf unit?
       PDF.CreatePDF;
