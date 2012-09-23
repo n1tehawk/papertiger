@@ -114,7 +114,6 @@ begin
     Exit;
   end;
 
-  FTigerDB:=TTigerDB.Create;
   if FileExists(SettingsFile) then
   begin
     Settings := TINIFile.Create(SettingsFile);
@@ -163,8 +162,6 @@ begin
     ScanAndProcess;
   end;
 
-  if Assigned(FTigerDB) then
-    FTigerDB.Free;
   // stop program loop
   Terminate;
 end;
@@ -297,12 +294,18 @@ begin
     writeln('going to process images');
     PDF:=ProcessImages(ImageFiles, Resolution);
     DocumentID:=FTigerDB.InsertDocument(StartDateString,PDF,'',StartDate);
-    for i:=0 to FPages-1 do
+    if DocumentID=DBINVALIDID then
     begin
-      // Add to database
-      FTigerDB.InsertImage(DocumentID,ImageFiles[i],'');
+      writeln('Error: could not insert document/scan into database. Please try again.');
+    end
+    else
+    begin
+      for i:=0 to FPages-1 do
+      begin
+        // Add to database
+        FTigerDB.InsertImage(DocumentID,ImageFiles[i],'');
+      end;
     end;
-
   finally
     Scanner.Free;
     ImageFiles.Free;
@@ -314,10 +317,12 @@ begin
   inherited Create(TheOwner);
   FPages:=1; //Assume single scan, not batch
   StopOnException:=True;
+  FTigerDB:=TTigerDB.Create;
 end;
 
 destructor TTigerServer.Destroy;
 begin
+  FTigerDB.Free;
   inherited Destroy;
 end;
 
