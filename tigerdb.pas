@@ -49,18 +49,18 @@ begin
   try
     if FReadWriteTransaction.Active = false then
       FReadWriteTransaction.StartTransaction;
-    FInsertImage.ParamByName('DOCUMENTID').AsInteger;
-    if Path='' then
-      // NULL
+    FInsertImage.Close;
+    FInsertImage.ParamByName('DOCUMENTID').AsInteger:=DocumentID;
+    if Path='' then // NULL
       FInsertImage.ParamByName('PATH').Clear
     else
       FInsertImage.ParamByName('PATH').AsString:=Path;
-    if ImageHash='' then
-      // NULL
+    if ImageHash='' then // NULL
       FInsertImage.ParamByName('IMAGEHASH').Clear
     else
       FInsertImage.ParamByName('IMAGEHASH').AsString:=ImageHash;
     FInsertImage.Open;
+    FInsertImage.First;
     if not(FInsertImage.EOF) then
       result:=FInsertImage.Fields[0].AsInteger
     else
@@ -91,28 +91,27 @@ begin
   try
     if FReadWriteTransaction.Active = false then
       FReadWriteTransaction.StartTransaction;
-    if DocumentName='' then
-      // NULL
+    FInsertScan.Close;
+    if DocumentName='' then // NULL
       FInsertScan.ParamByName('DOCUMENTNAME').Clear
     else
       FInsertScan.ParamByName('DOCUMENTNAME').AsString:=DocumentName;
-    if PDFPath='' then
-      // NULL
+    if PDFPath='' then // NULL
       FInsertScan.ParamByName('PDFPATH').Clear
     else
       FInsertScan.ParamByName('PDFPATH').AsString:=PDFPath;
-    if DocumentHash='' then
-      // NULL
+    if DocumentHash='' then // NULL
       FInsertScan.ParamByName('DOCUMENTHASH').Clear
     else
       FInsertScan.ParamByName('DOCUMENTHASH').AsString:=DocumentHash;
-    // Scan dates before 1900 must be fake
-    if TheScanDate < EncodeDate(1900,1,1) then
+    // Scan dates before say 1900 must be fake
+    if TheScanDate <= EncodeDate(1900,1,1) then
       // NULL
       FInsertScan.ParamByName('SCANDATE').Clear
     else
       FInsertScan.ParamByName('SCANDATE').AsDateTime:=TheScanDate;
     FInsertScan.Open;
+    FInsertScan.First;
     if not(FInsertScan.EOF) then
       result:=FInsertScan.Fields[0].AsInteger
     else

@@ -281,14 +281,14 @@ begin
       if FPages=1 then
         Scanner.FileName:=FImageDirectory+StartDateString+'.tif'
       else
-        Scanner.FileName:=FImageDirectory+StartDateString+'_'+format('[%.4d]',[i])+'.tif';
+        Scanner.FileName:=FImageDirectory+StartDateString+'_'+format('%.4d',[i])+'.tif';
       Scanner.Scan;
       writeln('Image file: '+Scanner.FileName);
       ImageFiles.Add(Scanner.FileName);
-      if FPages>1 then
+      if (i<FPages-1) then
       begin
         // todo: rebuild using event procedure so this can be plugged in (via web interface etc)
-        writeln('If the scan is completed, please put in the next paper and press enter to continue.');
+        writeln('Once the scan is completed, please put in sheet '+inttostr(i)+' and press enter to continue.');
         readln;
       end;
     end;

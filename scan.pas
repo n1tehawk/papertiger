@@ -133,7 +133,7 @@ begin
     ScanDevicePart:='--device-name='+FScanDevice;
 
   //todo: remove deskew, crop; replace by unpaper/scantailor
-  Options:=' "'+FFileName+'" '+ScanDevicePart+' --mode='+ScanType+' --swdeskew=yes --swcrop=yes --resolution='+inttostr(FResolution)+' --format=tiff';
+  Options:=' "'+FFileName+'" '+ScanDevicePart+' --mode='+ScanType+' --resolution='+inttostr(FResolution)+' --swdeskew=yes --swcrop=yes --format=tiff';
   writeln('Executing:');
   writeln(ScanCommand+Options);
   if ExecuteCommand(ScanCommand+Options,false)=0 then
