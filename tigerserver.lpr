@@ -64,6 +64,10 @@ type
     // Directory where scanned images must be/are stored
     // Has trailing path delimiter.
     //todo: perhaps publish property?
+    FPages: integer;
+    // Number of pages to scan/process at once
+    // Use >1 for batch (e.g. multipage documents)
+    //todo: think about multipage tiff
     FPDFDirectory: string;
     // Directory where resulting PDFs must be stored
     // Has trailing path delimiter.
@@ -71,12 +75,13 @@ type
   protected
     procedure DoRun; override;
     // Main entry point into the program
-    procedure ProcessImage(ImageFile: string; Resolution: integer);
-    // Process existing (TIFF) image; should be named <image>.tif
+    function ProcessImages(const ImageFiles: TStringList; Resolution: integer): string;
+    // Process (set of) existing (TIFF) image(s); should be named <image>.tif
     // Specify resolution override to indicate image resolution to hocr2pdf
     // Specify 0 to leave alone and let hocr detect resolution or fallback to 300dpi
+    // Returns resulting pdf file/path
     procedure ScanAndProcess;
-    // Scan a document and process it.
+    // Scan a document (with one or more pages) and process it.
   public
     constructor Create(TheOwner: TComponent); override;
     destructor Destroy; override;
@@ -88,10 +93,12 @@ type
 procedure TTigerServer.DoRun;
 var
   ErrorMsg: String;
+  Images:TStringList;
+  PDF: string;
   Settings: TINIFile;
 begin
   // quick check parameters
-  ErrorMsg:=CheckOptions('hi:s','help image: scan');
+  ErrorMsg:=CheckOptions('hi:p:s','help image: pages: scan');
   if ErrorMsg<>'' then
   begin
     ShowException(Exception.Create(ErrorMsg));
@@ -126,12 +133,29 @@ begin
     FPDFDirectory:='';
   end;
 
+  // Fallback to directory where .ini file is stored
   if FImageDirectory='' then FImageDirectory:=IncludeTrailingPathDelimiter(ExtractFilePath(SettingsFile));
   if FPDFDirectory='' then FPDFDirectory:=FImageDirectory;
 
+  if HasOption('p','pages') then
+  begin
+    FPages:=strtoint(GetOptionValue('p','pages'));
+  end;
+
+  // Branches off into processing starts here
   if HasOption('i','image') then
   begin
-    ProcessImage(GetOptionValue('i','image'),0);
+    Images:=TStringList.Create;
+    try
+      //todo: add support for ; or , separated image names when pages>1
+      Images.Add(GetOptionValue('i','image'));
+      PDF:=ProcessImages(Images,0);
+      //todo: update images so they are part of the pdf
+      //what to do with images that already belonged to another pdf?
+      FTigerDB.InsertDocument('fixmeimages',PDF,'',Now());
+    finally
+      Images.Free;
+    end;
   end;
 
   if HasOption('s','scan') then
@@ -145,9 +169,10 @@ begin
   Terminate;
 end;
 
-procedure TTigerServer.ProcessImage(ImageFile: string; Resolution: integer);
+function TTigerServer.ProcessImages(const ImageFiles: TStringList; Resolution: integer):string;
 var
   HOCRFile: string;
+  i: integer;
   OCR: TOCR;
   PDF: TPDF;
 begin
@@ -155,43 +180,41 @@ begin
   Scantailor: more for letters/documents; unpaper more for books
   scantailor new version: https://sourceforge.net/projects/scantailor/files/scantailor-devel/enhanced/
   unpaper input.ppm output.ppm => perhaps more formats than ppm? use eg. exactimage's econvert for format conversion}
-  OCR:=TOCR.Create;
-  try
-    if ImageFile<>'' then
-    begin
-      OCR.ImageFile:=ImageFile;
+  result:='';
+  for i:=0 to ImageFiles.Count-1 do
+  begin
+    OCR:=TOCR.Create;
+    try
+      OCR.ImageFile:=ImageFiles[i];
       OCR.RecognizeText;
       HOCRFile:=OCR.HOCRFile;
       writeln('Got this text:');
       writeln(OCR.Text);
+    finally
+      OCR.Free;
     end;
-  finally
-    OCR.Free;
-  end;
 
-  PDF:=TPDF.Create;
-  try
-    if ImageFile<>'' then
-    begin
+    PDF:=TPDF.Create;
+    try
       // Only pass on overrides on resolution
       if Resolution>0 then
         PDF.ImageResolution:=Resolution;
       PDF.HOCRFile:=HOCRFile;
-      PDF.ImageFile:=ImageFile;
+      PDF.ImageFile:=ImageFiles[i];
       writeln('pdfdirectory: '+FPDFDirectory);
       PDF.PDFFile:=IncludeTrailingPathDelimiter(FPDFDirectory)+
-        ChangeFileExt(ExtractFileName(ImageFile),'.pdf');
+        ChangeFileExt(ExtractFileName(ImageFiles[i]),'.pdf');
       //todo: add metadata stuff to pdf unit
       //todo: add compression to pdf unit?
       PDF.CreatePDF;
       writeln('Got PDF:');
       writeln(PDF.PDFFile);
+      result:=PDF.PDFFile;
+    finally
+      PDF.Free;
     end;
-
-    // Add to database
-    FTigerDB.InsertScan('test',ImageFile,'',Now);
-  finally
-    PDF.Free;
+    //todo: concatenate pdfs; we just add the last one for now
+    //todo: update pdf name
   end;
 {
 #adapted from http://ubuntuforums.org/showthread.php?t=1647350
@@ -227,35 +250,58 @@ attach_files <filename> <filename> <...>
 Can attach arbitrary files to PDF using PDF file attachment.
 We could save some data here? If so, what?
 }
+
 end;
 
 procedure TTigerServer.ScanAndProcess;
 // Performs the document scan, and process result
 var
-  ImageFile: string;
+  DocumentID: integer;
+  i:integer;
+  ImageFiles: TStringList;
+  PDF:string;
   Resolution: integer;
   Scanner: TScanner;
+  StartDate: TDateTime;
+  StartDateString: string;
 begin
   // Try a 300dpi scan, probably best for normal sized letters on paper
   Resolution:=300;
   Scanner:=TScanner.Create;
+  ImageFiles:=TStringList.Create;
   try
     Scanner.Resolution:=Resolution;
     Scanner.ColorType:=stLineArt;
-    Scanner.FileName:=FImageDirectory+FormatDateTime('yyyymmddhhnnss', Now())+'.tif';
-    Scanner.Scan;
-    ImageFile:=Scanner.FileName;
-    writeln('Image file: '+ImageFile);
+    StartDate:=Now();
+    StartDateString:=FormatDateTime('yyyymmddhhnnss', StartDate);
+    for i:=0 to FPages-1 do
+    begin
+      if FPages=1 then
+        Scanner.FileName:=FImageDirectory+'.tif'
+      else
+        Scanner.FileName:=FImageDirectory+StartDateString+'_'+format('[%.4d]',[i])+'.tif';
+      Scanner.Scan;
+      writeln('Image file: '+Scanner.FileName);
+      ImageFiles.Add(Scanner.FileName);
+    end;
     //todo: add teventlog logging support
+    PDF:=ProcessImages(ImageFiles, Resolution);
+    DocumentID:=FTigerDB.InsertDocument(StartDateString,PDF,'',StartDate);
+    for i:=0 to FPages-1 do
+    begin
+      // Add to database
+      FTigerDB.InsertImage(DocumentID,ImageFiles[i],'');
+    end;
   finally
     Scanner.Free;
+    ImageFiles.Free;
   end;
-  ProcessImage(ImageFile, Resolution);
 end;
 
 constructor TTigerServer.Create(TheOwner: TComponent);
 begin
   inherited Create(TheOwner);
+  FPages:=1; //Assume single scan, not batch
   StopOnException:=True;
 end;
 

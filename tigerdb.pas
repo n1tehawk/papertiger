@@ -21,11 +21,13 @@ private
   FDBType: string; //Database connection details
   FDBPassword: string; //Database connection details
   FDBUser: string; //Database connection details
+  FInsertImage: TSQLQuery; //Inserts new images
   FInsertScan: TSQLQuery; //Inserts new scan data.
   FReadTransaction: TSQLTransaction; //Transaction for read-only access
   FReadWriteTransaction: TSQLTransaction; //Transaction for read/write access
 public
-  procedure InsertScan(DocumentName, DocumentPath, DocumentHash: string; TheScanDate: TDateTime); //Insterts a new scan record in database. Keep string values empty to insert NULLs; pass a pre 1900 date for TheScanDate to do the same.
+  function InsertImage(const DocumentID: integer; const Path, ImageHash: string):integer; //Inserts a new image record in database; returns image ID. Keep string values empty to insert NULLs; pass a pre 1900 date for TheScanDate to do the same.
+  function InsertDocument(const DocumentName, PDFPath, DocumentHash: string; TheScanDate: TDateTime):integer; //Insterts a new scan record in database; retruns scan ID. Keep string values empty to insert NULLs; pass a pre 1900 date for TheScanDate to do the same.
   constructor Create;
   destructor Destroy; override;
 end;
@@ -41,8 +43,49 @@ const
 
 { TTigerDB }
 
-procedure TTigerDB.InsertScan(DocumentName, DocumentPath, DocumentHash: string;
-  TheScanDate: TDateTime);
+function TTigerDB.InsertImage(const DocumentID: integer; const Path,
+  ImageHash: string): integer;
+begin
+  try
+    if FReadWriteTransaction.Active = false then
+      FReadWriteTransaction.StartTransaction;
+    FInsertImage.ParamByName('DOCUMENTID').AsInteger;
+    if Path='' then
+      // NULL
+      FInsertImage.ParamByName('PATH').Clear
+    else
+      FInsertImage.ParamByName('PATH').AsString:=Path;
+    if ImageHash='' then
+      // NULL
+      FInsertImage.ParamByName('IMAGEHASH').Clear
+    else
+      FInsertImage.ParamByName('IMAGEHASH').AsString:=ImageHash;
+    FInsertImage.Open;
+    if not(FInsertImage.EOF) then
+      result:=FInsertImage.Fields[0].AsInteger
+    else
+      result:=-1;
+    FReadWriteTransaction.Commit;
+  except
+    on E: EIBDatabaseError do
+    begin
+      if FReadWriteTransaction.Active then
+      FReadWriteTransaction.Rollback;
+        writeln('Database error: ' + E.Message + '(error code: ' + IntToStr(E.GDSErrorCode) + ')');
+        writeln('');
+    end;
+    on F: Exception do
+    begin
+      if FReadWriteTransaction.Active then
+        FReadWriteTransaction.Rollback;
+      writeln('Exception: ' + F.ClassName + '/' + F.Message);
+      writeln('');
+    end;
+  end;
+end;
+
+function TTigerDB.InsertDocument(const DocumentName, PDFPath, DocumentHash: string;
+  TheScanDate: TDateTime): integer;
 begin
   try
     if FReadWriteTransaction.Active = false then
@@ -52,11 +95,11 @@ begin
       FInsertScan.ParamByName('DOCUMENTNAME').Clear
     else
       FInsertScan.ParamByName('DOCUMENTNAME').AsString:=DocumentName;
-    if DocumentPath='' then
+    if PDFPath='' then
       // NULL
-      FInsertScan.ParamByName('PATH').Clear
+      FInsertScan.ParamByName('PDFPATH').Clear
     else
-      FInsertScan.ParamByName('PATH').AsString:=DocumentPath;
+      FInsertScan.ParamByName('PDFPATH').AsString:=PDFPath;
     if DocumentHash='' then
       // NULL
       FInsertScan.ParamByName('DOCUMENTHASH').Clear
@@ -68,8 +111,11 @@ begin
       FInsertScan.ParamByName('SCANDATE').Clear
     else
       FInsertScan.ParamByName('SCANDATE').AsDateTime:=TheScanDate;
-
-    FInsertScan.ExecSQL;
+    FInsertScan.Open;
+    if not(FInsertScan.EOF) then
+      result:=FInsertScan.Fields[0].AsInteger
+    else
+      result:=-1;
     FReadWriteTransaction.Commit;
   except
     on E: EIBDatabaseError do
@@ -78,11 +124,6 @@ begin
       FReadWriteTransaction.Rollback;
         writeln('Database error: ' + E.Message + '(error code: ' + IntToStr(E.GDSErrorCode) + ')');
         writeln('');
-        //todo: fix this
-        {
-        log('Database error: ' + E.Message + '(error code: ' + IntToStr(E.GDSErrorCode) + ')' + LineEnding +
-          'Deleted tweet ID: ' + IntToStr(Tweets[i].ID) + LineEnding + '');
-        }
     end;
     on F: Exception do
     begin
@@ -90,10 +131,6 @@ begin
         FReadWriteTransaction.Rollback;
       writeln('Exception: ' + F.ClassName + '/' + F.Message);
       writeln('');
-      //todo: add logging; get rid of writelns
-      {
-      log('Error: ' + F.Message + LineEnding + 'Deleted tweet ID: ' + IntToStr(Tweets[i].ID) + LineEnding + '');
-      }
     end;
   end;
 end;
@@ -168,16 +205,23 @@ begin
   FDB.Transaction := FReadWriteTransaction; //Default transaction for database
 
   // todo: Check for+create required tables
+  FInsertImage.Database := FDB;
+  FInsertImage.Transaction := FReadWriteTransaction;
+  FInsertImage.SQL.Text := 'INSERT INTO IMAGES (DOCUMENTID,PATH,,IMAGEHASH) '
+    +'VALUES (:DOCUMENTID,:PATH,:IMAGEHASH) RETURNING ID';
+  FInsertImage.Prepare;
 
   FInsertScan.Database := FDB;
   FInsertScan.Transaction := FReadWriteTransaction;
-  FInsertScan.SQL.Text := 'INSERT INTO DOCUMENTS (DOCUMENTNAME,PATH,SCANDATE,DOCUMENTHASH) '
-    +'VALUES (:DOCUMENTNAME,:PATH,:SCANDATE,:DOCUMENTHASH) RETURNING ID';
+  FInsertScan.SQL.Text := 'INSERT INTO DOCUMENTS (DOCUMENTNAME,PDFPATH,SCANDATE,DOCUMENTHASH) '
+    +'VALUES (:DOCUMENTNAME,:PDFPATH,:SCANDATE,:DOCUMENTHASH) RETURNING ID';
   FInsertScan.Prepare;
 end;
 
 destructor TTigerDB.Destroy;
 begin
+  if Assigned(FInsertImage) then
+    FInsertScan.Close;
   if Assigned(FInsertScan) then
     FInsertScan.Close;
   if Assigned(FReadWriteTransaction) then
@@ -186,6 +230,7 @@ begin
     FReadTransaction.Rollback;
   if Assigned(FDB) then
     FDB.Connected := false;
+  FInsertImage.Free;
   FInsertScan.Free;
   FReadWriteTransaction.Free;
   FReadTransaction.Free;
