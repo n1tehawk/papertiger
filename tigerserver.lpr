@@ -285,7 +285,7 @@ begin
       Scanner.Scan;
       writeln('Image file: '+Scanner.FileName);
       ImageFiles.Add(Scanner.FileName);
-      if i>1 then
+      if FPages>1 then
       begin
         // todo: rebuild using event procedure so this can be plugged in (via web interface etc)
         writeln('If the scan is completed, please put in the next paper and press enter to continue.');
