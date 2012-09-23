@@ -65,6 +65,7 @@ begin
       result:=FInsertImage.Fields[0].AsInteger
     else
       result:=-1;
+    FInsertImage.Close;
     FReadWriteTransaction.Commit;
   except
     on E: EIBDatabaseError do
@@ -116,6 +117,7 @@ begin
       result:=FInsertScan.Fields[0].AsInteger
     else
       result:=-1;
+    FInsertScan.Close;
     FReadWriteTransaction.Commit;
   except
     on E: EIBDatabaseError do
@@ -182,6 +184,7 @@ begin
   end;
   FReadWriteTransaction := TSQLTransaction.Create(nil);
   FReadTransaction:=TSQLTransaction.Create(nil);
+  FInsertImage:=TSQLQuery.Create(nil);
   FInsertScan:=TSQLQuery.Create(nil);
 
   if FDBType='SQLite' then
@@ -207,7 +210,7 @@ begin
   // todo: Check for+create required tables
   FInsertImage.Database := FDB;
   FInsertImage.Transaction := FReadWriteTransaction;
-  FInsertImage.SQL.Text := 'INSERT INTO IMAGES (DOCUMENTID,PATH,,IMAGEHASH) '
+  FInsertImage.SQL.Text := 'INSERT INTO IMAGES (DOCUMENTID,PATH,IMAGEHASH) '
     +'VALUES (:DOCUMENTID,:PATH,:IMAGEHASH) RETURNING ID';
   FInsertImage.Prepare;
 

@@ -274,18 +274,27 @@ begin
     Scanner.ColorType:=stLineArt;
     StartDate:=Now();
     StartDateString:=FormatDateTime('yyyymmddhhnnss', StartDate);
-    // to do: obviously, we need to know when the scan is done so user can feed the next page. Or we may require a sheet feeder. So we need to add an event procedure for this!?!?
+
+    writeln('Going to scan '+inttostr(FPages)+' pages; start date: '+StartDateString);
     for i:=0 to FPages-1 do
     begin
       if FPages=1 then
-        Scanner.FileName:=FImageDirectory+'.tif'
+        Scanner.FileName:=FImageDirectory+StartDateString+'.tif'
       else
         Scanner.FileName:=FImageDirectory+StartDateString+'_'+format('[%.4d]',[i])+'.tif';
       Scanner.Scan;
       writeln('Image file: '+Scanner.FileName);
       ImageFiles.Add(Scanner.FileName);
+      if i>1 then
+      begin
+        // todo: rebuild using event procedure so this can be plugged in (via web interface etc)
+        writeln('If the scan is completed, please put in the next paper and press enter to continue.');
+        readln;
+      end;
     end;
+
     //todo: add teventlog logging support
+    writeln('going to process images');
     PDF:=ProcessImages(ImageFiles, Resolution);
     DocumentID:=FTigerDB.InsertDocument(StartDateString,PDF,'',StartDate);
     for i:=0 to FPages-1 do
@@ -293,6 +302,7 @@ begin
       // Add to database
       FTigerDB.InsertImage(DocumentID,ImageFiles[i],'');
     end;
+
   finally
     Scanner.Free;
     ImageFiles.Free;
