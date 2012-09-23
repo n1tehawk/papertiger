@@ -274,6 +274,7 @@ begin
     Scanner.ColorType:=stLineArt;
     StartDate:=Now();
     StartDateString:=FormatDateTime('yyyymmddhhnnss', StartDate);
+    // to do: obviously, we need to know when the scan is done so user can feed the next page. Or we may require a sheet feeder. So we need to add an event procedure for this!?!?
     for i:=0 to FPages-1 do
     begin
       if FPages=1 then
