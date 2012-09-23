@@ -10,6 +10,8 @@ uses
   pqconnection {PostgreSQL},
   sqlite3conn {SQLite};
 
+const
+  DBINVALIDID=-1; //Used to return invalid primary key ids for db objects
 type
 { TTigerDB }
 
@@ -46,6 +48,7 @@ const
 function TTigerDB.InsertImage(const DocumentID: integer; const Path,
   ImageHash: string): integer;
 begin
+  result:=DBINVALIDID;
   try
     if FReadWriteTransaction.Active = false then
       FReadWriteTransaction.StartTransaction;
@@ -60,11 +63,8 @@ begin
     else
       FInsertImage.ParamByName('IMAGEHASH').AsString:=ImageHash;
     FInsertImage.Open;
-    FInsertImage.First;
     if not(FInsertImage.EOF) then
-      result:=FInsertImage.Fields[0].AsInteger
-    else
-      result:=-1;
+      result:=FInsertImage.Fields[0].AsInteger;
     FInsertImage.Close;
     FReadWriteTransaction.Commit;
   except
@@ -88,6 +88,7 @@ end;
 function TTigerDB.InsertDocument(const DocumentName, PDFPath, DocumentHash: string;
   TheScanDate: TDateTime): integer;
 begin
+  result:=DBINVALIDID;
   try
     if FReadWriteTransaction.Active = false then
       FReadWriteTransaction.StartTransaction;
@@ -111,11 +112,8 @@ begin
     else
       FInsertScan.ParamByName('SCANDATE').AsDateTime:=TheScanDate;
     FInsertScan.Open;
-    FInsertScan.First;
     if not(FInsertScan.EOF) then
-      result:=FInsertScan.Fields[0].AsInteger
-    else
-      result:=-1;
+      result:=FInsertScan.Fields[0].AsInteger;
     FInsertScan.Close;
     FReadWriteTransaction.Commit;
   except
