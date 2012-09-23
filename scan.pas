@@ -132,7 +132,7 @@ begin
   else
     ScanDevicePart:='--device-name='+FScanDevice;
 
-  Options:=' "'+FFileName+'" '+ScanDevicePart+' --mode='+ScanType+' --resolution='+inttostr(FResolution)+' --swdeskew=yes --swcrop=yes --format=tiff';
+  Options:=' "'+FFileName+'" '+ScanDevicePart+' --mode='+ScanType+' --resolution='+inttostr(FResolution)+' --format=tiff';
   writeln('Executing:');
   writeln(ScanCommand+Options);
   if ExecuteCommand(ScanCommand+Options,false)=0 then
