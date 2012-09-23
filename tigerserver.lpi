@@ -49,6 +49,7 @@
     <RunParams>
       <local>
         <FormatVersion Value="1"/>
+        <CommandLineParams Value="--scan"/>
       </local>
     </RunParams>
     <Units Count="5">
