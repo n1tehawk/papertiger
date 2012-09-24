@@ -178,6 +178,8 @@ begin
   scantailor new version: https://sourceforge.net/projects/scantailor/files/scantailor-devel/enhanced/
   unpaper input.ppm output.ppm => perhaps more formats than ppm? use eg. exactimage's econvert for format conversion}
   result:='';
+  if not(ForceDirectories(FPDFDirectory)) then
+    raise Exception.Create('PDF directory '+FPDFDirectory+' does not exist and cannot be created.');
   for i:=0 to ImageFiles.Count-1 do
   begin
     OCR:=TOCR.Create;
@@ -264,6 +266,8 @@ var
 begin
   // Try a 300dpi scan, probably best for normal sized letters on paper
   Resolution:=300;
+  if not(ForceDirectories(FImageDirectory)) then
+    raise Exception.Create('Image directory '+FImageDirectory+' does not exist and cannot be created.');
   Scanner:=TScanner.Create;
   ImageFiles:=TStringList.Create;
   try
