@@ -18,11 +18,6 @@ type
 TTigerDB= class(TObject)
 private
   FDB: TSQLConnection; //Database connection
-  FDBHost: string; //Database connection details
-  FDBPath: string; //Database connection details
-  FDBType: string; //Database connection details
-  FDBPassword: string; //Database connection details
-  FDBUser: string; //Database connection details
   FInsertImage: TSQLQuery; //Inserts new images
   FInsertScan: TSQLQuery; //Inserts new scan data.
   FReadTransaction: TSQLTransaction; //Transaction for read-only access
@@ -37,7 +32,7 @@ end;
 implementation
 
 uses
-  inifiles, dateutils;
+  dbconfig, dateutils;
 
 const
   SettingsFile = 'tigerserver.ini';
@@ -136,71 +131,49 @@ end;
 
 constructor TTigerDB.Create;
 var
-  Settings: TINIFile;
+  Settings: TDBConnectionConfig;
 begin
   inherited Create;
-  if FileExists(SettingsFile) then
-  begin
-    Settings := TINIFile.Create(SettingsFile);
-    try
-      FDBType := Settings.ReadString('Database', 'DatabaseType', 'Firebird'); //Default to Firebird
-      FDBHost := Settings.ReadString('Database', 'Host', ''); //default to embedded
-      FDBPath := Settings.ReadString('Database', 'Database', 'tiger.fdb');
-      FDBUser := Settings.ReadString('Database', 'User', 'SYSDBA');
-      FDBPassword := Settings.ReadString('Database', 'Password', 'masterkey');
-    finally
-      Settings.Free;
+  Settings:=TDBConnectionConfig.Create('Firebird','','tiger.fdb','SYSDBA','masterkey','UTF8');
+  try
+    Settings.SettingsFile:=SettingsFile;
+    // Set up db connection
+    case Settings.DBType of
+      'Firebird':
+      begin
+        FDB := TIBConnection.Create(nil);
+        TIBConnection(FDB).Dialect := 3; //just to be sure
+      end;
+      'PostgreSQL': FDB := TPQConnection.Create(nil);
+      'SQLite': FDB := TSQLite3Connection.Create(nil);
+      else
+      begin
+        writeln('Warning: unknown database type ' + Settings.DBType + ' specified.');
+        writeln('Defaulting to Firebird');
+        FDB := TIBConnection.Create(nil);
+        TIBConnection(FDB).Dialect := 3; //just to be sure
+      end;
     end;
-  end
-  else
-  begin
-    // Set up defaults for database
-    FDBType := 'Firebird';
-    FDBHost := '';
-    FDBPath := 'tiger.fdb';
-    FDBUser := 'SYSDBA';
-    FDBPassword := 'masterkey';
-  end;
-  case UpperCase(FDBType) of
-    'FIREBIRD': FDBType:='Firebird';
-    'POSTGRES', 'POSTGRESQL': FDBType:='PostgreSQL';
-    'SQLITE','SQLITE3': FDBType:='SQLite';
-    else
-    begin
-      writeln('Warning: unknown database type ' + FDBType + ' specified.');
-      writeln('Defaulting to Firebird');
-      FDBType:='Firebird';
-    end;
-  end;
 
-  // Set up db connection
-  case FDBType of
-    'Firebird': FDB := TIBConnection.Create(nil);
-    'PostgreSQL': FDB := TPQConnection.Create(nil);
-    'SQLite': FDB := TSQLite3Connection.Create(nil);
-  end;
-  FReadWriteTransaction := TSQLTransaction.Create(nil);
-  FReadTransaction:=TSQLTransaction.Create(nil);
-  FInsertImage:=TSQLQuery.Create(nil);
-  FInsertScan:=TSQLQuery.Create(nil);
+    FDB.HostName := Settings.DBHost;
+    FDB.DatabaseName := Settings.DBPath;
+    FDB.UserName := Settings.DBUser;
+    FDB.Password := Settings.DBPassword;
+    FDB.CharSet := Settings.DBCharset;
 
-  if FDBType='SQLite' then
-    FDB.Hostname:=''
-  else
-    FDB.HostName := FDBHost;
-  FDB.DatabaseName := FDBPath;
-  FDB.UserName := FDBUser;
-  FDB.Password := FDBPassword;
-  FDB.CharSet := 'UTF8';
-  if FDBType = 'Firebird' then
-    TIBConnection(FDB).Dialect := 3; //just to be sure
+    FReadWriteTransaction := TSQLTransaction.Create(nil);
+    FReadTransaction:=TSQLTransaction.Create(nil);
+    FInsertImage:=TSQLQuery.Create(nil);
+    FInsertScan:=TSQLQuery.Create(nil);
 
-  // Check for existing database
-  if (FDBHost='') and (FileExists(FDB.DatabaseName)=false) then
-    if (FDBType='Firebird') then
-      TIBConnection(FDB).CreateDB
-    else if (FDBType='sqlite') then
+    // Check for existing database
+    if (FDB is TIBConnection) and (FDB.HostName='') and (FileExists(FDB.DatabaseName)=false) then
+      TIBConnection(FDB).CreateDB;
+    if (FDB is TSQLite3Connection) and (FileExists(FDB.DatabaseName)=false) then
       TSQLite3Connection(FDB).CreateDB;
+  finally
+    Settings.Free;
+  end;
   FDB.Open;
   FDB.Transaction := FReadWriteTransaction; //Default transaction for database
 
