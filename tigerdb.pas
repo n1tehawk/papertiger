@@ -180,13 +180,15 @@ begin
   // todo: Check for+create required tables
   FInsertImage.Database := FDB;
   FInsertImage.Transaction := FReadWriteTransaction;
-  FInsertImage.SQL.Text := 'INSERT INTO IMAGES (DOCUMENTID,PATH,IMAGEHASH) '
+  //Try to work around FPC 2.6.0 bug that doesn't do Open, but execute for INSERT statements
+  FInsertImage.SQL.Text := '/* select */ INSERT INTO IMAGES (DOCUMENTID,PATH,IMAGEHASH) '
     +'VALUES (:DOCUMENTID,:PATH,:IMAGEHASH) RETURNING ID';
   FInsertImage.Prepare;
 
   FInsertScan.Database := FDB;
   FInsertScan.Transaction := FReadWriteTransaction;
-  FInsertScan.SQL.Text := 'INSERT INTO DOCUMENTS (DOCUMENTNAME,PDFPATH,SCANDATE,DOCUMENTHASH) '
+  //Try to work around FPC 2.6.0 bug that doesn't do Open, but execute for INSERT statements
+  FInsertScan.SQL.Text := '/* select */ INSERT INTO DOCUMENTS (DOCUMENTNAME,PDFPATH,SCANDATE,DOCUMENTHASH) '
     +'VALUES (:DOCUMENTNAME,:PDFPATH,:SCANDATE,:DOCUMENTHASH) RETURNING ID';
   FInsertScan.Prepare;
 end;
