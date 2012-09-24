@@ -74,7 +74,7 @@ type
     FTigerDB: TTigerDB;
   protected
     procedure DoRun; override;
-    // Main entry point into the program
+    // Main entry point into the program; processes command line options etc
     function ProcessImages(const ImageFiles: TStringList; Resolution: integer): string;
     // Process (set of) existing (TIFF) image(s); should be named <image>.tif
     // Specify resolution override to indicate image resolution to hocr2pdf
@@ -147,7 +147,7 @@ begin
     Images:=TStringList.Create;
     try
       //todo: add support for ; or , separated image names when pages>1
-      Images.Add(GetOptionValue('i','image'));
+      Images.Add(ExpandFileName(GetOptionValue('i','image')));
       PDF:=ProcessImages(Images,0);
       //todo: update images so they are part of the pdf
       //what to do with images that already belonged to another pdf?
@@ -337,6 +337,8 @@ begin
   writeln(' Process image.');
   writeln('-s --scan: scan');
   writeln(' Scan document, process.');
+  writeln('-p <n> --pages <n>');
+  writeln(' Specify number of pages for processing/scanning multi page docs.');
 end;
 
 var
