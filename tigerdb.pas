@@ -132,6 +132,7 @@ end;
 constructor TTigerDB.Create;
 var
   Settings: TDBConnectionConfig;
+  SQL: string;
 begin
   inherited Create;
   Settings:=TDBConnectionConfig.Create('Firebird','','tiger.fdb','SYSDBA','masterkey','UTF8');
@@ -181,15 +182,43 @@ begin
   FInsertImage.Database := FDB;
   FInsertImage.Transaction := FReadWriteTransaction;
   //Try to work around FPC 2.6.0 bug that doesn't do Open, but execute for INSERT statements
+  {
   FInsertImage.SQL.Text := '/* select */ INSERT INTO IMAGES (DOCUMENTID,PATH,IMAGEHASH) '
     +'VALUES (:DOCUMENTID,:PATH,:IMAGEHASH) RETURNING ID';
+  }
+  FInsertScan.ParseSQL:=false; //Don't try to derive insert/update/deletesql, as that will fail
+  //debug: todo: enable
+  {
+  SQL:='EXECUTE BLOCK RETURNS (OURID INTEGER) '+
+      'AS '+
+      'BEGIN '+
+      'INSERT INTO IMAGES (DOCUMENTID,PATH,IMAGEHASH) '+
+      'VALUES (:DOCUMENTID,:PATH,:IMAGEHASH) RETURNING ID INTO OURID; '+
+      'SUSPEND; '+
+      'END';
+  FInsertImage.SQL.Text := SQL;
   FInsertImage.Prepare;
-
+  }
   FInsertScan.Database := FDB;
   FInsertScan.Transaction := FReadWriteTransaction;
   //Try to work around FPC 2.6.0 bug that doesn't do Open, but execute for INSERT statements
-  FInsertScan.SQL.Text := '/* select */ INSERT INTO DOCUMENTS (DOCUMENTNAME,PDFPATH,SCANDATE,DOCUMENTHASH) '
+  {
+  FInsertScan.SQL.Text := 'INSERT INTO DOCUMENTS (DOCUMENTNAME,PDFPATH,SCANDATE,DOCUMENTHASH) '
     +'VALUES (:DOCUMENTNAME,:PDFPATH,:SCANDATE,:DOCUMENTHASH) RETURNING ID';
+  }
+  FInsertScan.ParseSQL:=false; //Don't try to derive insert/update/deletesql, as that will fail
+  SQL:='EXECUTE BLOCK '+
+    '(DOCUMENTNAME VARCHAR(255)=?, PDFPATH VARCHAR(1024)=?, SCANDATE TIMESTAMP=?, DOCUMENTHASH BLOB SUB_TYPE 0=?) '+
+    'RETURNS (OURID INTEGER) '+
+    'AS '+
+    'BEGIN '+
+    'INSERT INTO DOCUMENTS (DOCUMENTNAME,PDFPATH,SCANDATE,DOCUMENTHASH) '+
+    'VALUES (:DOCUMENTNAME,:PDFPATH,:SCANDATE,:DOCUMENTHASH) RETURNING ID INTO OURID; '+
+    'SUSPEND; '+
+    'END';
+  //todo: debug
+  writeln (SQL);
+  FInsertScan.SQL.Text:=SQL;
   FInsertScan.Prepare;
 end;
 
