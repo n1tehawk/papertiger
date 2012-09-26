@@ -64,6 +64,9 @@ type
     // Directory where scanned images must be/are stored
     // Has trailing path delimiter.
     //todo: perhaps publish property?
+    FLanguage: string;
+    // (Tesseract) language code, used to set OCR lanague for document.
+    // Default en (for English)
     FPages: integer;
     // Number of pages to scan/process at once
     // Use >1 for batch (e.g. multipage documents)
@@ -98,7 +101,7 @@ var
   Settings: TINIFile;
 begin
   // quick check parameters
-  ErrorMsg:=CheckOptions('hi:p:s','help image: pages: scan');
+  ErrorMsg:=CheckOptions('hi:l:p:s','help image: language: pages: scan');
   if ErrorMsg<>'' then
   begin
     ShowException(Exception.Create(ErrorMsg));
@@ -136,12 +139,17 @@ begin
   if FImageDirectory='' then FImageDirectory:=IncludeTrailingPathDelimiter(ExtractFilePath(SettingsFile));
   if FPDFDirectory='' then FPDFDirectory:=FImageDirectory;
 
+  if HasOption('l','language') then
+  begin
+    FLanguage:=GetOptionValue('l','language');
+  end;
+
   if HasOption('p','pages') then
   begin
     FPages:=strtoint(GetOptionValue('p','pages'));
   end;
 
-  // Branches off into processing starts here
+  // Branching off into processing starts here
   if HasOption('i','image') then
   begin
     Images:=TStringList.Create;
@@ -319,6 +327,10 @@ end;
 constructor TTigerServer.Create(TheOwner: TComponent);
 begin
   inherited Create(TheOwner);
+  FLanguage:='en';
+  //todo: debug
+  writeln('Debug: setting language to Dutch for testing. Remove me in production code.');
+  FLanguage:='nld'; //Let's test with Dutch.
   FPages:=1; //Assume single scan, not batch
   StopOnException:=True;
   FTigerDB:=TTigerDB.Create;
@@ -333,11 +345,14 @@ end;
 procedure TTigerServer.WriteHelp;
 begin
   writeln('Usage: ',ExeName,' -h');
-  writeln('-i --image <image>');
+  writeln('-i <image> --image=<image>');
   writeln(' Process image.');
-  writeln('-s --scan: scan');
+  writeln('-l <lang> --language=<language>');
+  writeln(' Language to be used for OCR.');
+  writeln(' en (English) by default');
+  writeln('-s --scan');
   writeln(' Scan document, process.');
-  writeln('-p <n> --pages <n>');
+  writeln('-p <n> --pages=<n>');
   writeln(' Specify number of pages for processing/scanning multi page docs.');
 end;
 

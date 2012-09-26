@@ -55,18 +55,19 @@ type
     //todo: unicode??
     FText: string;
   public
-    // Perform the actual OCR
     procedure RecognizeText;
-    // File with hOCR: position and text in image
+    // Perform the actual OCR
     property HOCRFile: string read FHOCRFile;
-    // Input image
+    // File with hOCR: position and text in image
     property ImageFile: string write FImageFile;
+    // Input image
     property Language: string read FLanguage write FLanguage;
-    // Rotation (if any) of scanned image versus reality
+    // Language to use for OCR, e.g. en for English, nld for Dutch
     property Orientation: Orientation read FOrientation write FOrientation;
+    // Rotation (if any) of scanned image versus reality
+    property Text: string read FText write FText;
     // Text recognized in image
     //todo: add outputfile property?!?!!
-    property Text: string read FText write FText;
     constructor Create;
     destructor Destroy; override;
   end;
@@ -124,7 +125,6 @@ begin
   inherited Create;
   FHOCRFile:='';
   FOrientation:=orUnknown;
-  FLanguage:='nld'; //Let's test with Dutch.
 end;
 
 destructor TOCR.Destroy;
