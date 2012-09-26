@@ -55,7 +55,7 @@ type
     //todo: unicode??
     FText: string;
   public
-    procedure RecognizeText;
+    function RecognizeText: boolean;
     // Perform the actual OCR
     property HOCRFile: string read FHOCRFile;
     // File with hOCR: position and text in image
@@ -77,13 +77,17 @@ uses processutils;
 
 { TOCR }
 
-procedure TOCR.RecognizeText;
+function TOCR.RecognizeText: boolean;
 const
   OCRCommand='tesseract';
 var
+  Command: string;
+  HOCRResult:integer;
   OutputFile:string;
   Results:TStringList;
+  TessResult:integer;
 begin
+  result:=false;
   if FLanguage='' then FLanguage:='en'; //Default to English
   OutputFile:=GetTempFileName;
   FText:='';
@@ -91,7 +95,9 @@ begin
   //todo: upside down detection? OCR 2x, higher detection rate is right orientation
   //=> we can use tesseract 3 -pam parameter perhaps?
   // tesseract sticks results in outputfile+.txt
-  if ExecuteCommand(OCRCommand+' "'+FImageFile+'" "'+OutputFile+'" -l '+FLanguage,false)=0 then
+  Command:=OCRCommand+' "'+FImageFile+'" "'+OutputFile+'" -l '+FLanguage;
+  TessResult:=ExecuteCommand(Command,false);
+  if TessResult=0 then
   begin
     Results:=TStringList.Create;
     try
@@ -104,19 +110,24 @@ begin
       Results.Free;
     end;
     // Output position & word text in hocr format:
-    if ExecuteCommand(OCRCommand+' "'+FImageFile+'" "'+OutputFile+'" -l '+FLanguage+' hocr',false)=0 then
+    Command:=OCRCommand+' "'+FImageFile+'" "'+OutputFile+'" -l '+FLanguage+' hocr';
+    HOCRResult:=ExecuteCommand(Command,false);
+    if HOCRResult=0 then
     begin
       FHOCRFile:=OutputFile+'.html';
       writeln('Result: hocr done: '+FHOCRFile);
+      result:=true;
     end
     else
     begin
-      writeln('Error generating hocr.');
+      writeln('Error generating hocr. Result code: '+inttostr(HOCRResult)+LineEnding+
+        'Command given was: '+Command);
     end;
   end
   else
   begin
-    writeln('Error performing tesseract OCR.');
+    writeln('Error performing tesseract OCR. Result code: '+inttostr(TessResult)+LineEnding+
+      'Command given was: '+Command);
   end;
 end;
 
