@@ -51,7 +51,8 @@ type
     property ImageResolution: integer write FImageResolution;
     // Manual override/specification of image resolution. Enter 0 for no override.
     // Used for passing to hocr2pdf
-    procedure CreatePDF;
+    function CreatePDF: boolean;
+    // Takes hOCR file, image and creates a PDF from that. Returns success or failure
     constructor Create;
     destructor Destroy; override;
   end;
@@ -61,7 +62,7 @@ uses processutils;
 
 { TPDF }
 
-procedure TPDF.CreatePDF;
+function TPDF.CreatePDF: boolean;
 // Create searchable PDF using exactimage (using -s for aligning text better)
 const
   Command='hocrwrap.sh';
@@ -69,6 +70,7 @@ var
   Options:string;
   ResolutionOption: string;
 begin
+  Result:=false;
   if FPDFFile='' then
     FPDFFile:=ChangeFileExt(FImageFile,'.pdf');
 
@@ -82,6 +84,7 @@ begin
   if ExecuteCommand(Command+Options,false)=0 then
   begin
     writeln('PDF succeeded.');
+    result:=true;
   end
   else
   begin

@@ -159,7 +159,10 @@ begin
       PDF:=ProcessImages(Images,0);
       //todo: update images so they are part of the pdf
       //what to do with images that already belonged to another pdf?
-      FTigerDB.InsertDocument('fixmeimages',PDF,'',Now());
+      if PDF<>'' then
+        FTigerDB.InsertDocument('fixmeimages',PDF,'',Now())
+      else
+        writeln('Error creating PDF. Stopping.');
     finally
       Images.Free;
     end;
@@ -180,6 +183,7 @@ var
   i: integer;
   OCR: TOCR;
   PDF: TPDF;
+  Success:boolean;
 begin
   {todo: add preprocess unit??! despeckle, deskew etc? ScanTailor?
   Scantailor: more for letters/documents; unpaper more for books
@@ -193,7 +197,7 @@ begin
     OCR:=TOCR.Create;
     try
       OCR.ImageFile:=ImageFiles[i];
-      OCR.RecognizeText;
+      Success:=OCR.RecognizeText;
       HOCRFile:=OCR.HOCRFile;
       writeln('Got this text:');
       writeln(OCR.Text);
@@ -201,28 +205,32 @@ begin
       OCR.Free;
     end;
 
-    PDF:=TPDF.Create;
-    try
-      // Only pass on overrides on resolution
-      if Resolution>0 then
-        PDF.ImageResolution:=Resolution;
-      PDF.HOCRFile:=HOCRFile;
-      PDF.ImageFile:=ImageFiles[i];
-      writeln('pdfdirectory: '+FPDFDirectory);
-      PDF.PDFFile:=IncludeTrailingPathDelimiter(FPDFDirectory)+
-        ChangeFileExt(ExtractFileName(ImageFiles[i]),'.pdf');
-      //todo: add metadata stuff to pdf unit
-      //todo: add compression to pdf unit?
-      PDF.CreatePDF;
-      writeln('Got PDF:');
-      writeln(PDF.PDFFile);
-      result:=PDF.PDFFile;
-    finally
-      PDF.Free;
+    if Success then
+    begin
+      PDF:=TPDF.Create;
+      try
+        // Only pass on overrides on resolution
+        if Resolution>0 then
+          PDF.ImageResolution:=Resolution;
+        PDF.HOCRFile:=HOCRFile;
+        PDF.ImageFile:=ImageFiles[i];
+        writeln('pdfdirectory: '+FPDFDirectory);
+        PDF.PDFFile:=IncludeTrailingPathDelimiter(FPDFDirectory)+
+          ChangeFileExt(ExtractFileName(ImageFiles[i]),'.pdf');
+        //todo: add metadata stuff to pdf unit
+        //todo: add compression to pdf unit?
+        Success:=PDF.CreatePDF;
+        writeln('Got PDF:');
+        writeln(PDF.PDFFile);
+        result:=PDF.PDFFile;
+      finally
+        PDF.Free;
+      end;
+      //todo: concatenate pdfs; we just add the last one for now
+      //todo: update pdf name
     end;
-    //todo: concatenate pdfs; we just add the last one for now
-    //todo: update pdf name
   end;
+
 {
 #adapted from http://ubuntuforums.org/showthread.php?t=1647350
 in.info should contain (replace <>):
@@ -257,7 +265,6 @@ attach_files <filename> <filename> <...>
 Can attach arbitrary files to PDF using PDF file attachment.
 We could save some data here? If so, what?
 }
-
 end;
 
 procedure TTigerServer.ScanAndProcess;
