@@ -89,15 +89,23 @@ Building scantailor from source
 ===============================
 Scantailor is being developed; we use the scantailor enhanced fork.
 http://sourceforge.net/projects/scantailor/files/scantailor-devel/enhanced/
+Build instructions:
+https://sourceforge.net/apps/mediawiki/scantailor/index.php?title=Building_from_source_code_on_Linux_and_Mac_OS_X
 
 Notes for Debian below.
 
-aptitude install build-essential 
+# compilers and dependencies
+aptitude install build-essential cmake libqt4-dev libjpeg-dev zlib1g-dev libpng-dev libtiff-dev libboost-dev libxrender-dev 
 
 Get source from
 cd ~
-wget http://sourceforge.net/projects/scantailor/files/scantailor-devel/enhanced/scantailor-enhanced-20110902.tar.gz/download
-
+wget http://sourceforge.net/projects/scantailor/files/scantailor-devel/enhanced/scantailor-enhanced-20120914-pre.tar.bz2/download
+mv download scantailor-enhanced-20120914-pre.tar.bz2
+tar xvjf scantailor-enhanced-20120914-pre.tar.bz2
+rm scantailor-enhanced-20120914-pre.tar.bz2
+cd scantailor-enhanced-20120914-pre
+cmake .
+=> gives problems with boost?!?
 
 Miscellaneous notes
 ===================
