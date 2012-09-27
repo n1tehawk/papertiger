@@ -52,7 +52,7 @@
         <CommandLineParams Value="--scan"/>
       </local>
     </RunParams>
-    <Units Count="5">
+    <Units Count="6">
       <Unit0>
         <Filename Value="tigerserver.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -78,6 +78,11 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="tigerdb"/>
       </Unit4>
+      <Unit5>
+        <Filename Value="imagecleaner.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="imagecleaner"/>
+      </Unit5>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

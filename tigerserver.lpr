@@ -48,7 +48,7 @@ uses
   {$IFDEF UNIX}{$IFDEF UseCThreads}
   cthreads,
   {$ENDIF}{$ENDIF}
-  Classes, SysUtils, CustApp, scan, ocr, pdf, tigerdb, inifiles;
+  Classes, SysUtils, CustApp, scan, ocr, pdf, tigerdb, inifiles, imagecleaner;
 
 const
   // todo: create separate settings class
@@ -76,6 +76,8 @@ type
     // Has trailing path delimiter.
     FTigerDB: TTigerDB;
   protected
+    function CleanImage(const ImageFile: string): boolean;
+    // Cleans up image (postprocessing): straightens them up, despeckles etc
     procedure DoRun; override;
     // Main entry point into the program; processes command line options etc
     function ProcessImages(const ImageFiles: TStringList; Resolution: integer): string;
@@ -92,6 +94,20 @@ type
   end;
 
 { TTigerServer }
+
+function TTigerServer.CleanImage(const ImageFile: String): boolean;
+var
+  Cleaner: TImageCleaner;
+begin
+  result:=false;
+  Cleaner:=TImageCleaner.Create;
+  try
+    //todo: write me
+    //result;=true;
+  finally
+    Cleaner.Free;
+  end;
+end;
 
 procedure TTigerServer.DoRun;
 var
@@ -194,16 +210,20 @@ begin
     raise Exception.Create('PDF directory '+FPDFDirectory+' does not exist and cannot be created.');
   for i:=0 to ImageFiles.Count-1 do
   begin
-    OCR:=TOCR.Create;
-    try
-      OCR.ImageFile:=ImageFiles[i];
-      OCR.Language:=FLanguage;
-      Success:=OCR.RecognizeText;
-      HOCRFile:=OCR.HOCRFile;
-      writeln('Got this text:');
-      writeln(OCR.Text);
-    finally
-      OCR.Free;
+    Success:=CleanImage(ImageFiles[i]);
+    if Success then
+    begin
+      OCR:=TOCR.Create;
+      try
+        OCR.ImageFile:=ImageFiles[i];
+        OCR.Language:=FLanguage;
+        Success:=OCR.RecognizeText;
+        HOCRFile:=OCR.HOCRFile;
+        writeln('Got this text:');
+        writeln(OCR.Text);
+      finally
+        OCR.Free;
+      end;
     end;
 
     if Success then
