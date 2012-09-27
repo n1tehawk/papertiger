@@ -88,7 +88,6 @@ var
   TessResult:integer;
 begin
   result:=false;
-  if FLanguage='' then FLanguage:='en'; //Default to English
   OutputFile:=GetTempFileName;
   FText:='';
   FHOCRFile:='';
@@ -135,6 +134,7 @@ constructor TOCR.Create;
 begin
   inherited Create;
   FHOCRFile:='';
+  FLanguage:='en'; //default to English
   FOrientation:=orUnknown;
 end;
 

@@ -183,12 +183,12 @@ begin
   FInsertImage.Transaction := FReadWriteTransaction;
   //Try to work around FPC 2.6.0 bug that doesn't do Open, but execute for INSERT statements
   FInsertImage.ParseSQL:=false;
+  //todo: replace with merge/insert replacing
   SQL:='INSERT INTO IMAGES (DOCUMENTID,PATH,IMAGEHASH) '+
     'VALUES (:DOCUMENTID,:PATH,:IMAGEHASH) RETURNING ID';
-  writeln('FInsertImage:');
-  writeln (SQL);
   FInsertImage.SQL.Text := SQL;
   FInsertImage.Prepare;
+  //todo: debug
   writeln('FInsertImage:');
   writeln (FInsertImage.SQL.Text);
 
@@ -198,11 +198,9 @@ begin
   FInsertScan.ParseSQL:=false;
   SQL:='INSERT INTO DOCUMENTS (DOCUMENTNAME,PDFPATH,SCANDATE,DOCUMENTHASH) '+
     'VALUES (:DOCUMENTNAME,:PDFPATH,:SCANDATE,:DOCUMENTHASH) RETURNING ID';
-  //todo: debug
-  writeln('FInsertScan:');
-  writeln (SQL);
   FInsertScan.SQL.Text:=SQL;
   FInsertScan.Prepare;
+  //todo: debug
   writeln('FInsertScan:');
   writeln (FInsertScan.SQL.Text);
 end;

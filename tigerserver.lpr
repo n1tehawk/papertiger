@@ -197,6 +197,7 @@ begin
     OCR:=TOCR.Create;
     try
       OCR.ImageFile:=ImageFiles[i];
+      OCR.Language:=FLanguage;
       Success:=OCR.RecognizeText;
       HOCRFile:=OCR.HOCRFile;
       writeln('Got this text:');
