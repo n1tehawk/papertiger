@@ -1,8 +1,11 @@
-Paper Tiger:
+Paper Tiger
+===========
 scanning, text recognition and archiving of paper documents... with GUI clients but from the command line if necessary 
 
 The Paper Tiger code has a liberal MIT license. It uses various other open-source programs.
 
+Functionality
+=============
 Planned architecture/functionality:
 - scanning documents using sane into TIFF documents
 - OCR/text recognition using Tesseract
@@ -15,6 +18,7 @@ Further possible refinements:
 - support for other databases (sqlite, PostgreSQL, MS SQL Server)
 - using image cleanup tools such as unpaper
 - using WIA etc on Windows to support Windows scanners
+- write .deb for Debian servers
 
 Architecture and development principles
 - use other people's work if possible - the Unix way...
@@ -27,7 +31,8 @@ Architecture and development principles
 - these 2 principles clash; the code will need to stabilize until it is wise to directly try to access e.g. the databsse. Even then, breaking changes will not be avoided if e.g. cleanness of design would be compromised
 
 
-Installation instructions:
+Installation instructions
+=========================
 - prerequisites: have sane installed and configured for your scanner. E.g.:
   aptitude install sane-utils
 - prerequisites: have tesseract installed and configured. E.g.:
@@ -35,6 +40,8 @@ Installation instructions:
   Note: we need version 3 because of hOCR support needed for getting searchable PDFs.
 - prerequisites: have exactimage installed (for hocr2pdf), e.g.:
   aptitude install exactimage
+- prerequirisites: have scantailor installed (for aligning/cleaning up the tiff images before OCR)
+  see installation notes below
 - Tesseract must/can then be configured to output hocr, e.g.:
   check you have this file present (adjust config directory to your situation):
   cat /usr/local/share/tessdata/configs/hocr
@@ -51,7 +58,9 @@ Installation instructions:
   chmod u+rx scanwrap.sh
   chmod u+rx tigerserver
 
-  
+Building Tesseract 3
+====================
+If tesseract 3 is not available for your platform, you will need to build it.  
 Preliminary notes for building Tesseract 3 on Debian aqueeze
 sources:
 http://ubuntuforums.org/showthread.php?t=1647350
@@ -76,7 +85,22 @@ gunzip nld.traineddata.gz
 wget https://tesseract-ocr.googlecode.com/files/tesseract-ocr-3.01.eng.tar.gz
 gunzip tesseract-ocr-3.01.eng.tar.gz
 
+Building scantailor from source
+===============================
+Scantailor is being developed; we use the scantailor enhanced fork.
+http://sourceforge.net/projects/scantailor/files/scantailor-devel/enhanced/
 
+Notes for Debian below.
+
+aptitude install build-essential 
+
+Get source from
+cd ~
+wget http://sourceforge.net/projects/scantailor/files/scantailor-devel/enhanced/scantailor-enhanced-20110902.tar.gz/download
+
+
+Miscellaneous notes
+===================
 Getting PDF viewers to open a certain page:
 Adobe Acrobat Reader
 http://www.adobe.com/content/dam/Adobe/en/devnet/acrobat/pdfs/pdf_open_parameters.pdf

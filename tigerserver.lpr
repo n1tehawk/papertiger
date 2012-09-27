@@ -335,7 +335,7 @@ end;
 constructor TTigerServer.Create(TheOwner: TComponent);
 begin
   inherited Create(TheOwner);
-  FLanguage:='en';
+  FLanguage:='eng'; //Tesseract notation
   //todo: debug
   writeln('Debug: setting language to Dutch for testing. Remove me in production code.');
   FLanguage:='nld'; //Let's test with Dutch.
@@ -357,7 +357,8 @@ begin
   writeln(' Process image.');
   writeln('-l <lang> --language=<language>');
   writeln(' Language to be used for OCR.');
-  writeln(' en (English) by default');
+  writeln(' eng (English) by default. See the OCR documentation for ');
+  writeln(' language codes (e.g. man tesseract)');
   writeln('-s --scan');
   writeln(' Scan document, process.');
   writeln('-p <n> --pages=<n>');

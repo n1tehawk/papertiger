@@ -192,7 +192,6 @@ begin
   writeln('FInsertImage:');
   writeln (FInsertImage.SQL.Text);
 
-
   FInsertScan.Database := FDB;
   FInsertScan.Transaction := FReadWriteTransaction;
   FInsertScan.ParseSQL:=false;

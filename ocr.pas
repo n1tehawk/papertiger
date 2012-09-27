@@ -134,7 +134,7 @@ constructor TOCR.Create;
 begin
   inherited Create;
   FHOCRFile:='';
-  FLanguage:='en'; //default to English
+  FLanguage:='eng'; //default to English; tesseract format
   FOrientation:=orUnknown;
 end;
 
