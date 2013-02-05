@@ -188,9 +188,10 @@ begin
     'VALUES (:DOCUMENTID,:PATH,:IMAGEHASH) RETURNING ID';
   FInsertImage.SQL.Text := SQL;
   FInsertImage.Prepare;
-  //todo: debug
+  {$IFDEF DEBUG}
   writeln('FInsertImage:');
   writeln (FInsertImage.SQL.Text);
+  {$ENDIF}
 
   FInsertScan.Database := FDB;
   FInsertScan.Transaction := FReadWriteTransaction;
@@ -199,9 +200,10 @@ begin
     'VALUES (:DOCUMENTNAME,:PDFPATH,:SCANDATE,:DOCUMENTHASH) RETURNING ID';
   FInsertScan.SQL.Text:=SQL;
   FInsertScan.Prepare;
-  //todo: debug
+  {$IFDEF DEBUG}
   writeln('FInsertScan:');
   writeln (FInsertScan.SQL.Text);
+  {$ENDIF}
 end;
 
 destructor TTigerDB.Destroy;
