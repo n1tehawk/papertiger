@@ -1,7 +1,7 @@
 program tigerserver;
 { Paper Tiger paper scanning/OCR/archiving solution
 
-  Copyright (c) 2012 Reinier Olislagers
+  Copyright (c) 2012-2013 Reinier Olislagers
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to
@@ -325,7 +325,8 @@ begin
       if (i<FPages-1) then
       begin
         // todo: rebuild using event procedure so this can be plugged in (via web interface etc)
-        writeln('Once the scan is completed, please put in sheet '+inttostr(i)+' and press enter to continue.');
+        // Ask for page after current page:
+        writeln('Once the scan is completed, please put in sheet '+inttostr(i+2)+' and press enter to continue.');
         readln;
       end;
     end;
