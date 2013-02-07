@@ -6,7 +6,7 @@ interface
 
 uses
   SysUtils, Classes, httpdefs, fpHTTP, fpWeb,
-  scan, ocr, pdf, tigerdb, inifiles, imagecleaner;
+  scan, ocr, pdf, tigerdb, tigersettings, imagecleaner;
 
 type
   TFPWebModule1 = class(TFPWebModule)

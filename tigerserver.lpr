@@ -48,11 +48,8 @@ uses
   {$IFDEF UNIX}{$IFDEF UseCThreads}
   cthreads,
   {$ENDIF}{$ENDIF}
-  Classes, SysUtils, CustApp, scan, ocr, pdf, tigerdb, inifiles, imagecleaner;
-
-const
-  // todo: create separate settings class
-  SettingsFile = 'tigerserver.ini';
+  Classes, SysUtils, CustApp, scan, ocr, pdf, tigerdb, imagecleaner,
+  tigersettings;
 
 type
 
@@ -60,20 +57,12 @@ type
 
   TTigerServer = class(TCustomApplication)
   private
-    FImageDirectory: string;
-    // Directory where scanned images must be/are stored
-    // Has trailing path delimiter.
-    //todo: perhaps publish property?
-    FLanguage: string;
-    // (Tesseract) language code, used to set OCR lanague for document.
-    // Default en (for English)
+    FLanguage: string; //effective language (from settings file, possibly overridden by command-line options)
     FPages: integer;
     // Number of pages to scan/process at once
     // Use >1 for batch (e.g. multipage documents)
     //todo: think about multipage tiff
-    FPDFDirectory: string;
-    // Directory where resulting PDFs must be stored
-    // Has trailing path delimiter.
+    FSettings: TTigerSettings;
     FTigerDB: TTigerDB;
   protected
     function CleanImage(const ImageFile: string): boolean;
@@ -114,7 +103,7 @@ var
   ErrorMsg: String;
   Images:TStringList;
   PDF: string;
-  Settings: TINIFile;
+  Settings: TTigerSettings;
 begin
   // quick check parameters
   ErrorMsg:=CheckOptions('hi:l:p:s','help image: language: pages: scan');
@@ -132,28 +121,6 @@ begin
     Terminate;
     Exit;
   end;
-
-  if FileExists(SettingsFile) then
-  begin
-    Settings := TINIFile.Create(SettingsFile);
-    try
-      // When reading the settings, expand ~ to home directory etc
-      FImageDirectory:=IncludeTrailingPathDelimiter(ExpandFileName(Settings.ReadString('General', 'ImageDirectory', '~/scans'))); //Default to current directory
-      FPDFDirectory:=IncludeTrailingPathDelimiter(ExpandFileName(Settings.ReadString('General', 'PDFDirectory', '~/pdfs'))); //Default to current directory
-    finally
-      Settings.Free;
-    end;
-  end
-  else
-  begin
-    // Set up defaults
-    FImageDirectory:='';
-    FPDFDirectory:='';
-  end;
-
-  // Fallback to directory where .ini file is stored
-  if FImageDirectory='' then FImageDirectory:=IncludeTrailingPathDelimiter(ExtractFilePath(SettingsFile));
-  if FPDFDirectory='' then FPDFDirectory:=FImageDirectory;
 
   if HasOption('l','language') then
   begin
@@ -206,8 +173,8 @@ begin
   scantailor new version: https://sourceforge.net/projects/scantailor/files/scantailor-devel/enhanced/
   unpaper input.ppm output.ppm => perhaps more formats than ppm? use eg. exactimage's econvert for format conversion}
   result:='';
-  if not(ForceDirectories(FPDFDirectory)) then
-    raise Exception.Create('PDF directory '+FPDFDirectory+' does not exist and cannot be created.');
+  if not(ForceDirectories(FSettings.PDFDirectory)) then
+    raise Exception.Create('PDF directory '+FSettings.PDFDirectory+' does not exist and cannot be created.');
   for i:=0 to ImageFiles.Count-1 do
   begin
     Success:=CleanImage(ImageFiles[i]);
@@ -235,8 +202,8 @@ begin
           PDF.ImageResolution:=Resolution;
         PDF.HOCRFile:=HOCRFile;
         PDF.ImageFile:=ImageFiles[i];
-        writeln('pdfdirectory: '+FPDFDirectory);
-        PDF.PDFFile:=IncludeTrailingPathDelimiter(FPDFDirectory)+
+        writeln('pdfdirectory: '+FSettings.PDFDirectory);
+        PDF.PDFFile:=IncludeTrailingPathDelimiter(FSettings.PDFDirectory)+
           ChangeFileExt(ExtractFileName(ImageFiles[i]),'.pdf');
         //todo: add metadata stuff to pdf unit
         //todo: add compression to pdf unit?
@@ -302,8 +269,8 @@ var
 begin
   // Try a 300dpi scan, probably best for normal sized letters on paper
   Resolution:=300;
-  if not(ForceDirectories(FImageDirectory)) then
-    raise Exception.Create('Image directory '+FImageDirectory+' does not exist and cannot be created.');
+  if not(ForceDirectories(FSettings.ImageDirectory)) then
+    raise Exception.Create('Image directory '+FSettings.ImageDirectory+' does not exist and cannot be created.');
   Scanner:=TScanner.Create;
   ImageFiles:=TStringList.Create;
   try
@@ -316,9 +283,9 @@ begin
     for i:=0 to FPages-1 do
     begin
       if FPages=1 then
-        Scanner.FileName:=FImageDirectory+StartDateString+'.tif'
+        Scanner.FileName:=FSettings.ImageDirectory+StartDateString+'.tif'
       else
-        Scanner.FileName:=FImageDirectory+StartDateString+'_'+format('%.4d',[i])+'.tif';
+        Scanner.FileName:=FSettings.ImageDirectory+StartDateString+'_'+format('%.4d',[i])+'.tif';
       Scanner.Scan;
       writeln('Image file: '+Scanner.FileName);
       ImageFiles.Add(Scanner.FileName);
@@ -356,10 +323,8 @@ end;
 constructor TTigerServer.Create(TheOwner: TComponent);
 begin
   inherited Create(TheOwner);
-  FLanguage:='eng'; //Tesseract notation
-  //todo: debug
-  writeln('Debug: setting language to Dutch for testing. Remove me in production code.');
-  FLanguage:='nld'; //Let's test with Dutch.
+  FSettings:=TTigerSettings.Create;
+  FLanguage:=FSettings.Language; //read language from settings; can be overridden by command line optoin
   FPages:=1; //Assume single scan, not batch
   StopOnException:=True;
   FTigerDB:=TTigerDB.Create;
@@ -368,6 +333,7 @@ end;
 destructor TTigerServer.Destroy;
 begin
   FTigerDB.Free;
+  FSettings.Free;
   inherited Destroy;
 end;
 
