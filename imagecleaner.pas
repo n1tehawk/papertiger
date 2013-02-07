@@ -25,7 +25,7 @@ unit imagecleaner;
 
 
 
-{$mode objfpc}{$H+}
+{$i tigerserver.inc}
 
 interface
 
@@ -40,7 +40,6 @@ type
   private
 
   public
-
     constructor Create;
     destructor Destroy; override;
   end;

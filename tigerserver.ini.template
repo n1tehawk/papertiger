@@ -5,6 +5,11 @@
 ; ImageDirectory=~/somedir
 ImageDirectory=/opt/papertiger/scanimages
 PDFDirectory=/opt/papertiger/pdfs
+; Langauge for text recognition. Use Tesseract's way of writing the languages
+;nld=Dutch
+;eng=English
+Language=eng
+
 
 [Sane]
 ; Name of the scanner device according to sane
