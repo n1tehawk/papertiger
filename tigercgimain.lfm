@@ -1,6 +1,18 @@
 object FPWebModule1: TFPWebModule1
   OldCreateOrder = False
-  Actions = <>
+  Actions = <  
+    item
+      Name = 'unsupported'
+      Default = True
+      OnRequest = unsupportedRequest
+      Template.AllowTagParams = False
+    end  
+    item
+      Name = 'list'
+      Default = False
+      OnRequest = listRequest
+      Template.AllowTagParams = False
+    end>
   CreateSession = False
   Height = 108
   HorizontalOffset = 323
