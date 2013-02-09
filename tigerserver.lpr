@@ -72,7 +72,6 @@ type
 procedure TTigerServer.DoRun;
 var
   ErrorMsg: String;
-  Images:TStringList;
   PDF: string;
 begin
   // quick check parameters
@@ -105,18 +104,12 @@ begin
   // Branching off into processing starts here
   if HasOption('i','image') then
   begin
-    Images:=TStringList.Create;
-    try
-      //todo: add support for ; or , separated image names when pages>1
-      Images.Add(ExpandFileName(GetOptionValue('i','image')));
-      PDF:=FTigerCore.ProcessImages(Images,'Document'+FormatDateTime('yyyymmddhhnnss', Now),0);
-      //todo: update images so they are part of the pdf => what does this remark mean?
-      //what to do with images that already belonged to another pdf?
-      if PDF<>'' then
-        writeln('Error creating PDF. Stopping.');
-    finally
-      Images.Free;
-    end;
+    //todo: add support for ; or , separated image names when pages>1
+    FTigerCore.Images.Clear;
+    FTigerCore.Images.Add(ExpandFileName(GetOptionValue('i','image')));
+    PDF:=FTigerCore.ProcessImages('Document'+FormatDateTime('yyyymmddhhnnss', Now),0);
+    if PDF<>'' then
+      writeln('Error creating PDF. Stopping.');
   end;
 
   if HasOption('s','scan') then

@@ -18,7 +18,7 @@ type
 TTigerDB= class(TObject)
 private
   FDB: TSQLConnection; //Database connection
-  FInsertImage: TSQLQuery; //Inserts new images
+  FInsertImage: TSQLQuery; //Inserts new images (for now with an insert query)
   FInsertScan: TSQLQuery; //Inserts new scan data.
   FReadTransaction: TSQLTransaction; //Transaction for read-only access
   FReadWriteTransaction: TSQLTransaction; //Transaction for read/write access
@@ -43,6 +43,7 @@ const
 function TTigerDB.InsertImage(const DocumentID: integer; const Path,
   ImageHash: string): integer;
 begin
+  //todo: make this function insert or update image so it can modify existing records
   result:=DBINVALIDID;
   try
     if FReadWriteTransaction.Active = false then
