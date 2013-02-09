@@ -43,6 +43,7 @@ type
   private
     FCurrentOCRLanguage: string; //effective language (from settings file, possibly overridden by e.g. command-line options)
     FDocumentID: integer; //database ID for currently handled scanned document
+    FImageFiles: TStringList; //current image(s) being processed: result of scan or input for OCR
     FPages: integer;
     // Number of pages to scan/process at once
     // Use >1 for batch (e.g. multipage documents)
@@ -53,12 +54,15 @@ type
   public
     property CurrentOCRLanguage: string read FCurrentOCRLanguage write FCurrentOCRLanguage;
     // Language to be used for OCR. Will not be saved in settings
+    property Images: TStringList read FImageFiles;
+    // Image files to be OCRed or files that result from scanning
     property Pages: integer read FPages write FPages;
     // Number of pages to scan in one scan run.
     function CleanImage(const ImageFile: string): boolean;
     // Cleans up image (postprocessing): straightens them up, despeckles etc
-    function ProcessImages(const ImageFiles: TStringList; DocumentName: string; Resolution: integer): string;
+    function ProcessImages(DocumentName: string; Resolution: integer): string;
     // Process (set of) existing (TIFF) image(s); should be named <image>.tif
+    // Images are specified using the Images property
     // Specify resolution override to indicate image resolution to hocr2pdf
     // Specify 0 to leave alone and let hocr detect resolution or fallback to 300dpi
     // Returns resulting pdf file (including path)
@@ -86,7 +90,7 @@ begin
   end;
 end;
 
-function TTigerServerCore.ProcessImages(const ImageFiles: TStringList;
+function TTigerServerCore.ProcessImages(
   DocumentName: string;
   Resolution: integer):string;
 var
@@ -103,14 +107,14 @@ begin
   result:='';
   if not(ForceDirectories(FSettings.PDFDirectory)) then
     raise Exception.Create('PDF directory '+FSettings.PDFDirectory+' does not exist and cannot be created.');
-  for i:=0 to ImageFiles.Count-1 do
+  for i:=0 to FImageFiles.Count-1 do
   begin
-    Success:=CleanImage(ImageFiles[i]);
+    Success:=CleanImage(FImageFiles[i]);
     if Success then
     begin
       OCR:=TOCR.Create;
       try
-        OCR.ImageFile:=ImageFiles[i];
+        OCR.ImageFile:=FImageFiles[i];
         OCR.Language:=FCurrentOCRLanguage;
         Success:=OCR.RecognizeText;
         HOCRFile:=OCR.HOCRFile;
@@ -129,10 +133,10 @@ begin
         if Resolution>0 then
           PDF.ImageResolution:=Resolution;
         PDF.HOCRFile:=HOCRFile;
-        PDF.ImageFile:=ImageFiles[i];
+        PDF.ImageFile:=FImageFiles[i];
         writeln('pdfdirectory: '+FSettings.PDFDirectory);
         PDF.PDFFile:=IncludeTrailingPathDelimiter(FSettings.PDFDirectory)+
-          ChangeFileExt(ExtractFileName(ImageFiles[i]),'.pdf');
+          ChangeFileExt(ExtractFileName(FImageFiles[i]),'.pdf');
         //todo: add metadata stuff to pdf unit
         //todo: add compression to pdf unit?
         Success:=PDF.CreatePDF;
@@ -150,6 +154,7 @@ begin
         {todo: don't use now but get timestamp from oldest image and use that as scandate??? Or leave like this as
          the scan command has actually been issued now}
         FDocumentID:=FTigerDB.InsertDocument(DocumentName,result,'',Now);
+        // todo: next call db update or insert images here to make sure images assigned to proper document
       end
       else
         FDocumentID:=DBINVALIDID; //invalidate any previously valid document ID
@@ -196,7 +201,6 @@ procedure TTigerServerCore.ScanAndProcess;
 // Performs the document scan, and process result
 var
   i:integer;
-  ImageFiles: TStringList;
   PDF:string;
   Resolution: integer;
   Scanner: TScanner;
@@ -208,7 +212,7 @@ begin
   if not(ForceDirectories(FSettings.ImageDirectory)) then
     raise Exception.Create('Image directory '+FSettings.ImageDirectory+' does not exist and cannot be created.');
   Scanner:=TScanner.Create;
-  ImageFiles:=TStringList.Create;
+
   try
     Scanner.Resolution:=Resolution;
     Scanner.ColorType:=stLineArt;
@@ -224,7 +228,8 @@ begin
         Scanner.FileName:=FSettings.ImageDirectory+StartDateString+'_'+format('%.4d',[i])+'.tif';
       Scanner.Scan;
       writeln('Image file: '+Scanner.FileName);
-      ImageFiles.Add(Scanner.FileName);
+      FImageFiles.Clear;
+      FImageFiles.Add(Scanner.FileName);
       if (i<FPages-1) then
       begin
         // todo: rebuild using event procedure so this can be plugged in (via web interface etc)
@@ -236,7 +241,7 @@ begin
 
     //todo: add teventlog logging support
     writeln('going to process images');
-    PDF:=ProcessImages(ImageFiles, StartDateString, Resolution);
+    PDF:=ProcessImages(StartDateString, Resolution);
     if FDocumentID=DBINVALIDID then
     begin
       writeln('Error: could not insert document/scan into database. Please try again.');
@@ -246,12 +251,11 @@ begin
       for i:=0 to FPages-1 do
       begin
         // Add images to database
-        FTigerDB.InsertImage(FDocumentID,ImageFiles[i],'');
+        FTigerDB.InsertImage(FDocumentID,FImageFiles[i],'');
       end;
     end;
   finally
     Scanner.Free;
-    ImageFiles.Free;
   end;
 end;
 
@@ -260,12 +264,14 @@ begin
   inherited Create;
   FSettings:=TTigerSettings.Create;
   FCurrentOCRLanguage:=FSettings.Language; //read language from settings; can be overridden by command line optoin
+  FImageFiles:=TStringList.Create;
   FPages:=1; //Assume single scan, not batch
   FTigerDB:=TTigerDB.Create;
 end;
 
 destructor TTigerServerCore.Destroy;
 begin
+  FImageFiles.Free;
   FTigerDB.Free;
   FSettings.Free;
   inherited Destroy;
