@@ -43,6 +43,10 @@ Installation instructions
   aptitude install exactimage
 - prerequirisites: have scantailor installed (for aligning/cleaning up the tiff images before OCR)
   see installation notes below
+- prerequisites if using the cgi server/client server solution: apache2 or another HTTP server that supports cgi
+  aptitude install apache2
+	copy tigercgi to cgi directory (e.g. /usr/lib/cgi-bin). 
+	Make sure the user Apache runs under may read and execute the file (e.g. chmod ugo+rx tigercgi)
 - Tesseract must/can then be configured to output hocr, e.g.:
   check you have this file present (adjust config directory to your situation):
   cat /usr/local/share/tessdata/configs/hocr
