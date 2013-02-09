@@ -72,6 +72,7 @@
         <Filename Value="tigercgimain.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="FPWebModule1"/>
+        <HasResources Value="True"/>
         <ResourceBaseClass Value="DataModule"/>
         <UnitName Value="tigercgimain"/>
       </Unit1>

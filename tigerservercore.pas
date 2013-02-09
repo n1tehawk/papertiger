@@ -201,7 +201,6 @@ procedure TTigerServerCore.ScanAndProcess;
 // Performs the document scan, and process result
 var
   i:integer;
-  PDF:string;
   Resolution: integer;
   Scanner: TScanner;
   StartDate: TDateTime;
@@ -241,7 +240,7 @@ begin
 
     //todo: add teventlog logging support
     writeln('going to process images');
-    PDF:=ProcessImages(StartDateString, Resolution);
+    ProcessImages(StartDateString, Resolution);
     if FDocumentID=DBINVALIDID then
     begin
       writeln('Error: could not insert document/scan into database. Please try again.');
