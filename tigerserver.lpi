@@ -52,7 +52,7 @@
         <CommandLineParams Value="--scan"/>
       </local>
     </RunParams>
-    <Units Count="7">
+    <Units Count="8">
       <Unit0>
         <Filename Value="tigerserver.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -88,6 +88,11 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="tigersettings"/>
       </Unit6>
+      <Unit7>
+        <Filename Value="tigerservercore.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="tigerservercore"/>
+      </Unit7>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
