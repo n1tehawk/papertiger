@@ -56,25 +56,10 @@ type
 
   TTigerServer = class(TCustomApplication)
   private
-    FLanguage: string; //effective language (from settings file, possibly overridden by command-line options)
-    FPages: integer;
-    // Number of pages to scan/process at once
-    // Use >1 for batch (e.g. multipage documents)
-    //todo: think about multipage tiff
-    FSettings: TTigerSettings;
-    FTigerDB: TTigerDB;
+    FTigerCore: TTigerServerCore;
   protected
-    function CleanImage(const ImageFile: string): boolean;
-    // Cleans up image (postprocessing): straightens them up, despeckles etc
     procedure DoRun; override;
     // Main entry point into the program; processes command line options etc
-    function ProcessImages(const ImageFiles: TStringList; Resolution: integer): string;
-    // Process (set of) existing (TIFF) image(s); should be named <image>.tif
-    // Specify resolution override to indicate image resolution to hocr2pdf
-    // Specify 0 to leave alone and let hocr detect resolution or fallback to 300dpi
-    // Returns resulting pdf file/path
-    procedure ScanAndProcess;
-    // Scan a document (with one or more pages) and process it.
   public
     constructor Create(TheOwner: TComponent); override;
     destructor Destroy; override;
@@ -83,26 +68,12 @@ type
 
 { TTigerServer }
 
-function TTigerServer.CleanImage(const ImageFile: String): boolean;
-var
-  Cleaner: TImageCleaner;
-begin
-  result:=false;
-  Cleaner:=TImageCleaner.Create;
-  try
-    //todo: write me
-    //result;=true;
-  finally
-    Cleaner.Free;
-  end;
-end;
 
 procedure TTigerServer.DoRun;
 var
   ErrorMsg: String;
   Images:TStringList;
   PDF: string;
-  Settings: TTigerSettings;
 begin
   // quick check parameters
   ErrorMsg:=CheckOptions('hi:l:p:s','help image: language: pages: scan');
@@ -123,12 +94,12 @@ begin
 
   if HasOption('l','language') then
   begin
-    FLanguage:=GetOptionValue('l','language');
+    FTigerCore.CurrentOCRLanguage:=GetOptionValue('l','language');
   end;
 
   if HasOption('p','pages') then
   begin
-    FPages:=strtoint(GetOptionValue('p','pages'));
+    FTigerCore.Pages:=strtoint(GetOptionValue('p','pages'));
   end;
 
   // Branching off into processing starts here
@@ -138,12 +109,10 @@ begin
     try
       //todo: add support for ; or , separated image names when pages>1
       Images.Add(ExpandFileName(GetOptionValue('i','image')));
-      PDF:=ProcessImages(Images,0);
-      //todo: update images so they are part of the pdf
+      PDF:=FTigerCore.ProcessImages(Images,'Document'+FormatDateTime('yyyymmddhhnnss', Now),0);
+      //todo: update images so they are part of the pdf => what does this remark mean?
       //what to do with images that already belonged to another pdf?
       if PDF<>'' then
-        FTigerDB.InsertDocument('fixmeimages',PDF,'',Now())
-      else
         writeln('Error creating PDF. Stopping.');
     finally
       Images.Free;
@@ -152,187 +121,23 @@ begin
 
   if HasOption('s','scan') then
   begin
-    ScanAndProcess;
+    FTigerCore.ScanAndProcess;
   end;
 
   // stop program loop
   Terminate;
 end;
 
-function TTigerServer.ProcessImages(const ImageFiles: TStringList; Resolution: integer):string;
-var
-  HOCRFile: string;
-  i: integer;
-  OCR: TOCR;
-  PDF: TPDF;
-  Success:boolean;
-begin
-  {todo: add preprocess unit??! despeckle, deskew etc? ScanTailor?
-  Scantailor: more for letters/documents; unpaper more for books
-  scantailor new version: https://sourceforge.net/projects/scantailor/files/scantailor-devel/enhanced/
-  unpaper input.ppm output.ppm => perhaps more formats than ppm? use eg. exactimage's econvert for format conversion}
-  result:='';
-  if not(ForceDirectories(FSettings.PDFDirectory)) then
-    raise Exception.Create('PDF directory '+FSettings.PDFDirectory+' does not exist and cannot be created.');
-  for i:=0 to ImageFiles.Count-1 do
-  begin
-    Success:=CleanImage(ImageFiles[i]);
-    if Success then
-    begin
-      OCR:=TOCR.Create;
-      try
-        OCR.ImageFile:=ImageFiles[i];
-        OCR.Language:=FLanguage;
-        Success:=OCR.RecognizeText;
-        HOCRFile:=OCR.HOCRFile;
-        writeln('Got this text:');
-        writeln(OCR.Text);
-      finally
-        OCR.Free;
-      end;
-    end;
-
-    if Success then
-    begin
-      PDF:=TPDF.Create;
-      try
-        // Only pass on overrides on resolution
-        if Resolution>0 then
-          PDF.ImageResolution:=Resolution;
-        PDF.HOCRFile:=HOCRFile;
-        PDF.ImageFile:=ImageFiles[i];
-        writeln('pdfdirectory: '+FSettings.PDFDirectory);
-        PDF.PDFFile:=IncludeTrailingPathDelimiter(FSettings.PDFDirectory)+
-          ChangeFileExt(ExtractFileName(ImageFiles[i]),'.pdf');
-        //todo: add metadata stuff to pdf unit
-        //todo: add compression to pdf unit?
-        Success:=PDF.CreatePDF;
-        writeln('Got PDF:');
-        writeln(PDF.PDFFile);
-        result:=PDF.PDFFile;
-      finally
-        PDF.Free;
-      end;
-      //todo: concatenate pdfs; we just add the last one for now
-      //todo: update pdf name
-    end;
-  end;
-
-{
-#adapted from http://ubuntuforums.org/showthread.php?t=1647350
-in.info should contain (replace <>):
-InfoKey: Author
-InfoValue: <authorvalue>
-InfoKey: Title
-InfoValue: <title>
-InfoKey: Creator
-InfoValue: papertiger 20120722
-# only when joining multiple pdf pages in single document:
-# assumes individualpage1.pdf individualpage2.pdf etc
-# could be done by pdftk as well..
-pdfjoin --fitpaper --tidy --outfile "plainresult.pdf" "individualpage*.pdf"
-#now remove individual pages files
-#add info: - note: doc_data.txt probably generated by pdftk burst in original script which we don't use
-#note: pdftk v1.44 and higher has update_info_utf8
-
-pdftk "plainresult.pdf" update_info doc_data.txt output "someinfo.pdf"
-pdftk "someinfo.pdf" update_info in.info output "scan.pdf"
-#remove temp files: someinfo.pdf doc_data.txt in.info
-rm -f "$1.ocr1.pdf" "$1.ocr2.pdf" doc_data.txt in.info
-}
-
-{look into compressing final result - lossless with:
-qdf
-http://qpdf.sourceforge.net/files/qpdf-manual.html
-qdf --stream-data=compress input.pdf output.pdf
-}
-
-{ Look into pdftk
-attach_files <filename> <filename> <...>
-Can attach arbitrary files to PDF using PDF file attachment.
-We could save some data here? If so, what?
-}
-end;
-
-procedure TTigerServer.ScanAndProcess;
-// Performs the document scan, and process result
-var
-  DocumentID: integer;
-  i:integer;
-  ImageFiles: TStringList;
-  PDF:string;
-  Resolution: integer;
-  Scanner: TScanner;
-  StartDate: TDateTime;
-  StartDateString: string;
-begin
-  // Try a 300dpi scan, probably best for normal sized letters on paper
-  Resolution:=300;
-  if not(ForceDirectories(FSettings.ImageDirectory)) then
-    raise Exception.Create('Image directory '+FSettings.ImageDirectory+' does not exist and cannot be created.');
-  Scanner:=TScanner.Create;
-  ImageFiles:=TStringList.Create;
-  try
-    Scanner.Resolution:=Resolution;
-    Scanner.ColorType:=stLineArt;
-    StartDate:=Now();
-    StartDateString:=FormatDateTime('yyyymmddhhnnss', StartDate);
-
-    writeln('Going to scan '+inttostr(FPages)+' pages; start date: '+StartDateString);
-    for i:=0 to FPages-1 do
-    begin
-      if FPages=1 then
-        Scanner.FileName:=FSettings.ImageDirectory+StartDateString+'.tif'
-      else
-        Scanner.FileName:=FSettings.ImageDirectory+StartDateString+'_'+format('%.4d',[i])+'.tif';
-      Scanner.Scan;
-      writeln('Image file: '+Scanner.FileName);
-      ImageFiles.Add(Scanner.FileName);
-      if (i<FPages-1) then
-      begin
-        // todo: rebuild using event procedure so this can be plugged in (via web interface etc)
-        // Ask for page after current page:
-        writeln('Once the scan is completed, please put in sheet '+inttostr(i+2)+' and press enter to continue.');
-        readln;
-      end;
-    end;
-
-    //todo: add teventlog logging support
-    writeln('going to process images');
-    PDF:=ProcessImages(ImageFiles, Resolution);
-    DocumentID:=FTigerDB.InsertDocument(StartDateString,PDF,'',StartDate);
-    if DocumentID=DBINVALIDID then
-    begin
-      writeln('Error: could not insert document/scan into database. Please try again.');
-    end
-    else
-    begin
-      for i:=0 to FPages-1 do
-      begin
-        // Add to database
-        FTigerDB.InsertImage(DocumentID,ImageFiles[i],'');
-      end;
-    end;
-  finally
-    Scanner.Free;
-    ImageFiles.Free;
-  end;
-end;
-
 constructor TTigerServer.Create(TheOwner: TComponent);
 begin
   inherited Create(TheOwner);
-  FSettings:=TTigerSettings.Create;
-  FLanguage:=FSettings.Language; //read language from settings; can be overridden by command line optoin
-  FPages:=1; //Assume single scan, not batch
   StopOnException:=True;
-  FTigerDB:=TTigerDB.Create;
+  FTigerCore:=TTigerServerCore.Create;
 end;
 
 destructor TTigerServer.Destroy;
 begin
-  FTigerDB.Free;
-  FSettings.Free;
+  FTigerCore.Free;
   inherited Destroy;
 end;
 
