@@ -48,8 +48,7 @@ uses
   {$IFDEF UNIX}{$IFDEF UseCThreads}
   cthreads,
   {$ENDIF}{$ENDIF}
-  Classes, SysUtils, CustApp, scan, ocr, pdf, tigerdb, imagecleaner,
-  tigersettings;
+  Classes, SysUtils, CustApp, tigerservercore;
 
 type
 
