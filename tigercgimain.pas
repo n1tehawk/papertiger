@@ -27,8 +27,11 @@ type
       AResponse: TResponse; var Handled: Boolean);
   private
     { private declarations }
+    FTigerCore: TTigerServerCore;
   public
     { public declarations }
+    constructor Create;
+    destructor Destroy; override;
   end;
 
 var
@@ -50,7 +53,8 @@ end;
 procedure TFPWebModule1.listRequest(Sender: TObject; ARequest: TRequest;
   AResponse: TResponse; var Handled: Boolean);
 begin
-  AResponse.Contents.Add('<p>To do: add list scans stuff here.</p>');
+  AResponse.Contents.Add('<p>List of documents:</p>');
+  AResponse.Contents.Add(FTigerCore.ListDocuments(''));
   Handled:=true;
 end;
 
@@ -80,6 +84,17 @@ procedure TFPWebModule1.uploadimageRequest(Sender: TObject; ARequest: TRequest;
 begin
   AResponse.Contents.Add('<p>todo: support method '+ARequest.QueryString+'.</p>' );
   Handled := true;
+end;
+
+constructor TFPWebModule1.Create;
+begin
+  FTigerCore:=TTigerServerCore.Create;
+end;
+
+destructor TFPWebModule1.Destroy;
+begin
+  FTigerCore.Free;
+  inherited Destroy;
 end;
 
 initialization
