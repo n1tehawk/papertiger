@@ -20,11 +20,13 @@ private
   FDB: TSQLConnection; //Database connection
   FInsertImage: TSQLQuery; //Inserts new images (for now with an insert query)
   FInsertScan: TSQLQuery; //Inserts new scan data.
+  FReadQuery: TSQLQuery; //Query used for reading data
   FReadTransaction: TSQLTransaction; //Transaction for read-only access
   FReadWriteTransaction: TSQLTransaction; //Transaction for read/write access
 public
   function InsertImage(const DocumentID: integer; const Path, ImageHash: string):integer; //Inserts a new image record in database; returns image ID. Keep string values empty to insert NULLs; pass a pre 1900 date for TheScanDate to do the same.
   function InsertDocument(const DocumentName, PDFPath, DocumentHash: string; TheScanDate: TDateTime):integer; //Insterts a new scan record in database; retruns scan ID. Keep string values empty to insert NULLs; pass a pre 1900 date for TheScanDate to do the same.
+  function ListDocuments(const DocumentID: integer): string;
   constructor Create;
   destructor Destroy; override;
 end;
@@ -130,6 +132,31 @@ begin
   end;
 end;
 
+function TTigerDB.ListDocuments(const DocumentID: integer): string;
+begin
+  if DocumentID=DBINVALIDID then
+    // All documents
+    FReadQuery.SQL.Text:='SELECT ID,DOCUMENTNAME,PDFPATH,SCANDATE,DOCUMENTHASH FROM DOCUMENTS'
+  else
+    // Specified document; no need for parametrized queries: one time only, integer
+    FReadQuery.SQL.Text:='SELECT ID,DOCUMENTNAME,PDFPATH,SCANDATE,DOCUMENTHASH FROM DOCUMENTS WHERE ID='+inttostr(DocumentID);
+  FReadTransaction.StartTransaction;
+  FReadQuery.Open;
+  while not FReadQuery.EOF do
+  begin
+    if not(FReadQuery.BOF) then result:=result+#13+#10;
+    result:=result+FReadQuery.FieldByName('ID').AsString+','+
+      FReadQuery.FieldByName('ID').AsString+','+
+      FReadQuery.FieldByName('DOCUMENTNAME').AsString+','+
+      FReadQuery.FieldByName('PDFPATH').AsString+','+
+      FReadQuery.FieldByName('SCANDATE').AsString+','+
+      FReadQuery.FieldByName('DOCUMENTHASH').AsString;
+    FReadQuery.Next;
+  end;
+  FReadQuery.Close;
+  FReadTransaction.Commit;
+end;
+
 constructor TTigerDB.Create;
 var
   Settings: TDBConnectionConfig;
@@ -167,6 +194,7 @@ begin
     FReadTransaction:=TSQLTransaction.Create(nil);
     FInsertImage:=TSQLQuery.Create(nil);
     FInsertScan:=TSQLQuery.Create(nil);
+    FReadQuery:=TSQLQuery.Create(nil);
 
     // Check for existing database
     if (FDB is TIBConnection) and (FDB.HostName='') and (FileExists(FDB.DatabaseName)=false) then
@@ -205,6 +233,9 @@ begin
   writeln('FInsertScan:');
   writeln (FInsertScan.SQL.Text);
   {$ENDIF}
+
+  FReadQuery.Database := FDB;
+  FReadQuery.Transaction := FReadTransaction;
 end;
 
 destructor TTigerDB.Destroy;
@@ -221,6 +252,7 @@ begin
     FDB.Connected := false;
   FInsertImage.Free;
   FInsertScan.Free;
+  FReadQuery.Free;
   FReadWriteTransaction.Free;
   FReadTransaction.Free;
   FDB.Free;
