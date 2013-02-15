@@ -60,6 +60,9 @@ type
     // Number of pages to scan in one scan run.
     function CleanImage(const ImageFile: string): boolean;
     // Cleans up image (postprocessing): straightens them up, despeckles etc
+    function ListDocuments(DocumentID: string): string;
+    // Lists document specified by DocumentID or all documents (if DocumentID empty)
+    // Todo: replace return value by custom record in shared unit for cgi and client
     function ProcessImages(DocumentName: string; Resolution: integer): string;
     // Process (set of) existing (TIFF) image(s); should be named <image>.tif
     // Images are specified using the Images property
@@ -88,6 +91,14 @@ begin
   finally
     Cleaner.Free;
   end;
+end;
+
+function TTigerServerCore.ListDocuments(DocumentID: string): string;
+var
+  DocumentIDNumber: integer;
+begin
+  DocumentIDNumber:=StrToIntDef(DocumentID,DBINVALIDID);
+  result:=FTigerDB.ListDocuments(DocumentIDNumber);
 end;
 
 function TTigerServerCore.ProcessImages(
