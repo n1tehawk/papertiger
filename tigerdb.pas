@@ -134,27 +134,37 @@ end;
 
 function TTigerDB.ListDocuments(const DocumentID: integer): string;
 begin
-  if DocumentID=DBINVALIDID then
-    // All documents
-    FReadQuery.SQL.Text:='SELECT ID,DOCUMENTNAME,PDFPATH,SCANDATE,DOCUMENTHASH FROM DOCUMENTS'
-  else
-    // Specified document; no need for parametrized queries: one time only, integer
-    FReadQuery.SQL.Text:='SELECT ID,DOCUMENTNAME,PDFPATH,SCANDATE,DOCUMENTHASH FROM DOCUMENTS WHERE ID='+inttostr(DocumentID);
-  FReadTransaction.StartTransaction;
-  FReadQuery.Open;
-  while not FReadQuery.EOF do
-  begin
-    if not(FReadQuery.BOF) then result:=result+#13+#10;
-    result:=result+FReadQuery.FieldByName('ID').AsString+','+
-      FReadQuery.FieldByName('ID').AsString+','+
-      FReadQuery.FieldByName('DOCUMENTNAME').AsString+','+
-      FReadQuery.FieldByName('PDFPATH').AsString+','+
-      FReadQuery.FieldByName('SCANDATE').AsString+','+
-      FReadQuery.FieldByName('DOCUMENTHASH').AsString;
-    FReadQuery.Next;
+  if FReadTransaction.Active=false then
+    FReadTransaction.StartTransaction;
+  try
+    if DocumentID=DBINVALIDID then
+      // All documents
+      FReadQuery.SQL.Text:='SELECT ID,DOCUMENTNAME,PDFPATH,SCANDATE,DOCUMENTHASH FROM DOCUMENTS'
+    else
+      // Specified document; no need for parametrized queries: one time only, integer
+      FReadQuery.SQL.Text:='SELECT ID,DOCUMENTNAME,PDFPATH,SCANDATE,DOCUMENTHASH FROM DOCUMENTS WHERE ID='+inttostr(DocumentID);
+    FReadQuery.Open;
+    while not FReadQuery.EOF do
+    begin
+      if not(FReadQuery.BOF) then result:=result+#13+#10;
+      result:=result+FReadQuery.FieldByName('ID').AsString+','+
+        FReadQuery.FieldByName('ID').AsString+','+
+        FReadQuery.FieldByName('DOCUMENTNAME').AsString+','+
+        FReadQuery.FieldByName('PDFPATH').AsString+','+
+        FReadQuery.FieldByName('SCANDATE').AsString+','+
+        FReadQuery.FieldByName('DOCUMENTHASH').AsString;
+      FReadQuery.Next;
+    end;
+    FReadQuery.Close;
+    FReadTransaction.Commit;
+  except
+    on E: EIBDatabaseError do
+    begin
+      //todo: implement logging and replace this crude error handling
+      result:='db exception: GDS'+inttostr(E.GDSErrorCode)+' message '+E.Message;
+      FReadTransaction.RollBack;
+    end;
   end;
-  FReadQuery.Close;
-  FReadTransaction.Commit;
 end;
 
 constructor TTigerDB.Create;
