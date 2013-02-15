@@ -99,6 +99,7 @@ var
 begin
   DocumentIDNumber:=StrToIntDef(DocumentID,DBINVALIDID);
   result:=FTigerDB.ListDocuments(DocumentIDNumber);
+  //todo: json this up
 end;
 
 function TTigerServerCore.ProcessImages(
