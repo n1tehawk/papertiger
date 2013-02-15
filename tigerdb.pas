@@ -220,7 +220,9 @@ begin
     Settings.Free;
   end;
   FDB.Open;
+  // Get transactions linked to the right database connection:
   FDB.Transaction := FReadWriteTransaction; //Default transaction for database
+  FReadTransaction.Database := FDB;
 
   // todo: Check for+create required tables
   FInsertImage.Database := FDB;
