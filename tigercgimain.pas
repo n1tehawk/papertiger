@@ -54,7 +54,14 @@ procedure TFPWebModule1.listRequest(Sender: TObject; ARequest: TRequest;
   AResponse: TResponse; var Handled: Boolean);
 begin
   AResponse.Contents.Add('<p>List of documents:</p>');
-  AResponse.Contents.Add(FTigerCore.ListDocuments(''));
+  try
+    AResponse.Contents.Add(FTigerCore.ListDocuments(''));
+  except
+    on E: Exception do
+    begin
+      AResponse.Contents.Add('todo: debug: exception '+E.Message);
+    end;
+  end;
   Handled:=true;
 end;
 
