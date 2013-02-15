@@ -164,6 +164,10 @@ begin
       result:='db exception: GDS'+inttostr(E.GDSErrorCode)+' message '+E.Message;
       FReadTransaction.RollBack;
     end;
+    on F: Exception do
+    begin
+      result:='exception: message '+F.Message;
+    end;
   end;
 end;
 
