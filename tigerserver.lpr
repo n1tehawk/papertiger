@@ -75,7 +75,7 @@ var
   PDF: string;
 begin
   // quick check parameters
-  ErrorMsg:=CheckOptions('hi:l:p:s','help image: language: pages: scan');
+  ErrorMsg:=CheckOptions('hi:l:p:s','help image: language: list pages: scan');
   if ErrorMsg<>'' then
   begin
     ShowException(Exception.Create(ErrorMsg));
@@ -89,6 +89,14 @@ begin
     WriteHelp;
     Terminate;
     Exit;
+  end;
+
+  if HasOption('list') then
+  begin
+    writeln('Existing documents on server:');
+    writeln(FTigerCore.ListDocuments(''));
+    Terminate;
+    exit;
   end;
 
   if HasOption('l','language') then
@@ -143,6 +151,8 @@ begin
   writeln(' Language to be used for OCR.');
   writeln(' eng (English) by default. See the OCR documentation for ');
   writeln(' language codes (e.g. man tesseract)');
+  writeln('--list');
+  writeln(' list already scanned documents');
   writeln('-s --scan');
   writeln(' Scan document, process.');
   writeln('-p <n> --pages=<n>');
