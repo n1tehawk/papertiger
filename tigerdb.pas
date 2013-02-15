@@ -5,7 +5,8 @@ unit tigerdb;
 interface
 
 uses
-  Classes, SysUtils,  sqldb,
+  Classes, SysUtils, sqldb,
+  db {for EDatabaseError},
   ibconnection {Firebird},
   pqconnection {PostgreSQL},
   sqlite3conn {SQLite};
@@ -66,11 +67,11 @@ begin
     FInsertImage.Close;
     FReadWriteTransaction.Commit;
   except
-    on E: EIBDatabaseError do
+    on E: EDatabaseError do
     begin
       if FReadWriteTransaction.Active then
       FReadWriteTransaction.Rollback;
-        writeln('Database error: ' + E.Message + '(error code: ' + IntToStr(E.GDSErrorCode) + ')');
+        writeln('Database error: ' + E.Message);
         writeln('');
     end;
     on F: Exception do
@@ -233,7 +234,7 @@ begin
   FInsertImage.Prepare;
   {$IFDEF DEBUG}
   writeln('FInsertImage:');
-  writeln (FInsertImage.SQL.Text);
+  writeln(FInsertImage.SQL.Text);
   {$ENDIF}
 
   FInsertScan.Database := FDB;
@@ -245,7 +246,7 @@ begin
   FInsertScan.Prepare;
   {$IFDEF DEBUG}
   writeln('FInsertScan:');
-  writeln (FInsertScan.SQL.Text);
+  writeln(FInsertScan.SQL.Text);
   {$ENDIF}
 
   FReadQuery.Database := FDB;
