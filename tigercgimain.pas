@@ -54,7 +54,7 @@ procedure TFPWebModule1.listRequest(Sender: TObject; ARequest: TRequest;
   AResponse: TResponse; var Handled: Boolean);
 begin
   {$IFDEF DEBUG}
-  AResponse.Contents.Add('<p>papertiger build date: '+{$INCLUDE %DATE%}+' '+{$INCLUDE %TIME%}+'</p>'));
+  AResponse.Contents.Add('<p>papertiger build date: '+{$INCLUDE %DATE%}+' '+{$INCLUDE %TIME%}+'</p>');
   {$ENDIF}
   AResponse.Contents.Add('<p>List of documents:</p>');
   try
