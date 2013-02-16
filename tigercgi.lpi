@@ -42,7 +42,7 @@
             <CompilerMessages>
               <MsgFileName Value=""/>
             </CompilerMessages>
-            <CustomOptions Value="-dDEBUG"/>
+            <CustomOptions Value="-dDEBUG -dCGI"/>
             <CompilerPath Value="$(CompPath)"/>
           </Other>
         </CompilerOptions>
@@ -101,6 +101,7 @@
       <CompilerMessages>
         <MsgFileName Value=""/>
       </CompilerMessages>
+      <CustomOptions Value="-dCGI"/>
       <CompilerPath Value="$(CompPath)"/>
     </Other>
   </CompilerOptions>
