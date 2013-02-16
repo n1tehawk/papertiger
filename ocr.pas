@@ -36,7 +36,7 @@ cuneiform alternative: cuneiform -l <language> -o hocr.html imagefile.bmp
 interface
 
 uses
-  Classes, SysUtils;
+  Classes, SysUtils, tigerutil;
 
 type
   // Orientation of scanned image versus the "right side up".
@@ -114,19 +114,21 @@ begin
     if HOCRResult=0 then
     begin
       FHOCRFile:=OutputFile+'.html';
-      writeln('Result: hocr done: '+FHOCRFile);
+      {$IFDEF DEBUG}
+      TigerLog.WriteLog(etDebug,'Result: hocr done: '+FHOCRFile);
+      {$ENDIF}
       result:=true;
     end
     else
     begin
-      writeln('Error generating hocr. Result code: '+inttostr(HOCRResult)+LineEnding+
-        'Command given was: '+Command);
+      TigerLog.WriteLog(etError,'RecognizeText: Error generating hocr. Result code: '+inttostr(HOCRResult)+LineEnding+
+        'Command given was: '+Command,true);
     end;
   end
   else
   begin
-    writeln('Error performing tesseract OCR. Result code: '+inttostr(TessResult)+LineEnding+
-      'Command given was: '+Command);
+    TigerLog.WriteLog(etError,'RecognizeText: Error performing tesseract OCR. Result code: '+inttostr(TessResult)+LineEnding+
+      'Command given was: '+Command,true);
   end;
 end;
 

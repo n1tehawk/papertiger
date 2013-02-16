@@ -256,7 +256,7 @@ begin
     ProcessImages(StartDateString, Resolution);
     if FDocumentID=DBINVALIDID then
     begin
-      writeln('Error: could not insert document/scan into database. Please try again.');
+      TigerLog.WriteLog(etError,'ScanAndProcess: Error: could not insert document/scan into database. Please try again.');
     end
     else
     begin
