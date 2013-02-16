@@ -33,7 +33,8 @@ interface
 
 uses
   Classes, SysUtils,
-  tigerutil {for logging}, tigersettings, tigerdb,
+  tigerutil {put this first for logging support},
+  tigersettings, tigerdb,
   scan, imagecleaner, ocr, pdf;
 
 type
