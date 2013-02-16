@@ -75,7 +75,7 @@ var
   PDF: string;
 begin
   // quick check parameters
-  ErrorMsg:=CheckOptions('hi:l:p:s','help image: language: list pages: scan');
+  ErrorMsg:=CheckOptions('hi:l:p:sv','help image: language: list pages: scan version');
   if ErrorMsg<>'' then
   begin
     ShowException(Exception.Create(ErrorMsg));
@@ -100,6 +100,15 @@ begin
     Terminate;
     exit;
   end;
+
+  if HasOption('v','version') then
+  begin
+    writeln(FTigerCore.ServerInfo);
+    writeln('');
+    Terminate;
+    Exit;
+  end;
+
 
   if HasOption('l','language') then
   begin
