@@ -8,6 +8,12 @@ object FPWebModule1: TFPWebModule1
       Template.AllowTagParams = False
     end  
     item
+      Name = 'deletedocument'
+      Default = False
+      OnRequest = deletedocumentRequest
+      Template.AllowTagParams = False
+    end  
+    item
       Name = 'list'
       Default = False
       OnRequest = listRequest
@@ -20,21 +26,21 @@ object FPWebModule1: TFPWebModule1
       Template.AllowTagParams = False
     end  
     item
-      Name = 'showdocument'
-      Default = False
-      OnRequest = showdocumentRequest
-      Template.AllowTagParams = False
-    end  
-    item
-      Name = 'deletedocument'
-      Default = False
-      OnRequest = deletedocumentRequest
-      Template.AllowTagParams = False
-    end  
-    item
       Name = 'uploadimage'
       Default = False
       OnRequest = uploadimageRequest
+      Template.AllowTagParams = False
+    end  
+    item
+      Name = 'serverinfo'
+      Default = False
+      OnRequest = serverinfoRequest
+      Template.AllowTagParams = False
+    end  
+    item
+      Name = 'showdocument'
+      Default = False
+      OnRequest = showdocumentRequest
       Template.AllowTagParams = False
     end>
   CreateSession = False
