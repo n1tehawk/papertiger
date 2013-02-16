@@ -28,7 +28,7 @@ unit pdf;
 interface
 
 uses
-  Classes, SysUtils;
+  Classes, SysUtils, tigerutil;
 
 type
 
@@ -80,15 +80,19 @@ begin
   if FImageResolution>0 then
     ResolutionOption:=' --resolution '+inttostr(FImageResolution);
   Options:=' "'+FHOCRFile+'" -i "'+FImageFile+'" -o "'+FPDFFile+'"'+ResolutionOption+' --sloppy-text';
-  writeln('PDF generation: running '+Command+Options);
+  {$IFDEF DEBUG}
+  TigerLog.WriteLog(etDebug,'CreatePDF: PDF generation: running '+Command+Options,true);
+  {$ENDIF}
   if ExecuteCommand(Command+Options,false)=0 then
   begin
-    writeln('PDF succeeded.');
+    {$IFDEF DEBUG}
+    TigerLog.WriteLog(etDebug,'CreatePDF: PDF succeeded.',true);
+    {$ENDIF}
     result:=true;
   end
   else
   begin
-    writeln('Error running command.');
+    TigerLog.WriteLog(etError,'CreatePDF: Error running command.');
   end;
   //todo: deal with temp files somewhere. complicated because some are needed by other processes. Best to add them to an overarchiing object with list?
 end;

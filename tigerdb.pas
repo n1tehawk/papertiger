@@ -105,8 +105,7 @@ begin
     begin
       if FReadWriteTransaction.Active then
         FReadWriteTransaction.Rollback;
-      writeln('Exception: ' + F.ClassName + '/' + F.Message);
-      writeln('');
+      TigerLog.WriteLog(etError,'Exception: ' + F.ClassName + '/' + F.Message,true);
     end;
   end;
 end;
@@ -143,19 +142,17 @@ begin
     FInsertScan.Close;
     FReadWriteTransaction.Commit;
   except
-    on E: EIBDatabaseError do
+    on E: EDatabaseError do
     begin
       if FReadWriteTransaction.Active then
       FReadWriteTransaction.Rollback;
-        writeln('Database error: ' + E.Message + '(error code: ' + IntToStr(E.GDSErrorCode) + ')');
-        writeln('');
+        TigerLog.WriteLog(etError,'InsertDocument: Database error: ' + E.Message,true);
     end;
     on F: Exception do
     begin
       if FReadWriteTransaction.Active then
         FReadWriteTransaction.Rollback;
-      writeln('Exception: ' + F.ClassName + '/' + F.Message);
-      writeln('');
+      TigerLog.WriteLog(etError,'InsertDocument: Exception: ' + F.Message,true);
     end;
   end;
 end;
@@ -206,7 +203,7 @@ var
 begin
   inherited Create;
   {$IFDEF DEBUG}
-  writeln('todo: debug: starting db layer');
+  TigerLog.WriteLog('todo: debug: starting db layer');
   {$ENDIF}
   Settings:=TDBConnectionConfig.Create('Firebird','','tiger.fdb','SYSDBA','masterkey','UTF8');
   try
@@ -222,8 +219,7 @@ begin
       'SQLite': FDB := TSQLite3Connection.Create(nil);
       else
       begin
-        writeln('Warning: unknown database type ' + Settings.DBType + ' specified.');
-        writeln('Defaulting to Firebird');
+        TigerLog.WriteLog(etWarning,'Warning: unknown database type ' + Settings.DBType + ' specified. Defaulting to Firebird',true);
         FDB := TIBConnection.Create(nil);
         TIBConnection(FDB).Dialect := 3; //just to be sure
       end;
@@ -242,7 +238,7 @@ begin
     FReadQuery:=TSQLQuery.Create(nil);
 
     {$IFDEF DEBUG}
-    writeln('todo: debug: ready to check existing db');
+    TigerLog.WriteLog(etDebug,'todo: debug: ready to check existing db',true);
     {$ENDIF}
     // Check for existing database
     if (FDB is TIBConnection) and (FDB.HostName='') and (FileExists(FDB.DatabaseName)=false) then
@@ -250,11 +246,12 @@ begin
     if (FDB is TSQLite3Connection) and (FileExists(FDB.DatabaseName)=false) then
       TSQLite3Connection(FDB).CreateDB;
     {$IFDEF DEBUG}
-    writeln('todo: debug: before finally');
+    TigerLog.WriteLog(etDebug,'todo: debug: before finally',true);
     {$ENDIF}
   finally
     Settings.Free;
   end;
+
   FDB.Open;
   // Get transactions linked to the right database connection:
   FDB.Transaction := FReadWriteTransaction; //Default transaction for database
@@ -271,8 +268,7 @@ begin
   FInsertImage.SQL.Text := SQL;
   FInsertImage.Prepare;
   {$IFDEF DEBUG}
-  writeln('FInsertImage:');
-  writeln(FInsertImage.SQL.Text);
+  TigerLog.WriteLog(etDebug,'FInsertImage SQL: '+FInsertImage.SQL.Text,true);
   {$ENDIF}
 
   FInsertScan.Database := FDB;
@@ -283,15 +279,14 @@ begin
   FInsertScan.SQL.Text:=SQL;
   FInsertScan.Prepare;
   {$IFDEF DEBUG}
-  writeln('FInsertScan:');
-  writeln(FInsertScan.SQL.Text);
+  TigerLog.WriteLog('FInsertScan:'+FInsertScan.SQL.Text);
   {$ENDIF}
 
   FReadQuery.Database := FDB;
   FReadQuery.Transaction := FReadTransaction;
 
   {$IFDEF DEBUG}
-  writeln('todo: debug: finished starting db layer');
+  TigerLog.WriteLog('todo: debug: finished starting db layer');
   {$ENDIF}
 end;
 
