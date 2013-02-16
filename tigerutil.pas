@@ -1,6 +1,5 @@
 unit tigerutil;
 { Utility functions such as logging support.
-  Logs to event log/syslog unless CGI is defined. In this case it logs to file tiger.log
 
   Copyright (c) 2012-2013 Reinier Olislagers
 
@@ -26,6 +25,7 @@ unit tigerutil;
 
 
 {$i tigerserver.inc}
+{$R fclel.res} //needed for message files to get Windows to display event log contents correctly
 
 interface
 uses
@@ -101,15 +101,8 @@ end;
 constructor TLogger.Create;
 begin
   FLog:=TEventLog.Create(nil);
-  // Log to event log/syslog unless we're running a CGI application
-  {$IFDEF CGI}
-  FLog.LogType:=ltFile;
-  FLog.AppendContent:=true;
-  FLog.FileName:='tiger.log';
-  {$ELSE}
   FLog.LogType:=ltSystem;
-  {$ENDIF}
-  FLog.AppendContent:=true;
+  FLog.RegisterMessageFile(''); //specify Windows should use the binary to look up formatting strings
   FLog.RaiseExceptionOnError:=false; //Don't throw exceptions on log errors.
 end;
 
