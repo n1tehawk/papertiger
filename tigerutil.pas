@@ -32,7 +32,7 @@ unit tigerutil;
 
 interface
 uses
-  Classes, SysUtils, eventlog {$IFDEF LINUX}, systemlog{$ENDIF};
+  Classes, SysUtils, eventlog;
 
 type
   { TLogger }
@@ -91,13 +91,6 @@ end;
 
 procedure TLogger.WriteLog(Message: string; ToConsole: Boolean=false);
 begin
-  {$IFDEF LINUX}
-  //todo: debug code
-  openlog(pchar(format('%s[%d]',
-      [ExtractFileName(Paramstr(0)),GetProcessID])),0,LOG_SYSLOG);
-  syslog(log_info,PChar(Message+#10),[]);
-  closelog;
-  {$ENDIF}
   FLog.Log(etInfo, Message);
   if ToConsole then infoln(Message,etinfo);
 end;
