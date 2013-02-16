@@ -30,6 +30,21 @@ Architecture and development principles
 - however, use standard methods of storing data (e.g. full text search components), normalized database schema in order to allow programs/tools that don't speak the protocols mentioned above to get data easily
 - these 2 principles clash; the code will need to stabilize until it is wise to directly try to access e.g. the databsse. Even then, breaking changes will not be avoided if e.g. cleanness of design would be compromised
 
+Compilation instructions
+========================
+Only standard FPC 2.6.0+ is required for the server/CGI programs.
+For the client program, Lazarus 1.0.6 has been used for development.
+
+1. Compile hgversion.pas, e.g.:
+fpc hgversion.pas
+2. Compile the program you want
+2.1 With Lazarus:
+lazbuild tigercgi.lpi
+lazbuild tigerserver.lpi
+2.2 With FreePascal:
+- Run hgversion first to update the version info
+fpc tigercgi.lpr
+fpc tigerserver.lpr
 
 Installation instructions
 =========================
