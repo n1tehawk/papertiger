@@ -1,11 +1,39 @@
 unit tigerdb;
 
-{$mode objfpc}{$H+}
+{ Database connection for papertiger.
+  Currently supports Firebird, sqlite
+
+  Copyright (c) 2012-2013 Reinier Olislagers
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to
+  deal in the Software without restriction, including without limitation the
+  rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+  sell copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in
+  all copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+  IN THE SOFTWARE.
+}
+
+
+
+{$i tigerserver.inc}
 
 interface
 
 uses
-  Classes, SysUtils, sqldb,
+  Classes, SysUtils,
+  tigerutil {for logging},
+  sqldb,
   db {for EDatabaseError},
   ibconnection {Firebird},
   pqconnection {PostgreSQL},
@@ -71,8 +99,7 @@ begin
     begin
       if FReadWriteTransaction.Active then
       FReadWriteTransaction.Rollback;
-        writeln('Database error: ' + E.Message);
-        writeln('');
+      TigerLog.WriteLog(etError,'Database error: ' + E.Message,true);
     end;
     on F: Exception do
     begin
@@ -178,6 +205,9 @@ var
   SQL: string;
 begin
   inherited Create;
+  {$IFDEF DEBUG}
+  writeln('todo: debug: starting db layer');
+  {$ENDIF}
   Settings:=TDBConnectionConfig.Create('Firebird','','tiger.fdb','SYSDBA','masterkey','UTF8');
   try
     Settings.SettingsFile:=SettingsFile;
@@ -211,11 +241,17 @@ begin
     FInsertScan:=TSQLQuery.Create(nil);
     FReadQuery:=TSQLQuery.Create(nil);
 
+    {$IFDEF DEBUG}
+    writeln('todo: debug: ready to check existing db');
+    {$ENDIF}
     // Check for existing database
     if (FDB is TIBConnection) and (FDB.HostName='') and (FileExists(FDB.DatabaseName)=false) then
       TIBConnection(FDB).CreateDB;
     if (FDB is TSQLite3Connection) and (FileExists(FDB.DatabaseName)=false) then
       TSQLite3Connection(FDB).CreateDB;
+    {$IFDEF DEBUG}
+    writeln('todo: debug: before finally');
+    {$ENDIF}
   finally
     Settings.Free;
   end;
@@ -253,6 +289,10 @@ begin
 
   FReadQuery.Database := FDB;
   FReadQuery.Transaction := FReadTransaction;
+
+  {$IFDEF DEBUG}
+  writeln('todo: debug: finished starting db layer');
+  {$ENDIF}
 end;
 
 destructor TTigerDB.Destroy;

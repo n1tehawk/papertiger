@@ -3,7 +3,7 @@ unit tigerservercore;
 { Core functionality for the server part of papertiger.
   Shared by web/CGI, command line etc frontends.
 
-  Copyright (c) 2012 Reinier Olislagers
+  Copyright (c) 2012-2013 Reinier Olislagers
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to
@@ -32,8 +32,9 @@ unit tigerservercore;
 interface
 
 uses
-  Classes, SysUtils, scan, ocr, pdf, tigerdb, imagecleaner,
-  tigersettings;
+  Classes, SysUtils,
+  tigerutil {for logging}, tigersettings, tigerdb,
+  scan, imagecleaner, ocr, pdf;
 
 type
 
@@ -273,6 +274,9 @@ end;
 constructor TTigerServerCore.Create;
 begin
   inherited Create;
+  {$IFDEF DEBUG}
+  TigerLog.WriteLog(etDebug,'Starting TTigerServerCore');
+  {$ENDIF}
   FSettings:=TTigerSettings.Create;
   FCurrentOCRLanguage:=FSettings.Language; //read language from settings; can be overridden by command line optoin
   FImageFiles:=TStringList.Create;
@@ -285,6 +289,9 @@ begin
   FImageFiles.Free;
   FTigerDB.Free;
   FSettings.Free;
+  {$IFDEF DEBUG}
+  TigerLog.WriteLog(etDebug,'Stopping TTigerServerCore');
+  {$ENDIF}
   inherited Destroy;
 end;
 
