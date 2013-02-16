@@ -31,8 +31,9 @@ const
   DEBUGGER='C:\lazarus\mingw\bin\7.3\gdb.exe';
   {$endif}
   {$ifdef linux}
-  DEBUGGER='gdb';
-  DISPLAY=':0.0';
+  // Debuggers: e.g. gdb, gdbtui or ddd
+  DEBUGGER='ddd';
+  DISPLAY=':0.0'; //modify according to your setup
   {$endif}
   MSWAIT=2000;
 

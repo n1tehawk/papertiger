@@ -67,7 +67,7 @@
         <PackageName Value="WebLaz"/>
       </Item1>
     </RequiredPackages>
-    <Units Count="2">
+    <Units Count="3">
       <Unit0>
         <Filename Value="tigercgi.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -81,6 +81,11 @@
         <ResourceBaseClass Value="DataModule"/>
         <UnitName Value="tigercgimain"/>
       </Unit1>
+      <Unit2>
+        <Filename Value="selfdebug.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="selfdebug"/>
+      </Unit2>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
