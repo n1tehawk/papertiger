@@ -1,5 +1,6 @@
 unit tigerutil;
 { Utility functions such as logging support.
+  Logs to event log/syslog unless CGI is defined. In this case it logs to file tiger.log
 
   Copyright (c) 2012-2013 Reinier Olislagers
 
@@ -100,14 +101,21 @@ end;
 constructor TLogger.Create;
 begin
   FLog:=TEventLog.Create(nil);
+  // Log to event log/syslog unless we're running a CGI application
+  {$IFDEF CGI}
+  FLog.LogType:=ltFile;
+  FLog.AppendContent:=true;
+  FLog.FileName:='tiger.log';
+  {$ELSE}
   FLog.LogType:=ltSystem;
+  {$ENDIF}
   FLog.AppendContent:=true;
   FLog.RaiseExceptionOnError:=false; //Don't throw exceptions on log errors.
 end;
 
 destructor TLogger.Destroy;
 begin
-  FLog.Active:=false;//save WriteLog text
+  FLog.Active:=false; //save WriteLog text
   FLog.Free;
   inherited Destroy;
 end;
