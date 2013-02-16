@@ -19,6 +19,8 @@ type
       AResponse: TResponse; var Handled: Boolean);
     procedure scanRequest(Sender: TObject; ARequest: TRequest;
       AResponse: TResponse; var Handled: Boolean);
+    procedure serverinfoRequest(Sender: TObject; ARequest: TRequest;
+      AResponse: TResponse; var Handled: Boolean);
     procedure showdocumentRequest(Sender: TObject; ARequest: TRequest;
       AResponse: TResponse; var Handled: Boolean);
     procedure unsupportedRequest(Sender: TObject; ARequest: TRequest;
@@ -72,6 +74,13 @@ procedure TFPWebModule1.scanRequest(Sender: TObject; ARequest: TRequest;
   AResponse: TResponse; var Handled: Boolean);
 begin
   AResponse.Contents.Add('<p>todo: support method '+ARequest.QueryString+'.</p>' );
+  Handled := true;
+end;
+
+procedure TFPWebModule1.serverinfoRequest(Sender: TObject; ARequest: TRequest;
+  AResponse: TResponse; var Handled: Boolean);
+begin
+  AResponse.Contents.Add('<p>'+StringReplace(FTigerCore.ServerInfo,LineEnding,#13+#10,[rfReplaceAll])+'</p>');
   Handled := true;
 end;
 

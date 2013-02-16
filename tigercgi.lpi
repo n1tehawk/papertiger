@@ -44,6 +44,10 @@
             </CompilerMessages>
             <CustomOptions Value="-dDEBUG -dCGI"/>
             <CompilerPath Value="$(CompPath)"/>
+            <ExecuteBefore>
+              <Command Value="hgversion$(ExeExt)"/>
+              <CompileReasons Run="False"/>
+            </ExecuteBefore>
           </Other>
         </CompilerOptions>
       </Item2>
@@ -103,6 +107,10 @@
       </CompilerMessages>
       <CustomOptions Value="-dCGI"/>
       <CompilerPath Value="$(CompPath)"/>
+      <ExecuteBefore>
+        <Command Value="hgversion$(ExeExt)"/>
+        <CompileReasons Run="False"/>
+      </ExecuteBefore>
     </Other>
   </CompilerOptions>
   <Debugging>

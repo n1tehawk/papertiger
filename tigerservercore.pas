@@ -72,6 +72,8 @@ type
     // Returns resulting pdf file (including path)
     procedure ScanAndProcess;
     // Scan a document (with one or more pages) and process it.
+    function ServerInfo: string;
+    // Returns server version, compile date, etc
     constructor Create;
     destructor Destroy; override;
   end;
@@ -79,6 +81,10 @@ type
 implementation
 
 { TTigerServerCore }
+
+// Get revision from our source code repository:
+// If you have a file not found error for revision.inc, please make sure you compile hgversion.pas before compiling this project.
+{$i revision.inc}
 
 function TTigerServerCore.CleanImage(const ImageFile: String): boolean;
 var
@@ -269,6 +275,14 @@ begin
   finally
     Scanner.Free;
   end;
+end;
+
+function TTigerServerCore.ServerInfo: string;
+begin
+  result:='Papertiger '+LineEnding+
+  'version: based on commit '+RevisionStr+' ('+versiondate+')'+LineEnding+
+  'build date: '+{$INCLUDE %DATE%}+' '+{$INCLUDE %TIME%}+LineEnding+
+  'Compiled for CPU: '+lowercase({$INCLUDE %FPCTARGETCPU%})+' on '+lowercase({$INCLUDE %FPCTARGETOS%});
 end;
 
 constructor TTigerServerCore.Create;

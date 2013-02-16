@@ -83,9 +83,11 @@ begin
     Exit;
   end;
 
-  // parse parameters
-  if HasOption('h','help') then
+  // parse parameters; show help if no params given
+  if (ParamCount=0) or (HasOption('h','help')) then
   begin
+    writeln(FTigerCore.ServerInfo);
+    writeln('');
     WriteHelp;
     Terminate;
     Exit;
