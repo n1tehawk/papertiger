@@ -43,7 +43,7 @@ lazbuild tigercgi.lpi
 lazbuild tigerserver.lpi
 2.2 With FreePascal:
 - Run hgversion first to update the version info
-fpc tigercgi.lpr
+fpc -dCGI tigercgi.lpr
 fpc tigerserver.lpr
 
 Installation instructions
