@@ -25,7 +25,10 @@ unit tigerutil;
 
 
 {$i tigerserver.inc}
+{$IFDEF MSWINDOWS}
 {$R fclel.res} //needed for message files to get Windows to display event log contents correctly
+// Not needed for *nix
+{$ENDIF}
 
 interface
 uses
