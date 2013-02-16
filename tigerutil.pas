@@ -95,7 +95,7 @@ begin
   //todo: debug code
   openlog(pchar(format('%s[%d]',
       [ExtractFileName(Paramstr(0)),GetProcessID])),0,LOG_SYSLOG);
-  syslog(log_info,Message#10,[]);
+  syslog(log_info,PChar(Message+#10),[]);
   closelog;
   {$ENDIF}
   FLog.Log(etInfo, Message);
