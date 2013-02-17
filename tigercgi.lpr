@@ -3,7 +3,7 @@ program tigercgi;
 {$mode objfpc}{$H+}
 
 uses
-  fpCGI, tigercgimain, SelfDebug;
+  fpCGI, tigercgimain;
 
 begin
   Application.Initialize;
