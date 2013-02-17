@@ -265,6 +265,12 @@ begin
   end;
 
   FDB.Open;
+  if not(FDB.Connected) then
+  begin
+    TigerLog.WriteLog(etDebug,'Error opening database '+FDB.DatabaseName,true);
+    raise Exception.CreateFmt('Error opening databas %s.',[FDB.DatabaseName]);
+  end;
+
   // Get transactions linked to the right database connection:
   FDB.Transaction := FReadWriteTransaction; //Default transaction for database
   FReadTransaction.Database := FDB;
