@@ -34,9 +34,11 @@ interface
 uses
   Classes, SysUtils,
   {$IFDEF DEBUG}
-  {$IFDEF CGI}
-  selfdebug, //only useful when running the CGI/web module code
-  {$ENDIF}
+    {$IFDEF CGI}
+      {$IFDEF RUNDEBUGGERWITHCGI}
+      selfdebug, //only useful when running the CGI/web module code
+      {$ENDIF}
+    {$ENDIF}
   {$ENDIF}
   tigerutil {put this first for logging support},
   tigerdb, tigersettings,
