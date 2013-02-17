@@ -39,8 +39,8 @@ uses
   {$ENDIF}
   {$ENDIF}
   tigerutil {put this first for logging support},
-  tigersettings, tigerdb,
-  scan, imagecleaner, ocr, pdf{$IFDEF LINUX}, systemlog{$ENDIF};
+  tigerdb, tigersettings,
+  scan, imagecleaner, ocr, pdf;
 
 type
 
@@ -111,13 +111,6 @@ var
   DocumentIDNumber: integer;
 begin
   DocumentIDNumber:=StrToIntDef(DocumentID,DBINVALIDID);
-  {$IFDEF LINUX}
-  //todo: debug code
-  openlog(pchar(format('%s[%d]',
-      [ExtractFileName(Paramstr(0)),GetProcessID])),0,LOG_SYSLOG);
-  syslog(log_info,PChar('Starting listdocuments'+#10),[]);
-  closelog;
-  {$ENDIF}
   result:=FTigerDB.ListDocuments(DocumentIDNumber);
   //todo: json this up
 end;
