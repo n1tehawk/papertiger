@@ -241,10 +241,22 @@ begin
     TigerLog.WriteLog(etDebug,'todo: debug: ready to check existing db',true);
     {$ENDIF}
     // Check for existing database
-    if (FDB is TIBConnection) and (FDB.HostName='') and (FileExists(FDB.DatabaseName)=false) then
-      TIBConnection(FDB).CreateDB;
-    if (FDB is TSQLite3Connection) and (FileExists(FDB.DatabaseName)=false) then
-      TSQLite3Connection(FDB).CreateDB;
+    if (FDB.HostName='') and (FileExists(FDB.DatabaseName)=false) then
+    begin
+      if (FDB is TIBConnection) or (FDB is TSQLite3Connection) then
+      begin
+        if (FDB is TIBConnection) then
+          TIBConnection(FDB).CreateDB;
+        if (FDB is TSQLite3Connection) then
+          TSQLite3Connection(FDB).CreateDB;
+        sleep(10);
+        if not(FileExists(FDB.DatabaseName)) then
+        begin
+          TigerLog.WriteLog(etDebug,'Tried to create database '+FDB.DatabaseName+' but could not.',true);
+          raise Exception.CreateFmt('Tried to create database %s but could not.',[FDB.DatabaseName]);
+        end;
+      end;
+    end;
     {$IFDEF DEBUG}
     TigerLog.WriteLog(etDebug,'todo: debug: before finally',true);
     {$ENDIF}
