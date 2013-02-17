@@ -294,6 +294,8 @@ begin
 end;
 
 constructor TTigerServerCore.Create;
+var
+  debugfixme: tstringlist;
 begin
   inherited Create;
   {$IFDEF DEBUG}
@@ -303,7 +305,16 @@ begin
   FCurrentOCRLanguage:=FSettings.Language; //read language from settings; can be overridden by command line optoin
   FImageFiles:=TStringList.Create;
   FPages:=1; //Assume single scan, not batch
+  //todo: debug, fix me
+  debugfixme:=TStringList.Create;
+  debugfixme.Add('going to load db object now: '+formatdatetime('hh nn ss',now));
+  debugfixme.SaveToFile('tigerdebug.log');
+
   FTigerDB:=TTigerDB.Create;
+  debugfixme.clear;
+  debugfixme.add('db was loaded.');
+  debugfixme.SaveToFile('tigerdebug.log');
+  debugfixme.free;
 end;
 
 destructor TTigerServerCore.Destroy;
