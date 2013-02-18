@@ -121,6 +121,7 @@ begin
     end
     else
     begin
+      //todo: should this be an error? I get resultcode 1 - is that perhaps ocr failure? could be no problem
       TigerLog.WriteLog(etError,'RecognizeText: Error generating hocr. Result code: '+inttostr(HOCRResult)+LineEnding+
         'Command given was: '+Command);
     end;
@@ -128,7 +129,7 @@ begin
   else
   begin
     TigerLog.WriteLog(etError,'RecognizeText: Error performing tesseract OCR. Result code: '+inttostr(TessResult)+LineEnding+
-      'Command given was: '+Command,true);
+      'Command given was: '+Command);
   end;
 end;
 
