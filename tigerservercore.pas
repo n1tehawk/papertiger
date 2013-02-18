@@ -44,6 +44,9 @@ uses
   tigerdb, tigersettings,
   scan, imagecleaner, ocr, pdf;
 
+const
+  INVALIDID=DBINVALIDID; //Used to indicate document ID etc is invalid.
+
 type
 
   { TTigerServerCore }
@@ -78,8 +81,9 @@ type
     // Specify resolution override to indicate image resolution to hocr2pdf
     // Specify 0 to leave alone and let hocr detect resolution or fallback to 300dpi
     // Returns resulting pdf file (including path)
-    procedure ScanAndProcess;
+    function ScanAndProcess: integer;
     // Scan a document (with one or more pages) and process it.
+    // Returns document ID if succesfull; <=0 if not.
     function ServerInfo: string;
     // Returns server version, compile date, etc
     constructor Create;
@@ -225,7 +229,7 @@ Can attach arbitrary files to PDF using PDF file attachment.
 We could save some data here? If so, what?
 }
 
-procedure TTigerServerCore.ScanAndProcess;
+function TTigerServerCore.ScanAndProcess: integer;
 // Performs the document scan, and process result
 var
   i:integer;
@@ -234,6 +238,7 @@ var
   StartDate: TDateTime;
   StartDateString: string;
 begin
+  result:=INVALIDID; //fail by default
   // Try a 300dpi scan, probably best for normal sized letters on paper
   Resolution:=300;
   if not(ForceDirectories(FSettings.ImageDirectory)) then
@@ -246,7 +251,7 @@ begin
     StartDate:=Now();
     StartDateString:=FormatDateTime('yyyymmddhhnnss', StartDate);
 
-    writeln('Going to scan '+inttostr(FPages)+' pages; start date: '+StartDateString);
+    TigerLog.WriteLog(etInfo,'Going to scan '+inttostr(FPages)+' pages; start date: '+StartDateString,true);
     for i:=0 to FPages-1 do
     begin
       if FPages=1 then
@@ -281,6 +286,7 @@ begin
         FTigerDB.InsertImage(FDocumentID,FImageFiles[i],'');
       end;
     end;
+    result:=FDocumentID;
   finally
     Scanner.Free;
   end;

@@ -28,7 +28,7 @@ interface
 
 uses
   SysUtils, Classes, httpdefs, fpHTTP, fpWeb,
-  tigerservercore;
+  tigerutil, tigerservercore;
 
 type
 
@@ -104,8 +104,23 @@ end;
 
 procedure TFPWebModule1.scanRequest(Sender: TObject; ARequest: TRequest;
   AResponse: TResponse; var Handled: Boolean);
+var
+  DocumentID: integer;
+  Message: string;
 begin
-  AResponse.Contents.Add('<p>todo: support method '+ARequest.QueryString+'.</p>' );
+  //todo implement number of pages, language etc
+  //todo: json this up
+  try
+    DocumentID:=FTigerCore.ScanAndProcess;
+    if DocumentID<>INVALIDID then
+      AResponse.Contents.Add('<p>Scanning succeeded.</p>')
+    else
+    AResponse.Contents.Add('<p>Scanning failed; an error occurred.</p>');
+  except
+    Message:='Scanning failed; an excecption occurred.';
+    AResponse.Contents.Add('<p>'+Message+'</p>');
+    TigerLog.WriteLog(etError,'scanRequest '+Message);
+  end;
   Handled := true;
 end;
 
