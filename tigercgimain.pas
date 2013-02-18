@@ -35,6 +35,8 @@ type
   { TFPWebModule1 }
 
   TFPWebModule1 = class(TFPWebModule)
+    procedure DataModuleCreate(Sender: TObject);
+    procedure DataModuleDestroy(Sender: TObject);
     procedure deletedocumentRequest(Sender: TObject; ARequest: TRequest;
       AResponse: TResponse; var Handled: Boolean);
     procedure listRequest(Sender: TObject; ARequest: TRequest;
@@ -54,8 +56,6 @@ type
     FTigerCore: TTigerServerCore;
   public
     { public declarations }
-    constructor Create;
-    destructor Destroy; override;
   end;
 
 var
@@ -66,6 +66,16 @@ implementation
 {$R *.lfm}
 
 { TFPWebModule1 }
+
+procedure TFPWebModule1.DataModuleCreate(Sender: TObject);
+begin
+  FTigerCore:=TTigerServerCore.Create;
+end;
+
+procedure TFPWebModule1.DataModuleDestroy(Sender: TObject);
+begin
+  FTigerCore.Free;
+end;
 
 procedure TFPWebModule1.deletedocumentRequest(Sender: TObject;
   ARequest: TRequest; AResponse: TResponse; var Handled: Boolean);
@@ -86,7 +96,7 @@ begin
   except
     on E: Exception do
     begin
-      AResponse.Contents.Add('todo: debug: exception '+E.Message);
+      AResponse.Contents.Add('<p>todo: debug: exception '+E.Message+'</p>');
     end;
   end;
   Handled:=true;
@@ -125,17 +135,6 @@ procedure TFPWebModule1.uploadimageRequest(Sender: TObject; ARequest: TRequest;
 begin
   AResponse.Contents.Add('<p>todo: support method '+ARequest.QueryString+'.</p>' );
   Handled := true;
-end;
-
-constructor TFPWebModule1.Create;
-begin
-  FTigerCore:=TTigerServerCore.Create;
-end;
-
-destructor TFPWebModule1.Destroy;
-begin
-  FTigerCore.Free;
-  inherited Destroy;
 end;
 
 initialization
