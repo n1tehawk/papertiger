@@ -122,7 +122,7 @@ begin
     else
     begin
       TigerLog.WriteLog(etError,'RecognizeText: Error generating hocr. Result code: '+inttostr(HOCRResult)+LineEnding+
-        'Command given was: '+Command,true);
+        'Command given was: '+Command);
     end;
   end
   else
