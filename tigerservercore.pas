@@ -70,7 +70,7 @@ type
     property Images: TStringList read FImageFiles;
     // Number of pages to scan in one scan run.
     property Pages: integer read FPages write FPages;
-    // Cleans up image (postprocessing): straightens them up, despeckles etc
+    // Cleans up image (postprocessing): straightens them up, despeckles etc. Returns true if succesful
     function CleanImage(const ImageFile: string): boolean;
     // Lists document specified by DocumentID or all documents (if DocumentID empty)
     // Todo: replace return value by custom record in shared unit for cgi and client
@@ -82,7 +82,7 @@ type
     // Returns resulting pdf file (including path)
     function ProcessImages(DocumentName: string; Resolution: integer): string;
     // Scan a document (with one or more pages) and process it.
-    // Returns document ID if succesfull; <=0 if not.
+    // Returns document ID if succesful; <=0 if not.
     function ScanAndProcess: integer;
     // Returns server version, compile date, etc
     function ServerInfo: string;
@@ -106,7 +106,7 @@ begin
   Cleaner := TImageCleaner.Create;
   try
     //todo: write me
-    //result;=true;
+    result;=true;
     TigerLog.WriteLog(etInfo, 'CleanImage: not yet implemented. File argument Passed: ' + ImageFile);
   finally
     Cleaner.Free;
@@ -136,7 +136,9 @@ begin
   unpaper input.ppm output.ppm => perhaps more formats than ppm? use eg. exactimage's econvert for format conversion}
   Result := '';
   if not (ForceDirectories(FSettings.PDFDirectory)) then
-    raise Exception.Create('PDF directory ' + FSettings.PDFDirectory + ' does not exist and cannot be created.');
+    raise Exception.CreateFmt('PDF directory %s does not exist and cannot be created.',[FSettings.PDFDirectory]);
+  if DocumentName='' then
+    raise Exception.Create('ProcessImages: cannot accept empty DocumentName. Please fix the program code.');
   for i := 0 to FImageFiles.Count - 1 do
   begin
     Success := CleanImage(FImageFiles[i]);
@@ -148,8 +150,7 @@ begin
         OCR.Language := FCurrentOCRLanguage;
         Success := OCR.RecognizeText;
         HOCRFile := OCR.HOCRFile;
-        writeln('Got this text:');
-        writeln(OCR.Text);
+        TigerLog.LogWrite(etDebug,'ProcessImages: Got this text:'+OCR.Text);
       finally
         OCR.Free;
       end;
@@ -164,13 +165,12 @@ begin
           PDF.ImageResolution := Resolution;
         PDF.HOCRFile := HOCRFile;
         PDF.ImageFile := FImageFiles[i];
-        writeln('pdfdirectory: ' + FSettings.PDFDirectory);
+        TigerLog.LogWrite(etDebug,'pdfdirectory: ' + FSettings.PDFDirectory);
         PDF.PDFFile := IncludeTrailingPathDelimiter(FSettings.PDFDirectory) + ChangeFileExt(ExtractFileName(FImageFiles[i]), '.pdf');
         //todo: add metadata stuff to pdf unit
         //todo: add compression to pdf unit?
         Success := PDF.CreatePDF;
-        writeln('Got PDF:');
-        writeln(PDF.PDFFile);
+        TigerLog.LogWrite(etDebug,'Got PDF:'+PDF.PDFFile);
         Result := PDF.PDFFile;
       finally
         PDF.Free;
@@ -236,6 +236,8 @@ var
   StartDateString: string;
 begin
   Result := INVALIDID; //fail by default
+  FDocumentID = DBINVALIDID; //Avoid processing old documents after failure
+
   // Try a 300dpi scan, probably best for normal sized letters on paper
   Resolution := 300;
   if not (ForceDirectories(FSettings.ImageDirectory)) then
@@ -275,7 +277,7 @@ begin
       end;
     end;
 
-    TigerLog.WriteLog(etDebug, 'going to process message');
+    TigerLog.WriteLog(etDebug, 'going to process image(s): '+inttostr(FImageFiles Count));
     ProcessImages(StartDateString, Resolution);
     if FDocumentID = DBINVALIDID then
     begin
@@ -288,8 +290,8 @@ begin
         // Add images to database
         FTigerDB.InsertImage(FDocumentID, FImageFiles[i], '');
       end;
+      Result := FDocumentID;
     end;
-    Result := FDocumentID;
   finally
     Scanner.Free;
   end;
