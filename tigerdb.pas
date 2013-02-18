@@ -203,9 +203,6 @@ var
   SQL: string;
 begin
   inherited Create;
-  {$IFDEF DEBUG}
-  TigerLog.WriteLog('todo: debug: starting db layer');
-  {$ENDIF}
   Settings:=TDBConnectionConfig.Create('Firebird','','tiger.fdb','SYSDBA','masterkey','UTF8');
   try
     Settings.SettingsFile:=SettingsFile;
@@ -238,9 +235,6 @@ begin
     FInsertScan:=TSQLQuery.Create(nil);
     FReadQuery:=TSQLQuery.Create(nil);
 
-    {$IFDEF DEBUG}
-    TigerLog.WriteLog(etDebug,'todo: debug: ready to check existing db',true);
-    {$ENDIF}
     // Check for existing database
     if (FDB.HostName='') and (FileExists(FDB.DatabaseName)=false) then
     begin
@@ -258,9 +252,6 @@ begin
         end;
       end;
     end;
-    {$IFDEF DEBUG}
-    TigerLog.WriteLog(etDebug,'todo: debug: before finally',true);
-    {$ENDIF}
   finally
     Settings.Free;
   end;
@@ -286,9 +277,6 @@ begin
     'VALUES (:DOCUMENTID,:PATH,:IMAGEHASH) RETURNING ID';
   FInsertImage.SQL.Text := SQL;
   FInsertImage.Prepare;
-  {$IFDEF DEBUG}
-  TigerLog.WriteLog(etDebug,'FInsertImage SQL: '+FInsertImage.SQL.Text,true);
-  {$ENDIF}
 
   FInsertScan.Database := FDB;
   FInsertScan.Transaction := FReadWriteTransaction;
@@ -297,16 +285,9 @@ begin
     'VALUES (:DOCUMENTNAME,:PDFPATH,:SCANDATE,:DOCUMENTHASH) RETURNING ID';
   FInsertScan.SQL.Text:=SQL;
   FInsertScan.Prepare;
-  {$IFDEF DEBUG}
-  TigerLog.WriteLog('FInsertScan:'+FInsertScan.SQL.Text);
-  {$ENDIF}
 
   FReadQuery.Database := FDB;
   FReadQuery.Transaction := FReadTransaction;
-
-  {$IFDEF DEBUG}
-  TigerLog.WriteLog('todo: debug: finished starting db layer');
-  {$ENDIF}
 end;
 
 destructor TTigerDB.Destroy;
