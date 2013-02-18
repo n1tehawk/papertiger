@@ -192,7 +192,7 @@ begin
     on F: Exception do
     begin
       result:='exception: message '+F.Message;
-      TigerLog.WriteLog(etError, 'ListDocuments: exception: '+E.Message);
+      TigerLog.WriteLog(etError, 'ListDocuments: exception: '+F.Message);
     end;
   end;
 end;

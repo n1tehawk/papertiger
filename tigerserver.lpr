@@ -71,6 +71,7 @@ type
 
 procedure TTigerServer.DoRun;
 var
+  DocumentID: integer;
   ErrorMsg: String;
   PDF: string;
 begin
@@ -133,7 +134,19 @@ begin
 
   if HasOption('s','scan') then
   begin
-    FTigerCore.ScanAndProcess;
+    DocumentID:=INVALIDID;
+    try
+      DocumentID:=FTigerCore.ScanAndProcess;
+    except
+      on E: Exception do
+      begin
+      writeln('Exception: '+E.Message);
+      end;
+    end;
+    if DocumentID=INVALIDID then
+      writeln('Error while scanning')
+    else
+      writeln('Scanning complete.');
   end;
 
   // stop program loop
