@@ -4,8 +4,16 @@ rm tigercgi
 rm tigerserver
 hg pull && hg update
 #~/trunk/lazarus/lazbuild --primary-config-path=~/trunk/config_lazarus tigerserver.lpi && ./tigerserver --image=bla.tif
+echo
+echo Compiling tigerserver
+echo "**************************************************"
 ~/trunk/lazarus/lazbuild --primary-config-path=~/trunk/config_lazarus --build-all tigerserver.lpi
+echo
+echo
+echo Compiling tigercgi
+echo "**************************************************"
 ~/trunk/lazarus/lazbuild --primary-config-path=~/trunk/config_lazarus --build-all tigercgi.lpi
+echo
 
 cp tigercgi        /usr/lib/cgi-bin/
 cp hocrwrap.sh     /usr/lib/cgi-bin/
