@@ -43,6 +43,7 @@ private
   FImageDirectory: string;
   FLanguage: string;
   FPDFDirectory: string;
+  FScanDevice: string;
   FSettings: TINIFile;
 public
   property ImageDirectory: string read FImageDirectory write FImageDirectory; // Directory where scanned images must be/are stored.
@@ -50,6 +51,7 @@ public
   property Language: string read FLanguage write FLanguage; //Language used for text recognition. Use Tesseract notation. Default English.
   property PDFDirectory: string read FPDFDirectory write FPDFDirectory; // Directory where resulting PDFs must be stored
   // Has trailing path delimiter.
+  property ScanDevice: string read FScanDevice write FScanDevice; //Device to be used for scanning (in SANE notation)
   constructor Create;
   destructor Destroy; override;
 end;
@@ -65,11 +67,13 @@ begin
   FImageDirectory:='';
   FLanguage:='eng';
   FPDFDirectory:='';
+  FScanDevice:=''; //todo: find if there is some SANE default device name
   try
     // When reading the settings, expand ~ to home directory etc
     FImageDirectory:=IncludeTrailingPathDelimiter(ExpandFileName(FSettings.ReadString('General', 'ImageDirectory', '~/scans'))); //Default to current directory
     FLanguage:=FSettings.ReadString('General', 'Language', 'eng'); //Default to English
     FPDFDirectory:=IncludeTrailingPathDelimiter(ExpandFileName(FSettings.ReadString('General', 'PDFDirectory', '~/pdfs'))); //Default to current directory
+    FScanDevice:=FSettings.ReadString('Sane', 'DeviceName', '')
   except
     // ignore errors
   end;
