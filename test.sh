@@ -6,11 +6,19 @@ hg pull && hg update
 #~/trunk/lazarus/lazbuild --primary-config-path=~/trunk/config_lazarus tigerserver.lpi && ./tigerserver --image=bla.tif
 ~/trunk/lazarus/lazbuild --primary-config-path=~/trunk/config_lazarus --build-all tigerserver.lpi
 ~/trunk/lazarus/lazbuild --primary-config-path=~/trunk/config_lazarus --build-all tigercgi.lpi
-cp tigercgi /usr/lib/cgi-bin/
-# for easier troubleshooting:
-cp tigerserver /usr/lib/cgi-bin/
+
+cp tigercgi        /usr/lib/cgi-bin/
+cp hocrwrap.sh     /usr/lib/cgi-bin/
+cp scanwrap.sh     /usr/lib/cgi-bin/
+cp tigerserver     /usr/lib/cgi-bin/
 cp tigerserver.ini /usr/lib/cgi-bin
-chmod ug+x /usr/lib/cgi-bin/tigercgi
-chmod ug+x /usr/lib/cgi-bin/tigerserver
-chmod ug+r /usr/lib/cgi-bin/tigerserver.ini
+
+delp .
+
+chmod ug+rx /usr/lib/cgi-bin/hocrwrap.sh
+chmod ug+rx /usr/lib/cgi-bin/scanwrap.sh
+chmod ug+rx /usr/lib/cgi-bin/tigercgi
+chmod ug+rx /usr/lib/cgi-bin/tigerserver
+chmod ug+r  /usr/lib/cgi-bin/tigerserver.ini
+echo "Directory /usr/lib/cgi-bin"
 ls -al /usr/lib/cgi-bin/
