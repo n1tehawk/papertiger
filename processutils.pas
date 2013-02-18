@@ -31,77 +31,78 @@ uses
 
 const
   // Error code/result code:
-  PROC_INTERNALERROR=-1;
+  PROC_INTERNALERROR = -1;
+
 type
-  TProcessEx=class; //forward
-  TDumpFunc = procedure (Sender:TProcessEx; output:string);
-  TDumpMethod = procedure (Sender:TProcessEx; output:string) of object;
-  TErrorFunc = procedure (Sender:TProcessEx;IsException:boolean);
-  TErrorMethod = procedure (Sender:TProcessEx;IsException:boolean) of object;
+  TProcessEx = class; //forward
+  TDumpFunc = procedure(Sender: TProcessEx; output: string);
+  TDumpMethod = procedure(Sender: TProcessEx; output: string) of object;
+  TErrorFunc = procedure(Sender: TProcessEx; IsException: boolean);
+  TErrorMethod = procedure(Sender: TProcessEx; IsException: boolean) of object;
   { TProcessEnvironment }
 
   TProcessEnvironment = class(TObject)
-    private
-      FEnvironmentList:TStringList;
-      FCaseSensitive:boolean;
-      function GetVarIndex(VarName:string):integer;
-    public
-      function GetVar(VarName:string):string;
-      procedure SetVar(VarName,VarValue:string);
-      property EnvironmentList:TStringList read FEnvironmentList;
-      constructor Create;
-      destructor Destroy; override;
-    end;
+  private
+    FEnvironmentList: TStringList;
+    FCaseSensitive: boolean;
+    function GetVarIndex(VarName: string): integer;
+  public
+    function GetVar(VarName: string): string;
+    procedure SetVar(VarName, VarValue: string);
+    property EnvironmentList: TStringList read FEnvironmentList;
+    constructor Create;
+    destructor Destroy; override;
+  end;
 
   { TProcessEx }
 
   TProcessEx = class(TProcess)
-    private
-      FExceptionInfoStrings: TstringList;
-      FExecutable: string;
-      FExitStatus: integer;
-      FOnError: TErrorFunc;
-      FOnErrorM: TErrorMethod;
-      FOnOutput: TDumpFunc;
-      FOnOutputM: TDumpMethod;
-      FOutputStrings: TstringList;
-      FOutStream: TMemoryStream;
-      FProcessEnvironment:TProcessEnvironment;
-      function GetResultingCommand: string;
-      function GetExceptionInfo: string;
-      function GetOutputString: string;
-      function GetOutputStrings: TstringList;
-      function GetParametersString: String;
-      function GetProcessEnvironment: TProcessEnvironment;
-      procedure SetOnError(AValue: TErrorFunc);
-      procedure SetOnErrorM(AValue: TErrorMethod);
-      procedure SetOnOutput(AValue: TDumpFunc);
-      procedure SetOnOutputM(AValue: TDumpMethod);
-    public
-      procedure Execute;
-      // Executable+parameters. Use Executable and Parameters/ParametersString to assign
-      property ResultingCommand: string read GetResultingCommand;
-      property Environment:TProcessEnvironment read GetProcessEnvironment;
-      property ExceptionInfo:string read GetExceptionInfo;
-      property ExceptionInfoStrings:TstringList read FExceptionInfoStrings;
-      property ExitStatus:integer read FExitStatus;
-      property OnError:TErrorFunc read FOnError write SetOnError;
-      property OnErrorM:TErrorMethod read FOnErrorM write SetOnErrorM;
-      property OnOutput:TDumpFunc read FOnOutput write SetOnOutput;
-      property OnOutputM:TDumpMethod read FOnOutputM write SetOnOutputM;
-      property OutputString:string read GetOutputString;
-      property OutputStrings:TstringList read GetOutputStrings;
-      constructor Create(AOwner : TComponent); override;
-      destructor Destroy; override;
-    end;
+  private
+    FExceptionInfoStrings: TStringList;
+    FExecutable: string;
+    FExitStatus: integer;
+    FOnError: TErrorFunc;
+    FOnErrorM: TErrorMethod;
+    FOnOutput: TDumpFunc;
+    FOnOutputM: TDumpMethod;
+    FOutputStrings: TStringList;
+    FOutStream: TMemoryStream;
+    FProcessEnvironment: TProcessEnvironment;
+    function GetResultingCommand: string;
+    function GetExceptionInfo: string;
+    function GetOutputString: string;
+    function GetOutputStrings: TStringList;
+    function GetParametersString: string;
+    function GetProcessEnvironment: TProcessEnvironment;
+    procedure SetOnError(AValue: TErrorFunc);
+    procedure SetOnErrorM(AValue: TErrorMethod);
+    procedure SetOnOutput(AValue: TDumpFunc);
+    procedure SetOnOutputM(AValue: TDumpMethod);
+  public
+    procedure Execute;
+    // Executable+parameters. Use Executable and Parameters/ParametersString to assign
+    property ResultingCommand: string read GetResultingCommand;
+    property Environment: TProcessEnvironment read GetProcessEnvironment;
+    property ExceptionInfo: string read GetExceptionInfo;
+    property ExceptionInfoStrings: TStringList read FExceptionInfoStrings;
+    property ExitStatus: integer read FExitStatus;
+    property OnError: TErrorFunc read FOnError write SetOnError;
+    property OnErrorM: TErrorMethod read FOnErrorM write SetOnErrorM;
+    property OnOutput: TDumpFunc read FOnOutput write SetOnOutput;
+    property OnOutputM: TDumpMethod read FOnOutputM write SetOnOutputM;
+    property OutputString: string read GetOutputString;
+    property OutputStrings: TStringList read GetOutputStrings;
+    constructor Create(AOwner: TComponent); override;
+    destructor Destroy; override;
+  end;
 
 // Convenience functions
 
-function ExecuteCommand(Commandline: string; Verbose:boolean): integer; overload;
-function ExecuteCommand(Commandline: string; var Output:string; Verbose:boolean): integer; overload;
-function ExecuteCommandInDir(Commandline, Directory: string; Verbose:boolean): integer; overload;
-function ExecuteCommandInDir(Commandline, Directory: string; var Output:string; Verbose:boolean): integer; overload;
-procedure DumpConsole(Sender:TProcessEx; output:string);
+function ExecuteCommand(Commandline: string; Verbose: boolean): integer; overload;
+function ExecuteCommand(Commandline: string; var Output: string; Verbose: boolean): integer; overload;
+function ExecuteCommandInDir(Commandline, Directory: string; Verbose: boolean): integer; overload;
+function ExecuteCommandInDir(Commandline, Directory: string; var Output: string; Verbose: boolean): integer; overload;
+procedure DumpConsole(Sender: TProcessEx; output: string);
 
 
 
@@ -111,69 +112,74 @@ implementation
 
 function TProcessEx.GetOutputString: string;
 begin
-  result:=OutputStrings.Text;
+  Result := OutputStrings.Text;
 end;
 
-function TProcessEx.GetOutputStrings: TstringList;
+function TProcessEx.GetOutputStrings: TStringList;
 begin
-  if (FOutputStrings.Count=0) and (FOutStream.Size>0) then
-    begin
+  if (FOutputStrings.Count = 0) and (FOutStream.Size > 0) then
+  begin
     FOutStream.Position := 0;
     FOutputStrings.LoadFromStream(FOutStream);
-    end;
-  result:=FOutputStrings;
+  end;
+  Result := FOutputStrings;
 end;
 
-function TProcessEx.GetParametersString: String;
+function TProcessEx.GetParametersString: string;
 begin
-  result:=AnsiReplaceStr(Parameters.text, LineEnding, ' ');
+  Result := AnsiReplaceStr(Parameters.Text, LineEnding, ' ');
 end;
 
 function TProcessEx.GetExceptionInfo: string;
 begin
-  result:=FExceptionInfoStrings.Text;
+  Result := FExceptionInfoStrings.Text;
 end;
 
 function TProcessEx.GetResultingCommand: string;
-var i:integer;
+var
+  i: integer;
 begin
   //this is not the command as executed. The quotes are surrounding individual params.
   //the actual quoting is platform dependant
   //perhaps better to use another quoting character to make this clear to the user.
-  result:=Executable;
-  for i:=0 to Parameters.Count-1 do
-    result:=result+' "'+Parameters[i]+'"';
+  Result := Executable;
+  for i := 0 to Parameters.Count - 1 do
+    Result := Result + ' "' + Parameters[i] + '"';
 end;
 
 function TProcessEx.GetProcessEnvironment: TProcessEnvironment;
 begin
-  If not assigned(FProcessEnvironment) then
-    FProcessEnvironment:=TProcessEnvironment.Create;
-  result:=FProcessEnvironment;
+  if not assigned(FProcessEnvironment) then
+    FProcessEnvironment := TProcessEnvironment.Create;
+  Result := FProcessEnvironment;
 end;
 
 procedure TProcessEx.SetOnError(AValue: TErrorFunc);
 begin
-  if FOnError=AValue then Exit;
-  FOnError:=AValue;
+  if FOnError = AValue then
+    Exit;
+  FOnError := AValue;
 end;
 
 procedure TProcessEx.SetOnErrorM(AValue: TErrorMethod);
 begin
-  if FOnErrorM=AValue then Exit;
-  FOnErrorM:=AValue;
+  if FOnErrorM = AValue then
+    Exit;
+  FOnErrorM := AValue;
 end;
 
 procedure TProcessEx.SetOnOutput(AValue: TDumpFunc);
 begin
-  if FOnOutput=AValue then Exit;
-  FOnOutput:=AValue;
+  if FOnOutput = AValue then
+    Exit;
+  FOnOutput := AValue;
 end;
 
 procedure TProcessEx.SetOnOutputM(AValue: TDumpMethod);
 begin
-  if FOnOutputM=AValue then Exit;
-  FOnOutputM:=AValue;
+  if FOnOutputM = AValue then
+    Exit;
+  FOnOutputM := AValue;
 end;
 
 procedure TProcessEx.Execute;
@@ -186,16 +192,16 @@ procedure TProcessEx.Execute;
     Buffer: array[0..BufSize - 1] of byte;
     ReadBytes: integer;
   begin
-    Result := False;
+    Result := false;
     while Output.NumBytesAvailable > 0 do
     begin
       ReadBytes := Output.Read(Buffer, BufSize);
       FOutStream.Write(Buffer, ReadBytes);
       if Assigned(FOnOutput) then
-        FOnOutput(Self,copy(pchar(@buffer[0]),1,ReadBytes));
+        FOnOutput(Self, copy(PChar(@buffer[0]), 1, ReadBytes));
       if Assigned(FOnOutputM) then
-        FOnOutputM(Self,copy(pchar(@buffer[0]),1,ReadBytes));
-      Result := True;
+        FOnOutputM(Self, copy(PChar(@buffer[0]), 1, ReadBytes));
+      Result := true;
     end;
   end;
 
@@ -204,17 +210,17 @@ begin
     // "Normal" linux and DOS exit codes are in the range 0 to 255.
     // Windows System Error Codes are 0 to 15999
     // Use negatives for internal errors.
-    FExitStatus:=PROC_INTERNALERROR;
+    FExitStatus := PROC_INTERNALERROR;
     FExceptionInfoStrings.Clear;
     FOutputStrings.Clear;
     FOutStream.Clear;
     if Assigned(FProcessEnvironment) then
-      inherited Environment:=FProcessEnvironment.EnvironmentList;
-    Options := Options +[poUsePipes, poStderrToOutPut];
+      inherited Environment := FProcessEnvironment.EnvironmentList;
+    Options := Options + [poUsePipes, poStderrToOutPut];
     if Assigned(FOnOutput) then
-      FOnOutput(Self,'Executing : '+ResultingCommand+' (working dir: '+ CurrentDirectory +')'+ LineEnding);
+      FOnOutput(Self, 'Executing : ' + ResultingCommand + ' (working dir: ' + CurrentDirectory + ')' + LineEnding);
     if Assigned(FOnOutputM) then
-      FOnOutputM(Self,'Executing : '+ResultingCommand+' (working dir: '+ CurrentDirectory +')'+ LineEnding);
+      FOnOutputM(Self, 'Executing : ' + ResultingCommand + ' (working dir: ' + CurrentDirectory + ')' + LineEnding);
 
     try
       inherited Execute;
@@ -224,34 +230,34 @@ begin
           Sleep(50);
       end;
       ReadOutput;
-      FExitStatus:=inherited ExitStatus;
+      FExitStatus := inherited ExitStatus;
     except
       // Leave exitstatus as proc_internalerror
       // This should handle calling non-existing application etc.
     end;
 
-    if (FExitStatus<>0) and (Assigned(OnError) or Assigned(OnErrorM))  then
+    if (FExitStatus <> 0) and (Assigned(OnError) or Assigned(OnErrorM)) then
       if Assigned(OnError) then
-        OnError(Self,false)
+        OnError(Self, false)
       else
-        OnErrorM(Self,false);
+        OnErrorM(Self, false);
   except
     on E: Exception do
     begin
-    FExceptionInfoStrings.Add('Exception calling '+Executable+' '+Parameters.Text);
-    FExceptionInfoStrings.Add('Details: '+E.ClassName+'/'+E.Message);
-    FExitStatus:=-2;
-    if Assigned(OnError) then
-      OnError(Self,true);
+      FExceptionInfoStrings.Add('Exception calling ' + Executable + ' ' + Parameters.Text);
+      FExceptionInfoStrings.Add('Details: ' + E.ClassName + '/' + E.Message);
+      FExitStatus := -2;
+      if Assigned(OnError) then
+        OnError(Self, true);
     end;
   end;
 end;
 
-constructor TProcessEx.Create(AOwner : TComponent);
+constructor TProcessEx.Create(AOwner: TComponent);
 begin
   inherited;
-  FExceptionInfoStrings:= TstringList.Create;
-  FOutputStrings:= TstringList.Create;
+  FExceptionInfoStrings := TStringList.Create;
+  FOutputStrings := TStringList.Create;
   FOutStream := TMemoryStream.Create;
 end;
 
@@ -260,7 +266,7 @@ begin
   FExceptionInfoStrings.Free;
   FOutputStrings.Free;
   FOutStream.Free;
-  If assigned(FProcessEnvironment) then
+  if assigned(FProcessEnvironment) then
     FProcessEnvironment.Free;
   inherited Destroy;
 end;
@@ -269,69 +275,69 @@ end;
 
 function TProcessEnvironment.GetVarIndex(VarName: string): integer;
 var
-  idx:integer;
+  idx: integer;
 
-  function ExtractVar(VarVal:string):string;
+  function ExtractVar(VarVal: string): string;
   begin
-    result:='';
-    if length(Varval)>0 then
-      begin
+    Result := '';
+    if length(Varval) > 0 then
+    begin
       if VarVal[1] = '=' then //windows
-        delete(VarVal,1,1);
-      result:=trim(copy(VarVal,1,pos('=',VarVal)-1));
+        Delete(VarVal, 1, 1);
+      Result := trim(copy(VarVal, 1, pos('=', VarVal) - 1));
       if not FCaseSensitive then
-        result:=UpperCase(result);
-      end
+        Result := UpperCase(Result);
+    end;
   end;
 
 begin
   if not FCaseSensitive then
-    VarName:=UpperCase(VarName);
-  idx:=0;
-  while idx<FEnvironmentList.Count  do
-    begin
+    VarName := UpperCase(VarName);
+  idx := 0;
+  while idx < FEnvironmentList.Count do
+  begin
     if VarName = ExtractVar(FEnvironmentList[idx]) then
       break;
-    idx:=idx+1;
-    end;
-  if idx<FEnvironmentList.Count then
-    result:=idx
+    idx := idx + 1;
+  end;
+  if idx < FEnvironmentList.Count then
+    Result := idx
   else
-    result:=-1;
+    Result := -1;
 end;
 
 function TProcessEnvironment.GetVar(VarName: string): string;
 var
-  idx:integer;
+  idx: integer;
 
-  function ExtractVal(VarVal:string):string;
+  function ExtractVal(VarVal: string): string;
   begin
-    result:='';
-    if length(Varval)>0 then
-      begin
+    Result := '';
+    if length(Varval) > 0 then
+    begin
       if VarVal[1] = '=' then //windows
-        delete(VarVal,1,1);
-      result:=trim(copy(VarVal,pos('=',VarVal)+1,length(VarVal)));
-      end
+        Delete(VarVal, 1, 1);
+      Result := trim(copy(VarVal, pos('=', VarVal) + 1, length(VarVal)));
+    end;
   end;
 
 begin
-  idx:=GetVarIndex(VarName);
-  if idx>0 then
-    result:=ExtractVal(FEnvironmentList[idx])
+  idx := GetVarIndex(VarName);
+  if idx > 0 then
+    Result := ExtractVal(FEnvironmentList[idx])
   else
-    result:='';
+    Result := '';
 end;
 
 procedure TProcessEnvironment.SetVar(VarName, VarValue: string);
 var
-  idx:integer;
-  s:string;
+  idx: integer;
+  s: string;
 begin
-  idx:=GetVarIndex(VarName);
-  s:=trim(Varname)+'='+trim(VarValue);
-  if idx>0 then
-    FEnvironmentList[idx]:=s
+  idx := GetVarIndex(VarName);
+  s := trim(Varname) + '=' + trim(VarValue);
+  if idx > 0 then
+    FEnvironmentList[idx] := s
   else
     FEnvironmentList.Add(s);
 end;
@@ -340,14 +346,14 @@ constructor TProcessEnvironment.Create;
 var
   i: integer;
 begin
-  FEnvironmentList:=TStringList.Create;
+  FEnvironmentList := TStringList.Create;
   {$ifdef WINDOWS}
-  FCaseSensitive:=false;
+  FCaseSensitive := false;
   {$else}
-  FCaseSensitive:=true;
+  FCaseSensitive := true;
   {$endif WINDOWS}
   // GetEnvironmentVariableCount is 1 based
-  for i:=1 to GetEnvironmentVariableCount do
+  for i := 1 to GetEnvironmentVariableCount do
     EnvironmentList.Add(trim(GetEnvironmentString(i)));
 end;
 
@@ -358,96 +364,92 @@ begin
 end;
 
 
-procedure DumpConsole(Sender:TProcessEx; output:string);
+procedure DumpConsole(Sender: TProcessEx; output: string);
 begin
-  write(output);
+  Write(output);
 end;
 
 function ExecuteCommand(Commandline: string; Verbose: boolean): integer;
 var
-  s:string;
+  s: string;
 begin
-  Result:=ExecuteCommandInDir(Commandline,'',s,Verbose);
+  Result := ExecuteCommandInDir(Commandline, '', s, Verbose);
 end;
 
-function ExecuteCommand(Commandline: string; var Output: string;
-  Verbose: boolean): integer;
+function ExecuteCommand(Commandline: string; var Output: string; Verbose: boolean): integer;
 begin
-  Result:=ExecuteCommandInDir(Commandline,'',Output,Verbose);
+  Result := ExecuteCommandInDir(Commandline, '', Output, Verbose);
 end;
 
-function ExecuteCommandInDir(Commandline, Directory: string; Verbose: boolean
-  ): integer;
+function ExecuteCommandInDir(Commandline, Directory: string; Verbose: boolean): integer;
 var
-  s:string;
+  s: string;
 begin
-  Result:=ExecuteCommandInDir(Commandline,Directory,s,Verbose);
+  Result := ExecuteCommandInDir(Commandline, Directory, s, Verbose);
 end;
 
-function ExecuteCommandInDir(Commandline, Directory: string;
-  var Output: string; Verbose: boolean): integer;
+function ExecuteCommandInDir(Commandline, Directory: string; var Output: string; Verbose: boolean): integer;
 var
-  PE:TProcessEx;
-  s:string;
+  PE: TProcessEx;
+  s: string;
 
-  function GetFirstWord:string;
+  function GetFirstWord: string;
   var
-    i:integer;
-    LastQuote:char;
-    InQuote:boolean;
+    i: integer;
+    LastQuote: char;
+    InQuote: boolean;
   const
-    QUOTES = ['"',''''];
+    QUOTES = ['"', ''''];
   begin
-  Commandline:=trim(Commandline);
-  i:=1;
-  InQuote:=false;
-  while (i<length(Commandline)) and (InQuote or (Commandline[i]>' ')) do
+    Commandline := trim(Commandline);
+    i := 1;
+    InQuote := false;
+    while (i < length(Commandline)) and (InQuote or (Commandline[i] > ' ')) do
     begin
-    if Commandline[i] in QUOTES then
-      if InQuote then
+      if Commandline[i] in QUOTES then
+        if InQuote then
         begin
-        if Commandline[i]=LastQuote then
+          if Commandline[i] = LastQuote then
           begin
-          InQuote:=false;
-          delete(Commandline,i,1);
-          i:=i-1
+            InQuote := false;
+            Delete(Commandline, i, 1);
+            i := i - 1;
           end;
         end
-      else
+        else
         begin
-        InQuote:=True;
-        LastQuote:=Commandline[i];
-        delete(Commandline,i,1);
-        i:=i-1
+          InQuote := true;
+          LastQuote := Commandline[i];
+          Delete(Commandline, i, 1);
+          i := i - 1;
         end;
-    i:=i+1;
+      i := i + 1;
     end;
-  result:=trim(copy(Commandline,1,i));
-  delete(Commandline,1,i);
+    Result := trim(copy(Commandline, 1, i));
+    Delete(Commandline, 1, i);
   end;
 
 begin
-  PE:=TProcessEx.Create(nil);
+  PE := TProcessEx.Create(nil);
   try
-    if Directory<>'' then
-      PE.CurrentDirectory:=Directory;
-    PE.Executable:=GetFirstWord;
-    s:=GetFirstWord;
-    while s<>'' do
-      begin
+    if Directory <> '' then
+      PE.CurrentDirectory := Directory;
+    PE.Executable := GetFirstWord;
+    s := GetFirstWord;
+    while s <> '' do
+    begin
       PE.Parameters.Add(s);
-      s:=GetFirstWord;
-      end;
+      s := GetFirstWord;
+    end;
     PE.ShowWindow := swoHIDE;
     if Verbose then
-      PE.OnOutput:=@DumpConsole;
+      PE.OnOutput := @DumpConsole;
     PE.Execute;
-    Output:=PE.OutputString;
-    Result:=PE.ExitStatus;
+    Output := PE.OutputString;
+    Result := PE.ExitStatus;
   finally
     PE.Free;
   end;
 end;
 
 end.
-
