@@ -15,10 +15,10 @@ cp tigerserver.ini /usr/lib/cgi-bin
 
 delp .
 
-chmod ug+rx /usr/lib/cgi-bin/hocrwrap.sh
-chmod ug+rx /usr/lib/cgi-bin/scanwrap.sh
-chmod ug+rx /usr/lib/cgi-bin/tigercgi
-chmod ug+rx /usr/lib/cgi-bin/tigerserver
-chmod ug+r  /usr/lib/cgi-bin/tigerserver.ini
+chmod ugo+rx /usr/lib/cgi-bin/hocrwrap.sh
+chmod ugo+rx /usr/lib/cgi-bin/scanwrap.sh
+chmod ugo+rx /usr/lib/cgi-bin/tigercgi
+chmod ugo+rx /usr/lib/cgi-bin/tigerserver
+chmod ugo+r  /usr/lib/cgi-bin/tigerserver.ini
 echo "Directory /usr/lib/cgi-bin"
 ls -al /usr/lib/cgi-bin/
