@@ -1,4 +1,6 @@
 object FPWebModule1: TFPWebModule1
+  OnCreate = DataModuleCreate
+  OnDestroy = DataModuleDestroy
   OldCreateOrder = False
   Actions = <  
     item
