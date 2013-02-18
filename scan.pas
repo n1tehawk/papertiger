@@ -143,7 +143,7 @@ begin
   end
   else
   begin
-    TigerLog.WriteLog(etError,'TScanner.Scan: error occurred running command.');
+    TigerLog.WriteLog(etError,'TScanner.Scan: error occurred running command: '+ScanCommand+Options);
   end;
 end;
 

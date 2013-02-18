@@ -251,7 +251,7 @@ begin
     StartDate:=Now();
     StartDateString:=FormatDateTime('yyyymmddhhnnss', StartDate);
 
-    TigerLog.WriteLog(etInfo,'Going to scan '+inttostr(FPages)+' pages; start dae: '+StartDateString);
+    TigerLog.WriteLog(etInfo,'Going to scan '+inttostr(FPages)+' pages; start date: '+StartDateString);
     for i:=0 to FPages-1 do
     begin
       if FPages=1 then
@@ -259,7 +259,7 @@ begin
       else
         Scanner.FileName:=FSettings.ImageDirectory+StartDateString+'_'+format('%.4d',[i])+'.tif';
       if not(Scanner.Scan) then
-        raise Exception.Create('TigerServerCore: error scanning.');
+        raise Exception.CreateFmt('TigerServerCore: an error occurred while scanning document %s',[Scanner.FileName]);
       TigerLog.WriteLog(etDebug,'Image file: '+Scanner.FileName);
       FImageFiles.Clear;
       FImageFiles.Add(Scanner.FileName);
