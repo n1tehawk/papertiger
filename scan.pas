@@ -1,4 +1,5 @@
 unit scan;
+
 { Paper scanning functionality
 
   Copyright (c) 2012 Reinier Olislagers
@@ -36,7 +37,7 @@ const
 
 type
   // Colour/color, grayscale and lineart/black & white scan modes
-  ScanType=(stColor,stGray,stLineArt);
+  ScanType = (stColor, stGray, stLineArt);
 
   { TScanner }
 
@@ -65,21 +66,22 @@ type
     constructor Create;
     destructor Destroy; override;
   end;
+
 implementation
 
 uses processutils;
 
 const
   //todo: perhaps write FPC wrapper instead of bash scanwrap.sh
-  ScanCommand='./scanwrap.sh';
+  ScanCommand = './scanwrap.sh';
 
 { TScanner }
 
 procedure TScanner.ShowDevices(var DeviceList: TStringList);
 const
-  ScanListCommand='scanimage';
+  ScanListCommand = 'scanimage';
 var
-  Output: string='';
+  Output: string = '';
 begin
   //todo:
   //scanimage --list-devices
@@ -90,10 +92,10 @@ begin
                              %m (model), %t (type), %i (index number), and
                              %n (newline)
   }
-  if ExecuteCommand(ScanListCommand + ' --list-devices',Output,false)=0 then
+  if ExecuteCommand(ScanListCommand + ' --list-devices', Output, false) = 0 then
   begin
     writeln('Result:');
-    DeviceList.Text:=Output;
+    DeviceList.Text := Output;
     writeln(Output);
   end
   else
@@ -121,29 +123,31 @@ begin
   }
   //todo: device-specific parameters -> get from scanimage --help?
   //Compress TIFF?? => no, not really useful, wil be compressed in PDF
-  result:=false;
+  Result := false;
   case FColorType of
-    stLineArt: ScanType:='Lineart';
-    stGray: ScanType:='Gray';
-    stColor: ScanType:='Color';
-    else ScanType:='Lineart';
+    stLineArt: ScanType := 'Lineart';
+    stGray: ScanType := 'Gray';
+    stColor: ScanType := 'Color';
+    else
+      ScanType := 'Lineart';
   end;
-  if FScanDevice='' then
-    ScanDevicePart:=''
+  if FScanDevice = '' then
+    ScanDevicePart := ''
   else
-    ScanDevicePart:='--device-name='+FScanDevice;
+    ScanDevicePart := '--device-name=' + FScanDevice;
 
   //todo: remove deskew, crop; replace by unpaper/scantailor
-  Options:=' "'+FFileName+'" '+ScanDevicePart+' --mode='+ScanType+' --resolution='+inttostr(FResolution)+' --swdeskew=yes --swcrop=yes --format=tiff';
-  TigerLog.WriteLog(etDebug,'Executing: '+ScanCommand+Options);
-  if ExecuteCommand(ScanCommand+Options,false)=0 then
+  Options := ' "' + FFileName + '" ' + ScanDevicePart + ' --mode=' + ScanType + ' --resolution=' +
+    IntToStr(FResolution) + ' --swdeskew=yes --swcrop=yes --format=tiff';
+  TigerLog.WriteLog(etDebug, 'Executing: ' + ScanCommand + Options);
+  if ExecuteCommand(ScanCommand + Options, false) = 0 then
   begin
-    TigerLog.WriteLog(etDebug,'Scan succeeded.');
-    result:=true;
+    TigerLog.WriteLog(etDebug, 'Scan succeeded.');
+    Result := true;
   end
   else
   begin
-    TigerLog.WriteLog(etError,'TScanner.Scan: error occurred running command: '+ScanCommand+Options);
+    TigerLog.WriteLog(etError, 'TScanner.Scan: error occurred running command: ' + ScanCommand + Options);
   end;
 end;
 
@@ -152,16 +156,16 @@ var
   Settings: TTigerSettings;
 begin
   inherited Create;
-  FColorType:=stLineArt; //Lineart is suitable for OCR for black & white docments?!?
+  FColorType := stLineArt; //Lineart is suitable for OCR for black & white docments?!?
   //todo: we would like to scan graphics in B&W or even colour, then text as lineart. This would probably require fiddling with the hOCR output to get the text areas etc???
   // Tesseract requires a tif extension
-  FFileName:=Sysutils.GetTempFileName(GetTempDir(false),'SCN')+'.tif';
-  FResolution:=300;
+  FFileName := SysUtils.GetTempFileName(GetTempDir(false), 'SCN') + '.tif';
+  FResolution := 300;
   //todo: check whether sane works by --version ??
 
   Settings := TTigerSettings.Create;
   try
-    FScanDevice:=Settings.ScanDevice;
+    FScanDevice := Settings.ScanDevice;
   finally
     Settings.Free;
   end;
@@ -173,4 +177,3 @@ begin
 end;
 
 end.
-

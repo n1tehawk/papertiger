@@ -36,7 +36,7 @@ uses
   {$IFDEF DEBUG}
     {$IFDEF CGI}
       {$IFDEF RUNDEBUGGERWITHCGI}
-      selfdebug, //only useful when running the CGI/web module code
+  selfdebug, //only useful when running the CGI/web module code
       {$ENDIF}
     {$ENDIF}
   {$ENDIF}
@@ -45,7 +45,7 @@ uses
   scan, imagecleaner, ocr, pdf;
 
 const
-  INVALIDID=DBINVALIDID; //Used to indicate document ID etc is invalid.
+  INVALIDID = DBINVALIDID; //Used to indicate document ID etc is invalid.
 
 type
 
@@ -98,16 +98,16 @@ implementation
 // If you have a file not found error for revision.inc, please make sure you compile hgversion.pas before compiling this project.
 {$i revision.inc}
 
-function TTigerServerCore.CleanImage(const ImageFile: String): boolean;
+function TTigerServerCore.CleanImage(const ImageFile: string): boolean;
 var
   Cleaner: TImageCleaner;
 begin
-  result:=false;
-  Cleaner:=TImageCleaner.Create;
+  Result := false;
+  Cleaner := TImageCleaner.Create;
   try
     //todo: write me
     //result;=true;
-    TigerLog.WriteLog(etInfo,'CleanImage: not yet implemented. File argument Passed: '+ImageFile);
+    TigerLog.WriteLog(etInfo, 'CleanImage: not yet implemented. File argument Passed: ' + ImageFile);
   finally
     Cleaner.Free;
   end;
@@ -117,39 +117,37 @@ function TTigerServerCore.ListDocuments(DocumentID: string): string;
 var
   DocumentIDNumber: integer;
 begin
-  DocumentIDNumber:=StrToIntDef(DocumentID,DBINVALIDID);
-  result:=FTigerDB.ListDocuments(DocumentIDNumber);
+  DocumentIDNumber := StrToIntDef(DocumentID, DBINVALIDID);
+  Result := FTigerDB.ListDocuments(DocumentIDNumber);
   //todo: json this up
 end;
 
-function TTigerServerCore.ProcessImages(
-  DocumentName: string;
-  Resolution: integer):string;
+function TTigerServerCore.ProcessImages(DocumentName: string; Resolution: integer): string;
 var
   HOCRFile: string;
   i: integer;
   OCR: TOCR;
   PDF: TPDF;
-  Success:boolean;
+  Success: boolean;
 begin
   {todo: add preprocess unit??! despeckle, deskew etc? ScanTailor?
   Scantailor: more for letters/documents; unpaper more for books
   scantailor new version: https://sourceforge.net/projects/scantailor/files/scantailor-devel/enhanced/
   unpaper input.ppm output.ppm => perhaps more formats than ppm? use eg. exactimage's econvert for format conversion}
-  result:='';
-  if not(ForceDirectories(FSettings.PDFDirectory)) then
-    raise Exception.Create('PDF directory '+FSettings.PDFDirectory+' does not exist and cannot be created.');
-  for i:=0 to FImageFiles.Count-1 do
+  Result := '';
+  if not (ForceDirectories(FSettings.PDFDirectory)) then
+    raise Exception.Create('PDF directory ' + FSettings.PDFDirectory + ' does not exist and cannot be created.');
+  for i := 0 to FImageFiles.Count - 1 do
   begin
-    Success:=CleanImage(FImageFiles[i]);
+    Success := CleanImage(FImageFiles[i]);
     if Success then
     begin
-      OCR:=TOCR.Create;
+      OCR := TOCR.Create;
       try
-        OCR.ImageFile:=FImageFiles[i];
-        OCR.Language:=FCurrentOCRLanguage;
-        Success:=OCR.RecognizeText;
-        HOCRFile:=OCR.HOCRFile;
+        OCR.ImageFile := FImageFiles[i];
+        OCR.Language := FCurrentOCRLanguage;
+        Success := OCR.RecognizeText;
+        HOCRFile := OCR.HOCRFile;
         writeln('Got this text:');
         writeln(OCR.Text);
       finally
@@ -159,40 +157,39 @@ begin
 
     if Success then
     begin
-      PDF:=TPDF.Create;
+      PDF := TPDF.Create;
       try
         // Only pass on overrides on resolution
-        if Resolution>0 then
-          PDF.ImageResolution:=Resolution;
-        PDF.HOCRFile:=HOCRFile;
-        PDF.ImageFile:=FImageFiles[i];
-        writeln('pdfdirectory: '+FSettings.PDFDirectory);
-        PDF.PDFFile:=IncludeTrailingPathDelimiter(FSettings.PDFDirectory)+
-          ChangeFileExt(ExtractFileName(FImageFiles[i]),'.pdf');
+        if Resolution > 0 then
+          PDF.ImageResolution := Resolution;
+        PDF.HOCRFile := HOCRFile;
+        PDF.ImageFile := FImageFiles[i];
+        writeln('pdfdirectory: ' + FSettings.PDFDirectory);
+        PDF.PDFFile := IncludeTrailingPathDelimiter(FSettings.PDFDirectory) + ChangeFileExt(ExtractFileName(FImageFiles[i]), '.pdf');
         //todo: add metadata stuff to pdf unit
         //todo: add compression to pdf unit?
-        Success:=PDF.CreatePDF;
+        Success := PDF.CreatePDF;
         writeln('Got PDF:');
         writeln(PDF.PDFFile);
-        result:=PDF.PDFFile;
+        Result := PDF.PDFFile;
       finally
         PDF.Free;
       end;
       //todo: concatenate pdfs; we just add the last one for now
       //todo: update pdf name
       // Insert result into database:
-      if result<>'' then
+      if Result <> '' then
       begin
         {todo: don't use now but get timestamp from oldest image and use that as scandate??? Or leave like this as
          the scan command has actually been issued now}
-        FDocumentID:=FTigerDB.InsertDocument(DocumentName,result,'',Now);
+        FDocumentID := FTigerDB.InsertDocument(DocumentName, Result, '', Now);
         // todo: next call db update or insert images here to make sure images assigned to proper document
       end
       else
-        FDocumentID:=DBINVALIDID; //invalidate any previously valid document ID
-      end;
+        FDocumentID := DBINVALIDID; //invalidate any previously valid document ID
     end;
   end;
+end;
 
 {
 #adapted from http://ubuntuforums.org/showthread.php?t=1647350
@@ -230,69 +227,69 @@ We could save some data here? If so, what?
 }
 
 function TTigerServerCore.ScanAndProcess: integer;
-// Performs the document scan, and process result
+  // Performs the document scan, and process result
 var
-  i:integer;
+  i: integer;
   Resolution: integer;
   Scanner: TScanner;
   StartDate: TDateTime;
   StartDateString: string;
 begin
-  result:=INVALIDID; //fail by default
+  Result := INVALIDID; //fail by default
   // Try a 300dpi scan, probably best for normal sized letters on paper
-  Resolution:=300;
-  if not(ForceDirectories(FSettings.ImageDirectory)) then
-    raise Exception.Create('Image directory '+FSettings.ImageDirectory+' does not exist and cannot be created.');
-  Scanner:=TScanner.Create;
+  Resolution := 300;
+  if not (ForceDirectories(FSettings.ImageDirectory)) then
+    raise Exception.Create('Image directory ' + FSettings.ImageDirectory + ' does not exist and cannot be created.');
+  Scanner := TScanner.Create;
 
   try
-    Scanner.Resolution:=Resolution;
-    Scanner.ColorType:=stLineArt;
-    StartDate:=Now();
-    StartDateString:=FormatDateTime('yyyymmddhhnnss', StartDate);
+    Scanner.Resolution := Resolution;
+    Scanner.ColorType := stLineArt;
+    StartDate := Now();
+    StartDateString := FormatDateTime('yyyymmddhhnnss', StartDate);
 
-    TigerLog.WriteLog(etInfo,'Going to scan '+inttostr(FPages)+' pages; start date: '+StartDateString);
-    for i:=0 to FPages-1 do
+    TigerLog.WriteLog(etInfo, 'Going to scan ' + IntToStr(FPages) + ' pages; start date: ' + StartDateString);
+    for i := 0 to FPages - 1 do
     begin
-      if FPages=1 then
-        Scanner.FileName:=FSettings.ImageDirectory+StartDateString+'.tif'
+      if FPages = 1 then
+        Scanner.FileName := FSettings.ImageDirectory + StartDateString + '.tif'
       else
-        Scanner.FileName:=FSettings.ImageDirectory+StartDateString+'_'+format('%.4d',[i])+'.tif';
-      if not(Scanner.Scan) then
-        raise Exception.CreateFmt('TigerServerCore: an error occurred while scanning document %s',[Scanner.FileName]);
-      TigerLog.WriteLog(etDebug,'Image file: '+Scanner.FileName);
+        Scanner.FileName := FSettings.ImageDirectory + StartDateString + '_' + format('%.4d', [i]) + '.tif';
+      if not (Scanner.Scan) then
+        raise Exception.CreateFmt('TigerServerCore: an error occurred while scanning document %s', [Scanner.FileName]);
+      TigerLog.WriteLog(etDebug, 'Image file: ' + Scanner.FileName);
       FImageFiles.Clear;
       FImageFiles.Add(Scanner.FileName);
-      if (i<FPages-1) then
+      if (i < FPages - 1) then
       begin
         // todo: rebuild using event procedure so this can be plugged in (via web interface etc)
         // Ask for page after current page:
         //todo: do this with a callback!?!?!
         {$IFNDEF CGI}
-        writeln('Once the scan is completed, please put in sheet '+inttostr(i+2)+' and press enter to continue.');
+        writeln('Once the scan is completed, please put in sheet ' + IntToStr(i + 2) + ' and press enter to continue.');
         readln;
         {$ELSE}
         //to do: implement this!
-        TigerLog.WriteLog(etError,'to do: please implement multipage scan support!');
+        TigerLog.WriteLog(etError, 'to do: please implement multipage scan support!');
         {$ENDIF}
       end;
     end;
 
-    TigerLog.WriteLog(etDebug,'going to process message');
+    TigerLog.WriteLog(etDebug, 'going to process message');
     ProcessImages(StartDateString, Resolution);
-    if FDocumentID=DBINVALIDID then
+    if FDocumentID = DBINVALIDID then
     begin
-      TigerLog.WriteLog(etError,'ScanAndProcess: Error: could not insert document/scan into database. Please try again.');
+      TigerLog.WriteLog(etError, 'ScanAndProcess: Error: could not insert document/scan into database. Please try again.');
     end
     else
     begin
-      for i:=0 to FPages-1 do
+      for i := 0 to FPages - 1 do
       begin
         // Add images to database
-        FTigerDB.InsertImage(FDocumentID,FImageFiles[i],'');
+        FTigerDB.InsertImage(FDocumentID, FImageFiles[i], '');
       end;
     end;
-    result:=FDocumentID;
+    Result := FDocumentID;
   finally
     Scanner.Free;
   end;
@@ -300,10 +297,15 @@ end;
 
 function TTigerServerCore.ServerInfo: string;
 begin
-  result:='Papertiger '+LineEnding+
-  'version: based on commit '+RevisionStr+' ('+versiondate+')'+LineEnding+
-  'build date: '+{$INCLUDE %DATE%}+' '+{$INCLUDE %TIME%}+LineEnding+
-  'Compiled for CPU: '+lowercase({$INCLUDE %FPCTARGETCPU%})+' on '+lowercase({$INCLUDE %FPCTARGETOS%});
+  Result := 'Papertiger ' + LineEnding + 'version: based on commit ' + RevisionStr + ' (' + versiondate + ')' + LineEnding + 'build date: ' +
+{$INCLUDE %DATE%}
+    +' ' +
+{$INCLUDE %TIME%}
+    +LineEnding + 'Compiled for CPU: ' + lowercase(
+{$INCLUDE %FPCTARGETCPU%}
+    ) + ' on ' + lowercase(
+{$INCLUDE %FPCTARGETOS%}
+    );
 end;
 
 constructor TTigerServerCore.Create;
@@ -311,13 +313,13 @@ constructor TTigerServerCore.Create;
 begin
   inherited Create;
   {$IFDEF DEBUG}
-  TigerLog.WriteLog(etDebug,'Starting TTigerServerCore');
+  TigerLog.WriteLog(etDebug, 'Starting TTigerServerCore');
   {$ENDIF}
-  FSettings:=TTigerSettings.Create;
-  FCurrentOCRLanguage:=FSettings.Language; //read language from settings; can be overridden by command line optoin
-  FImageFiles:=TStringList.Create;
-  FPages:=1; //Assume single scan, not batch
-  FTigerDB:=TTigerDB.Create;
+  FSettings := TTigerSettings.Create;
+  FCurrentOCRLanguage := FSettings.Language; //read language from settings; can be overridden by command line optoin
+  FImageFiles := TStringList.Create;
+  FPages := 1; //Assume single scan, not batch
+  FTigerDB := TTigerDB.Create;
 end;
 
 destructor TTigerServerCore.Destroy;
@@ -326,10 +328,9 @@ begin
   FTigerDB.Free;
   FSettings.Free;
   {$IFDEF DEBUG}
-  TigerLog.WriteLog(etDebug,'Stopping TTigerServerCore');
+  TigerLog.WriteLog(etDebug, 'Stopping TTigerServerCore');
   {$ENDIF}
   inherited Destroy;
 end;
 
 end.
-

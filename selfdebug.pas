@@ -22,35 +22,36 @@ Instructions:
 interface
 
 uses
-  Classes, SysUtils,Process;
+  Classes, SysUtils, Process;
 
 implementation
 
 const
   {$ifdef windows}
-  DEBUGGER='C:\lazarus\mingw\bin\7.3\gdb.exe';
+  DEBUGGER = 'C:\lazarus\mingw\bin\7.3\gdb.exe';
   {$endif}
   {$ifdef linux}
   // Debuggers: e.g. gdb, gdbtui or ddd
-  DEBUGGER='ddd';
-  DISPLAY=':0.0'; //modify according to your setup
+  DEBUGGER = 'ddd';
+  DISPLAY = ':0.0'; //modify according to your setup
   {$endif}
-  MSWAIT=2000;
+  MSWAIT = 2000;
 
 var
   AProcess: TProcess;
 
 initialization
-AProcess := TProcess.Create(nil);
+  AProcess := TProcess.Create(nil);
 {$ifdef windows}
-AProcess.CommandLine := format('cmd /C START "Debugging %s" /WAIT "%s" "%s" %d"',[paramstr(0),debugger,paramstr(0),GetProcessID]);
+  AProcess.CommandLine := format('cmd /C START "Debugging %s" /WAIT "%s" "%s" %d"', [ParamStr(0), debugger, ParamStr(0), GetProcessID]);
 {$endif}
 {$ifdef linux}
-AProcess.CommandLine := format('xterm -display %s -T "Debugging %s" -e "%s" "%s" %d',[DISPLAY,paramstr(0),DEBUGGER,paramstr(0),GetProcessID]);
+  AProcess.CommandLine := format('xterm -display %s -T "Debugging %s" -e "%s" "%s" %d', [DISPLAY, ParamStr(0),
+    DEBUGGER, ParamStr(0), GetProcessID]);
 {$endif}
-AProcess.Execute;
-sleep(MSWAIT);
-finalization
-AProcess.Free;
-end.
+  AProcess.Execute;
+  sleep(MSWAIT);
 
+finalization
+  AProcess.Free;
+end.

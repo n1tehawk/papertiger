@@ -1,4 +1,5 @@
 unit tigerutil;
+
 { Utility functions such as logging support.
 
   Copyright (c) 2012-2013 Reinier Olislagers
@@ -26,11 +27,12 @@ unit tigerutil;
 
 {$i tigerserver.inc}
 {$IFDEF MSWINDOWS}
-{$R fclel.res} //needed for message files to get Windows to display event log contents correctly
+{$R fclel.res}//needed for message files to get Windows to display event log contents correctly
 // Not needed for *nix
 {$ENDIF}
 
 interface
+
 uses
   Classes, SysUtils, eventlog;
 
@@ -41,9 +43,9 @@ type
     FLog: TEventLog; //Logging/debug output to file
   public
     // Write to log and optionally console with seriousness etInfo
-    procedure WriteLog(Message: string; ToConsole: Boolean=false);
+    procedure WriteLog(Message: string; ToConsole: boolean = false);
     // Write to log and optionally console with specified seriousness
-    procedure WriteLog(EventType: TEventType;Message: string; ToConsole: Boolean=false);
+    procedure WriteLog(EventType: TEventType; Message: string; ToConsole: boolean = false);
     constructor Create;
     destructor Destroy; override;
   end;
@@ -62,76 +64,83 @@ var
   Seriousness: string;
 begin
   case Level of
-    etCustom: Seriousness:='Custom:';
-    etDebug: Seriousness:='Debug:';
-    etInfo: Seriousness:='Info:';
-    etWarning: Seriousness:='WARNING:';
-    etError: Seriousness:='ERROR:';
-    else Seriousness:='UNKNOWN CATEGORY!!:'
+    etCustom: Seriousness := 'Custom:';
+    etDebug: Seriousness := 'Debug:';
+    etInfo: Seriousness := 'Info:';
+    etWarning: Seriousness := 'WARNING:';
+    etError: Seriousness := 'ERROR:';
+    else
+      Seriousness := 'UNKNOWN CATEGORY!!:'
   end;
-  if (Level<>etDebug) then
-    begin
-      if AnsiPos(LineEnding, Message)>0 then writeln(''); //Write an empty line before multiline messagse
-      writeln(Seriousness+' '+ Message); //we misuse this for info output
-      sleep(200); //hopefully allow output to be written without interfering with other output
-    end
+  if (Level <> etDebug) then
+  begin
+    if AnsiPos(LineEnding, Message) > 0 then
+      writeln(''); //Write an empty line before multiline messagse
+    writeln(Seriousness + ' ' + Message); //we misuse this for info output
+    sleep(200); //hopefully allow output to be written without interfering with other output
+  end
   else
-    begin
+  begin
       {$IFDEF DEBUG}
       {DEBUG conditional symbol is defined using
       Project Options/Other/Custom Options using -dDEBUG}
-      if AnsiPos(LineEnding, Message)>0 then writeln(''); //Write an empty line before multiline messagse
-      writeln(Seriousness+' '+ Message); //we misuse this for info output
-      sleep(200); //hopefully allow output to be written without interfering with other output
+    if AnsiPos(LineEnding, Message) > 0 then
+      writeln(''); //Write an empty line before multiline messagse
+    writeln(Seriousness + ' ' + Message); //we misuse this for info output
+    sleep(200); //hopefully allow output to be written without interfering with other output
       {$ENDIF DEBUG}
-    end;
+  end;
 end;
 
 { TLogger }
 
-procedure TLogger.WriteLog(Message: string; ToConsole: Boolean=false);
+procedure TLogger.WriteLog(Message: string; ToConsole: boolean = false);
 begin
   FLog.Log(etInfo, Message);
-  if ToConsole then infoln(Message,etinfo);
+  if ToConsole then
+    infoln(Message, etinfo);
 end;
 
-procedure TLogger.WriteLog(EventType: TEventType;Message: string; ToConsole: Boolean=false);
+procedure TLogger.WriteLog(EventType: TEventType; Message: string; ToConsole: boolean = false);
 begin
   // Only log debug level if compiled as a debug build in order to cut down on logging
   case EventType of
-  etDebug: {$IFDEF DEBUG}FLog.Log(EventType, Message);{$ENDIF}
-  else
+    etDebug:
+{$IFDEF DEBUG}
+      FLog.Log(EventType, Message);
+{$ENDIF}
+    else
     begin
       FLog.Log(EventType, Message);
-      if ToConsole then infoln(Message,etinfo);
+      if ToConsole then
+        infoln(Message, etinfo);
     end;
   end;
 end;
 
 constructor TLogger.Create;
 begin
-  FLog:=TEventLog.Create(nil);
-  FLog.LogType:=ltSystem;
+  FLog := TEventLog.Create(nil);
+  FLog.LogType := ltSystem;
   FLog.RegisterMessageFile(''); //specify Windows should use the binary to look up formatting strings
-  FLog.RaiseExceptionOnError:=false; //Don't throw exceptions on log errors.
+  FLog.RaiseExceptionOnError := false; //Don't throw exceptions on log errors.
 end;
 
 destructor TLogger.Destroy;
 begin
-  FLog.Active:=false; //save WriteLog text
+  FLog.Active := false; //save WriteLog text
   FLog.Free;
   inherited Destroy;
 end;
 
 initialization
-begin
-  TigerLog:=TLogger.Create;
-end;
+  begin
+    TigerLog := TLogger.Create;
+  end;
 
 finalization
-begin
-  TigerLog.Free;
-end;
+  begin
+    TigerLog.Free;
+  end;
 
 end.
-

@@ -34,31 +34,34 @@ uses
   Classes, SysUtils,
   tigerutil {for logging},
   sqldb,
-  db {for EDatabaseError},
+  DB {for EDatabaseError},
   ibconnection {Firebird},
   pqconnection {PostgreSQL},
   sqlite3conn {SQLite};
 
 const
-  DBINVALIDID=-1; //Used to return invalid primary key ids for db objects
-type
-{ TTigerDB }
+  DBINVALIDID = -1; //Used to return invalid primary key ids for db objects
 
-TTigerDB= class(TObject)
-private
-  FDB: TSQLConnection; //Database connection
-  FInsertImage: TSQLQuery; //Inserts new images (for now with an insert query)
-  FInsertScan: TSQLQuery; //Inserts new scan data.
-  FReadQuery: TSQLQuery; //Query used for reading data
-  FReadTransaction: TSQLTransaction; //Transaction for read-only access
-  FReadWriteTransaction: TSQLTransaction; //Transaction for read/write access
-public
-  function InsertImage(const DocumentID: integer; const Path, ImageHash: string):integer; //Inserts a new image record in database; returns image ID. Keep string values empty to insert NULLs; pass a pre 1900 date for TheScanDate to do the same.
-  function InsertDocument(const DocumentName, PDFPath, DocumentHash: string; TheScanDate: TDateTime):integer; //Insterts a new scan record in database; retruns scan ID. Keep string values empty to insert NULLs; pass a pre 1900 date for TheScanDate to do the same.
-  function ListDocuments(const DocumentID: integer): string;
-  constructor Create;
-  destructor Destroy; override;
-end;
+type
+  { TTigerDB }
+
+  TTigerDB = class(TObject)
+  private
+    FDB: TSQLConnection; //Database connection
+    FInsertImage: TSQLQuery; //Inserts new images (for now with an insert query)
+    FInsertScan: TSQLQuery; //Inserts new scan data.
+    FReadQuery: TSQLQuery; //Query used for reading data
+    FReadTransaction: TSQLTransaction; //Transaction for read-only access
+    FReadWriteTransaction: TSQLTransaction; //Transaction for read/write access
+  public
+    function InsertImage(const DocumentID: integer; const Path, ImageHash: string): integer;
+    //Inserts a new image record in database; returns image ID. Keep string values empty to insert NULLs; pass a pre 1900 date for TheScanDate to do the same.
+    function InsertDocument(const DocumentName, PDFPath, DocumentHash: string; TheScanDate: TDateTime): integer;
+    //Insterts a new scan record in database; retruns scan ID. Keep string values empty to insert NULLs; pass a pre 1900 date for TheScanDate to do the same.
+    function ListDocuments(const DocumentID: integer): string;
+    constructor Create;
+    destructor Destroy; override;
+  end;
 
 implementation
 
@@ -71,113 +74,109 @@ const
 
 { TTigerDB }
 
-function TTigerDB.InsertImage(const DocumentID: integer; const Path,
-  ImageHash: string): integer;
+function TTigerDB.InsertImage(const DocumentID: integer; const Path, ImageHash: string): integer;
 begin
   //todo: make this function insert or update image so it can modify existing records
-  result:=DBINVALIDID;
+  Result := DBINVALIDID;
   try
     if FReadWriteTransaction.Active = false then
       FReadWriteTransaction.StartTransaction;
     FInsertImage.Close;
-    FInsertImage.ParamByName('DOCUMENTID').AsInteger:=DocumentID;
-    if Path='' then // NULL
+    FInsertImage.ParamByName('DOCUMENTID').AsInteger := DocumentID;
+    if Path = '' then // NULL
       FInsertImage.ParamByName('PATH').Clear
     else
-      FInsertImage.ParamByName('PATH').AsString:=Path;
-    if ImageHash='' then // NULL
+      FInsertImage.ParamByName('PATH').AsString := Path;
+    if ImageHash = '' then // NULL
       FInsertImage.ParamByName('IMAGEHASH').Clear
     else
-      FInsertImage.ParamByName('IMAGEHASH').AsString:=ImageHash;
+      FInsertImage.ParamByName('IMAGEHASH').AsString := ImageHash;
     FInsertImage.Open;
-    if not(FInsertImage.EOF) then
-      result:=FInsertImage.Fields[0].AsInteger;
+    if not (FInsertImage.EOF) then
+      Result := FInsertImage.Fields[0].AsInteger;
     FInsertImage.Close;
     FReadWriteTransaction.Commit;
   except
     on E: EDatabaseError do
     begin
       if FReadWriteTransaction.Active then
-      FReadWriteTransaction.Rollback;
-      TigerLog.WriteLog(etError,'Database error: ' + E.Message,true);
+        FReadWriteTransaction.Rollback;
+      TigerLog.WriteLog(etError, 'Database error: ' + E.Message, true);
     end;
     on F: Exception do
     begin
       if FReadWriteTransaction.Active then
         FReadWriteTransaction.Rollback;
-      TigerLog.WriteLog(etError,'Exception: ' + F.ClassName + '/' + F.Message,true);
+      TigerLog.WriteLog(etError, 'Exception: ' + F.ClassName + '/' + F.Message, true);
     end;
   end;
 end;
 
-function TTigerDB.InsertDocument(const DocumentName, PDFPath, DocumentHash: string;
-  TheScanDate: TDateTime): integer;
+function TTigerDB.InsertDocument(const DocumentName, PDFPath, DocumentHash: string; TheScanDate: TDateTime): integer;
 begin
-  result:=DBINVALIDID;
+  Result := DBINVALIDID;
   try
     if FReadWriteTransaction.Active = false then
       FReadWriteTransaction.StartTransaction;
     FInsertScan.Close;
-    if DocumentName='' then // NULL
+    if DocumentName = '' then // NULL
       FInsertScan.ParamByName('DOCUMENTNAME').Clear
     else
-      FInsertScan.ParamByName('DOCUMENTNAME').AsString:=DocumentName;
-    if PDFPath='' then // NULL
+      FInsertScan.ParamByName('DOCUMENTNAME').AsString := DocumentName;
+    if PDFPath = '' then // NULL
       FInsertScan.ParamByName('PDFPATH').Clear
     else
-      FInsertScan.ParamByName('PDFPATH').AsString:=PDFPath;
-    if DocumentHash='' then // NULL
+      FInsertScan.ParamByName('PDFPATH').AsString := PDFPath;
+    if DocumentHash = '' then // NULL
       FInsertScan.ParamByName('DOCUMENTHASH').Clear
     else
-      FInsertScan.ParamByName('DOCUMENTHASH').AsString:=DocumentHash;
+      FInsertScan.ParamByName('DOCUMENTHASH').AsString := DocumentHash;
     // Scan dates before say 1900 must be fake
-    if TheScanDate <= EncodeDate(1900,1,1) then
+    if TheScanDate <= EncodeDate(1900, 1, 1) then
       // NULL
       FInsertScan.ParamByName('SCANDATE').Clear
     else
-      FInsertScan.ParamByName('SCANDATE').AsDateTime:=TheScanDate;
+      FInsertScan.ParamByName('SCANDATE').AsDateTime := TheScanDate;
     FInsertScan.Open;
-    if not(FInsertScan.EOF) then
-      result:=FInsertScan.Fields[0].AsInteger;
+    if not (FInsertScan.EOF) then
+      Result := FInsertScan.Fields[0].AsInteger;
     FInsertScan.Close;
     FReadWriteTransaction.Commit;
   except
     on E: EDatabaseError do
     begin
       if FReadWriteTransaction.Active then
-      FReadWriteTransaction.Rollback;
-        TigerLog.WriteLog(etError,'InsertDocument: Database error: ' + E.Message,true);
+        FReadWriteTransaction.Rollback;
+      TigerLog.WriteLog(etError, 'InsertDocument: Database error: ' + E.Message, true);
     end;
     on F: Exception do
     begin
       if FReadWriteTransaction.Active then
         FReadWriteTransaction.Rollback;
-      TigerLog.WriteLog(etError,'InsertDocument: Exception: ' + F.Message,true);
+      TigerLog.WriteLog(etError, 'InsertDocument: Exception: ' + F.Message, true);
     end;
   end;
 end;
 
 function TTigerDB.ListDocuments(const DocumentID: integer): string;
 begin
-  if FReadTransaction.Active=false then
+  if FReadTransaction.Active = false then
     FReadTransaction.StartTransaction;
   try
-    if DocumentID=DBINVALIDID then
+    if DocumentID = DBINVALIDID then
       // All documents
-      FReadQuery.SQL.Text:='SELECT ID,DOCUMENTNAME,PDFPATH,SCANDATE,DOCUMENTHASH FROM DOCUMENTS'
+      FReadQuery.SQL.Text := 'SELECT ID,DOCUMENTNAME,PDFPATH,SCANDATE,DOCUMENTHASH FROM DOCUMENTS'
     else
       // Specified document; no need for parametrized queries: one time only, integer
-      FReadQuery.SQL.Text:='SELECT ID,DOCUMENTNAME,PDFPATH,SCANDATE,DOCUMENTHASH FROM DOCUMENTS WHERE ID='+inttostr(DocumentID);
+      FReadQuery.SQL.Text := 'SELECT ID,DOCUMENTNAME,PDFPATH,SCANDATE,DOCUMENTHASH FROM DOCUMENTS WHERE ID=' + IntToStr(DocumentID);
     FReadQuery.Open;
     while not FReadQuery.EOF do
     begin
-      if not(FReadQuery.BOF) then result:=result+#13+#10;
-      result:=result+FReadQuery.FieldByName('ID').AsString+','+
-        FReadQuery.FieldByName('ID').AsString+','+
-        FReadQuery.FieldByName('DOCUMENTNAME').AsString+','+
-        FReadQuery.FieldByName('PDFPATH').AsString+','+
-        FReadQuery.FieldByName('SCANDATE').AsString+','+
-        FReadQuery.FieldByName('DOCUMENTHASH').AsString;
+      if not (FReadQuery.BOF) then
+        Result := Result + #13 + #10;
+      Result := Result + FReadQuery.FieldByName('ID').AsString + ',' + FReadQuery.FieldByName('ID').AsString + ',' +
+        FReadQuery.FieldByName('DOCUMENTNAME').AsString + ',' + FReadQuery.FieldByName('PDFPATH').AsString + ',' +
+        FReadQuery.FieldByName('SCANDATE').AsString + ',' + FReadQuery.FieldByName('DOCUMENTHASH').AsString;
       FReadQuery.Next;
     end;
     FReadQuery.Close;
@@ -185,14 +184,14 @@ begin
   except
     on E: EDatabaseError do
     begin
-      result:='ListDocuments: db exception: '+E.Message;
-      TigerLog.WriteLog(etError, 'ListDocuments: db exception: '+E.Message);
+      Result := 'ListDocuments: db exception: ' + E.Message;
+      TigerLog.WriteLog(etError, 'ListDocuments: db exception: ' + E.Message);
       FReadTransaction.RollBack;
     end;
     on F: Exception do
     begin
-      result:='exception: message '+F.Message;
-      TigerLog.WriteLog(etError, 'ListDocuments: exception: '+F.Message);
+      Result := 'exception: message ' + F.Message;
+      TigerLog.WriteLog(etError, 'ListDocuments: exception: ' + F.Message);
     end;
   end;
 end;
@@ -203,9 +202,9 @@ var
   SQL: string;
 begin
   inherited Create;
-  Settings:=TDBConnectionConfig.Create('Firebird','','tiger.fdb','SYSDBA','masterkey','UTF8');
+  Settings := TDBConnectionConfig.Create('Firebird', '', 'tiger.fdb', 'SYSDBA', 'masterkey', 'UTF8');
   try
-    Settings.SettingsFile:=SettingsFile;
+    Settings.SettingsFile := SettingsFile;
     // Set up db connection
     case Settings.DBType of
       'Firebird':
@@ -217,7 +216,7 @@ begin
       'SQLite': FDB := TSQLite3Connection.Create(nil);
       else
       begin
-        TigerLog.WriteLog(etWarning,'Warning: unknown database type ' + Settings.DBType + ' specified. Defaulting to Firebird',true);
+        TigerLog.WriteLog(etWarning, 'Warning: unknown database type ' + Settings.DBType + ' specified. Defaulting to Firebird', true);
         FDB := TIBConnection.Create(nil);
         TIBConnection(FDB).Dialect := 3; //just to be sure
       end;
@@ -230,13 +229,13 @@ begin
     FDB.CharSet := Settings.DBCharset;
 
     FReadWriteTransaction := TSQLTransaction.Create(nil);
-    FReadTransaction:=TSQLTransaction.Create(nil);
-    FInsertImage:=TSQLQuery.Create(nil);
-    FInsertScan:=TSQLQuery.Create(nil);
-    FReadQuery:=TSQLQuery.Create(nil);
+    FReadTransaction := TSQLTransaction.Create(nil);
+    FInsertImage := TSQLQuery.Create(nil);
+    FInsertScan := TSQLQuery.Create(nil);
+    FReadQuery := TSQLQuery.Create(nil);
 
     // Check for existing database
-    if (FDB.HostName='') and (FileExists(FDB.DatabaseName)=false) then
+    if (FDB.HostName = '') and (FileExists(FDB.DatabaseName) = false) then
     begin
       if (FDB is TIBConnection) or (FDB is TSQLite3Connection) then
       begin
@@ -245,10 +244,10 @@ begin
         if (FDB is TSQLite3Connection) then
           TSQLite3Connection(FDB).CreateDB;
         sleep(10);
-        if not(FileExists(FDB.DatabaseName)) then
+        if not (FileExists(FDB.DatabaseName)) then
         begin
-          TigerLog.WriteLog(etDebug,'Tried to create database '+FDB.DatabaseName+' but could not.',true);
-          raise Exception.CreateFmt('Tried to create database %s but could not.',[FDB.DatabaseName]);
+          TigerLog.WriteLog(etDebug, 'Tried to create database ' + FDB.DatabaseName + ' but could not.', true);
+          raise Exception.CreateFmt('Tried to create database %s but could not.', [FDB.DatabaseName]);
         end;
       end;
     end;
@@ -257,10 +256,10 @@ begin
   end;
 
   FDB.Open;
-  if not(FDB.Connected) then
+  if not (FDB.Connected) then
   begin
-    TigerLog.WriteLog(etDebug,'Error opening database '+FDB.DatabaseName,true);
-    raise Exception.CreateFmt('Error opening databas %s.',[FDB.DatabaseName]);
+    TigerLog.WriteLog(etDebug, 'Error opening database ' + FDB.DatabaseName, true);
+    raise Exception.CreateFmt('Error opening databas %s.', [FDB.DatabaseName]);
   end;
 
   // Get transactions linked to the right database connection:
@@ -271,19 +270,18 @@ begin
   FInsertImage.Database := FDB;
   FInsertImage.Transaction := FReadWriteTransaction;
   //Try to work around FPC 2.6.0 bug that doesn't do Open, but execute for INSERT statements
-  FInsertImage.ParseSQL:=false;
+  FInsertImage.ParseSQL := false;
   //todo: replace with merge/insert replacing
-  SQL:='INSERT INTO IMAGES (DOCUMENTID,PATH,IMAGEHASH) '+
-    'VALUES (:DOCUMENTID,:PATH,:IMAGEHASH) RETURNING ID';
+  SQL := 'INSERT INTO IMAGES (DOCUMENTID,PATH,IMAGEHASH) ' + 'VALUES (:DOCUMENTID,:PATH,:IMAGEHASH) RETURNING ID';
   FInsertImage.SQL.Text := SQL;
   FInsertImage.Prepare;
 
   FInsertScan.Database := FDB;
   FInsertScan.Transaction := FReadWriteTransaction;
-  FInsertScan.ParseSQL:=false;
-  SQL:='INSERT INTO DOCUMENTS (DOCUMENTNAME,PDFPATH,SCANDATE,DOCUMENTHASH) '+
+  FInsertScan.ParseSQL := false;
+  SQL := 'INSERT INTO DOCUMENTS (DOCUMENTNAME,PDFPATH,SCANDATE,DOCUMENTHASH) ' +
     'VALUES (:DOCUMENTNAME,:PDFPATH,:SCANDATE,:DOCUMENTHASH) RETURNING ID';
-  FInsertScan.SQL.Text:=SQL;
+  FInsertScan.SQL.Text := SQL;
   FInsertScan.Prepare;
 
   FReadQuery.Database := FDB;
@@ -312,4 +310,6 @@ begin
 end;
 
 end.
+
+
 
