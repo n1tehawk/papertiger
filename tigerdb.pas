@@ -183,15 +183,16 @@ begin
     FReadQuery.Close;
     FReadTransaction.Commit;
   except
-    on E: EIBDatabaseError do
+    on E: EDatabaseError do
     begin
-      //todo: implement logging and replace this crude error handling
-      result:='db exception: GDS'+inttostr(E.GDSErrorCode)+' message '+E.Message;
+      result:='ListDocuments: db exception: '+E.Message;
+      TigerLog.WriteLog(etError, 'ListDocuments: db exception: '+E.Message);
       FReadTransaction.RollBack;
     end;
     on F: Exception do
     begin
       result:='exception: message '+F.Message;
+      TigerLog.WriteLog(etError, 'ListDocuments: exception: '+E.Message);
     end;
   end;
 end;
