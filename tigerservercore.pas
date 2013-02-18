@@ -106,7 +106,7 @@ begin
   Cleaner := TImageCleaner.Create;
   try
     //todo: write me
-    result;=true;
+    result:=true;
     TigerLog.WriteLog(etInfo, 'CleanImage: not yet implemented. File argument Passed: ' + ImageFile);
   finally
     Cleaner.Free;
@@ -150,7 +150,7 @@ begin
         OCR.Language := FCurrentOCRLanguage;
         Success := OCR.RecognizeText;
         HOCRFile := OCR.HOCRFile;
-        TigerLog.LogWrite(etDebug,'ProcessImages: Got this text:'+OCR.Text);
+        TigerLog.WriteLog(etDebug,'ProcessImages: Got this text:'+OCR.Text);
       finally
         OCR.Free;
       end;
@@ -165,12 +165,12 @@ begin
           PDF.ImageResolution := Resolution;
         PDF.HOCRFile := HOCRFile;
         PDF.ImageFile := FImageFiles[i];
-        TigerLog.LogWrite(etDebug,'pdfdirectory: ' + FSettings.PDFDirectory);
+        TigerLog.WriteLog(etDebug,'pdfdirectory: ' + FSettings.PDFDirectory);
         PDF.PDFFile := IncludeTrailingPathDelimiter(FSettings.PDFDirectory) + ChangeFileExt(ExtractFileName(FImageFiles[i]), '.pdf');
         //todo: add metadata stuff to pdf unit
         //todo: add compression to pdf unit?
         Success := PDF.CreatePDF;
-        TigerLog.LogWrite(etDebug,'Got PDF:'+PDF.PDFFile);
+        TigerLog.WriteLog(etDebug,'Got PDF:'+PDF.PDFFile);
         Result := PDF.PDFFile;
       finally
         PDF.Free;
@@ -236,7 +236,7 @@ var
   StartDateString: string;
 begin
   Result := INVALIDID; //fail by default
-  FDocumentID = DBINVALIDID; //Avoid processing old documents after failure
+  FDocumentID := DBINVALIDID; //Avoid processing old documents after failure
 
   // Try a 300dpi scan, probably best for normal sized letters on paper
   Resolution := 300;
@@ -277,7 +277,7 @@ begin
       end;
     end;
 
-    TigerLog.WriteLog(etDebug, 'going to process image(s): '+inttostr(FImageFiles Count));
+    TigerLog.WriteLog(etDebug, 'going to process image(s): '+inttostr(FImageFiles.Count));
     ProcessImages(StartDateString, Resolution);
     if FDocumentID = DBINVALIDID then
     begin
