@@ -58,10 +58,6 @@ Installation instructions
   aptitude install exactimage
 - prerequirisites: have scantailor installed (for aligning/cleaning up the tiff images before OCR)
   see installation notes below
-- prerequisites if using the cgi server/client server solution: apache2 or another HTTP server that supports cgi
-  aptitude install apache2
-	copy tigercgi to cgi directory (e.g. /usr/lib/cgi-bin). 
-	Make sure the user Apache runs under may read and execute the file (e.g. chmod ugo+rx tigercgi)
 - Tesseract must/can then be configured to output hocr, e.g.:
   check you have this file present (adjust config directory to your situation):
   cat /usr/local/share/tessdata/configs/hocr
@@ -70,8 +66,8 @@ Installation instructions
   tessedit_create_hocr 1
   EOF_DOCUMENT
 - copy hocrwrap.sh to server directory (e.g. /opt/tigerserver/)
-- copy tigerserver to server directory
 - copy scanwrap.sh to server directory
+- copy tigerserver to server directory
 - go to the server directory and make files executable, e.g. (replace directory with your own if necessary):
   cd /opt/tigerserver/
   chmod u+rx hocrwrap.sh
@@ -80,6 +76,27 @@ Installation instructions
 - copy tigerserver.ini.template to tigerserver.ini and edit settings to match your environment
 
 Test by running ./tigerserver --help
+
+Installing the cgi application:
+- prerequisites: apache2 or another HTTP server that supports cgi
+  aptitude install apache2
+	copy tigercgi to cgi directory (e.g. /usr/lib/cgi-bin). 
+	Make sure the user Apache runs under may read and execute the file (e.g. chmod ugo+rx tigercgi)
+- copy hocrwrap.sh to cgi directory (e.g. /usr/lib/cgi-bin/)
+- copy scanwrap.sh to cgi directory
+- copy tigercgi to cgi directory
+- copy tigerserver.ini.template to tigerserver.ini in the cgi directory and edit settings to match your environment
+- go to the cgi directory and make files executable for the apache/www user, e.g. (replace directory with your own if necessary):
+  cd /usr/lib/cgi-bin/
+  chown www-data:www-data hocrwrap.sh #replace with correct user/group if needed, e.g. apache2
+  chown www-data:www-data scanwrap.sh #replace with correct user/group if needed, e.g. apache2
+  chown www-data:www-data tigercgi #replace with correct user/group if needed, e.g. apache2 
+  chown www-data:www-data tigerserver.ini #replace with correct user/group if needed, e.g. apache2   
+  chmod u+rx hocrwrap.sh
+  chmod u+rx scanwrap.sh
+  chmod u+rx tigercgi
+  chmod u+r  tigerserver.ini
+
 
 Building Tesseract 3
 ====================

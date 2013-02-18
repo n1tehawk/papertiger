@@ -97,8 +97,15 @@ end;
 
 procedure TLogger.WriteLog(EventType: TEventType;Message: string; ToConsole: Boolean=false);
 begin
-  FLog.Log(EventType, Message);
-  if ToConsole then infoln(Message,etinfo);
+  // Only log debug level if compiled as a debug build in order to cut down on logging
+  case EventType of
+  etDebug: {$IFDEF DEBUG}FLog.Log(EventType, Message);{$ENDIF}
+  else
+    begin
+      FLog.Log(EventType, Message);
+      if ToConsole then infoln(Message,etinfo);
+    end;
+  end;
 end;
 
 constructor TLogger.Create;

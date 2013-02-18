@@ -27,7 +27,7 @@ unit scan;
 interface
 
 uses
-  Classes, SysUtils, inifiles;
+  Classes, SysUtils, tigerutil, tigersettings;
 //todo: add support for pascalsane/using libsane instead of wrapping sane command line?
 
 const
@@ -47,21 +47,21 @@ type
     FScanDevice: string;
     FColorType: ScanType;
   public
-    property ColorType: ScanType read FColorType write FColorType;
     // Black & white, grayscale or colour scan?
-    property FileName: string read FFileName write FFileName;
+    property ColorType: ScanType read FColorType write FColorType;
     // File where scanned image should be or has been stored
     //todo: how to deal with existing files?
-    property Resolution: integer read FResolution write FResolution;
+    property FileName: string read FFileName write FFileName;
     // Scan resolution in DPI
-    property ScanDevice: string read FScanDevice write FScanDevice;
+    property Resolution: integer read FResolution write FResolution;
     // Device to be used to scan with; e.g. genesys:libusb:001:002
     // Specify e.g. net:192.168.0.4:genesys:libusb:001:002 for a sane network
     // scanner
-    procedure ShowDevices(var DeviceList: TStringList);
+    property ScanDevice: string read FScanDevice write FScanDevice;
     // Interrogate scanner software for a list of installed devices
-    procedure Scan;
-    // Scan paper to image
+    procedure ShowDevices(var DeviceList: TStringList);
+    // Scan paper to image; returns success
+    function Scan: boolean;
     constructor Create;
     destructor Destroy; override;
   end;
@@ -102,7 +102,7 @@ begin
   end;
 end;
 
-procedure TScanner.Scan;
+function TScanner.Scan: boolean;
 var
   Options: string;
   ScanDevicePart: string;
@@ -121,6 +121,7 @@ begin
   }
   //todo: device-specific parameters -> get from scanimage --help?
   //Compress TIFF?? => no, not really useful, wil be compressed in PDF
+  result:=false;
   case FColorType of
     stLineArt: ScanType:='Lineart';
     stGray: ScanType:='Gray';
@@ -134,21 +135,21 @@ begin
 
   //todo: remove deskew, crop; replace by unpaper/scantailor
   Options:=' "'+FFileName+'" '+ScanDevicePart+' --mode='+ScanType+' --resolution='+inttostr(FResolution)+' --swdeskew=yes --swcrop=yes --format=tiff';
-  writeln('Executing:');
-  writeln(ScanCommand+Options);
+  TigerLog.WriteLog(etDebug,'Executing: '+ScanCommand+Options);
   if ExecuteCommand(ScanCommand+Options,false)=0 then
   begin
-    writeln('Scan succeeded.');
+    TigerLog.WriteLog(etDebug,'Scan succeeded.');
+    result:=true;
   end
   else
   begin
-    writeln('Error running command.');
+    TigerLog.WriteLog(etError,'TScanner.Scan: error occurred running command.');
   end;
 end;
 
 constructor TScanner.Create;
 var
-  Settings: TINIFile;
+  Settings: TTigerSettings;
 begin
   inherited Create;
   FColorType:=stLineArt; //Lineart is suitable for OCR for black & white docments?!?
@@ -158,15 +159,12 @@ begin
   FResolution:=300;
   //todo: check whether sane works by --version ??
 
-  if FileExists(SettingsFile) then
-  begin
-    Settings := TINIFile.Create(SettingsFile);
-    try
-      FScanDevice:=Settings.ReadString('Sane', 'DeviceName', '');
-    finally
-      Settings.Free;
-    end;
-  end
+  Settings := TTigerSettings.Create;
+  try
+    FScanDevice:=Settings.ScanDevice;
+  finally
+    Settings.Free;
+  end;
 end;
 
 destructor TScanner.Destroy;

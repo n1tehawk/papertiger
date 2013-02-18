@@ -64,28 +64,28 @@ type
     FTigerDB: TTigerDB;
   protected
   public
-    property CurrentOCRLanguage: string read FCurrentOCRLanguage write FCurrentOCRLanguage;
     // Language to be used for OCR. Will not be saved in settings
-    property Images: TStringList read FImageFiles;
+    property CurrentOCRLanguage: string read FCurrentOCRLanguage write FCurrentOCRLanguage;
     // Image files to be OCRed or files that result from scanning
-    property Pages: integer read FPages write FPages;
+    property Images: TStringList read FImageFiles;
     // Number of pages to scan in one scan run.
-    function CleanImage(const ImageFile: string): boolean;
+    property Pages: integer read FPages write FPages;
     // Cleans up image (postprocessing): straightens them up, despeckles etc
-    function ListDocuments(DocumentID: string): string;
+    function CleanImage(const ImageFile: string): boolean;
     // Lists document specified by DocumentID or all documents (if DocumentID empty)
     // Todo: replace return value by custom record in shared unit for cgi and client
-    function ProcessImages(DocumentName: string; Resolution: integer): string;
+    function ListDocuments(DocumentID: string): string;
     // Process (set of) existing (TIFF) image(s); should be named <image>.tif
     // Images are specified using the Images property
     // Specify resolution override to indicate image resolution to hocr2pdf
     // Specify 0 to leave alone and let hocr detect resolution or fallback to 300dpi
     // Returns resulting pdf file (including path)
-    function ScanAndProcess: integer;
+    function ProcessImages(DocumentName: string; Resolution: integer): string;
     // Scan a document (with one or more pages) and process it.
     // Returns document ID if succesfull; <=0 if not.
-    function ServerInfo: string;
+    function ScanAndProcess: integer;
     // Returns server version, compile date, etc
+    function ServerInfo: string;
     constructor Create;
     destructor Destroy; override;
   end;
@@ -251,28 +251,34 @@ begin
     StartDate:=Now();
     StartDateString:=FormatDateTime('yyyymmddhhnnss', StartDate);
 
-    TigerLog.WriteLog(etInfo,'Going to scan '+inttostr(FPages)+' pages; start date: '+StartDateString,true);
+    TigerLog.WriteLog(etInfo,'Going to scan '+inttostr(FPages)+' pages; start dae: '+StartDateString);
     for i:=0 to FPages-1 do
     begin
       if FPages=1 then
         Scanner.FileName:=FSettings.ImageDirectory+StartDateString+'.tif'
       else
         Scanner.FileName:=FSettings.ImageDirectory+StartDateString+'_'+format('%.4d',[i])+'.tif';
-      Scanner.Scan;
-      writeln('Image file: '+Scanner.FileName);
+      if not(Scanner.Scan) then
+        raise Exception.Create('TigerServerCore: error scanning.');
+      TigerLog.WriteLog(etDebug,'Image file: '+Scanner.FileName);
       FImageFiles.Clear;
       FImageFiles.Add(Scanner.FileName);
       if (i<FPages-1) then
       begin
         // todo: rebuild using event procedure so this can be plugged in (via web interface etc)
         // Ask for page after current page:
+        //todo: do this with a callback!?!?!
+        {$IFNDEF CGI}
         writeln('Once the scan is completed, please put in sheet '+inttostr(i+2)+' and press enter to continue.');
         readln;
+        {$ELSE}
+        //to do: implement this!
+        TigerLog.WriteLog(etError,'to do: please implement multipage scan support!');
+        {$ENDIF}
       end;
     end;
 
-    //todo: add teventlog logging support
-    writeln('going to process images');
+    TigerLog.WriteLog(etDebug,'going to process message');
     ProcessImages(StartDateString, Resolution);
     if FDocumentID=DBINVALIDID then
     begin
