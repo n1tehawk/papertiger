@@ -54,10 +54,11 @@ type
     FReadTransaction: TSQLTransaction; //Transaction for read-only access
     FReadWriteTransaction: TSQLTransaction; //Transaction for read/write access
   public
+    // Inserts a new image record in database; returns image ID. Keep string values empty to insert NULLs; pass a pre 1900 date for TheScanDate to do the same.
     function InsertImage(const DocumentID: integer; const Path, ImageHash: string): integer;
-    //Inserts a new image record in database; returns image ID. Keep string values empty to insert NULLs; pass a pre 1900 date for TheScanDate to do the same.
+    // Inserts a new scan record in database; retruns scan ID. Keep string values empty to insert NULLs; pass a pre 1900 date for TheScanDate to do the same.
     function InsertDocument(const DocumentName, PDFPath, DocumentHash: string; TheScanDate: TDateTime): integer;
-    //Insterts a new scan record in database; retruns scan ID. Keep string values empty to insert NULLs; pass a pre 1900 date for TheScanDate to do the same.
+    // Lists document with DocumentID or all documents if DocumentID=DBINVALIDID
     function ListDocuments(const DocumentID: integer): string;
     constructor Create;
     destructor Destroy; override;
