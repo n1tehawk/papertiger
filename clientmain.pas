@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, Menus,
-  tigersettings, LJGridUtils, FPJSON, httpclient;
+  tigersettings, LJGridUtils, FPJSON, jsonparser, httpclient;
 //todo: think about splitting up data access layer so you can e.g. build a CLI client
 
 type
@@ -38,8 +38,30 @@ implementation
 { TForm1 }
 
 procedure TForm1.mnuAboutClick(Sender: TObject);
+var
+  Success:boolean;
+  VersionInfo: string;
+  VersionInfoJSON: TJSONString;
 begin
-
+  Success:=false;
+  VersionInfoJSON:=TJSONString.Create('');
+  try
+    Success:=(HttpRequest(FCGIURL+'serverinfo',VersionInfoJSON,rmGet).Code=200);
+    if Success then
+      VersionInfo:=String(VersionInfoJSON);
+    if Success then
+    begin
+      ShowMessage('Papertiger client version 0.1'+LineEnding+
+       'Papertiger server: '+VersionInfo);
+    end
+    else
+    begin
+      ShowMessage('Papertiger client version 0.1'+LineEnding+
+       'Papertiger server: error retrieving server information');
+    end;
+  finally
+    VersionInfoJSON.Free;
+  end;
 end;
 
 procedure TForm1.FormCreate(Sender: TObject);

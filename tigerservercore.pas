@@ -42,7 +42,7 @@ uses
   {$ENDIF}
   tigerutil {put this first for logging support},
   tigerdb, tigersettings,
-  scan, imagecleaner, ocr, pdf;
+  scan, imagecleaner, ocr, pdf, fpjson;
 
 const
   INVALIDID = DBINVALIDID; //Used to indicate document ID etc is invalid.
@@ -84,8 +84,8 @@ type
     // Scan a document (with one or more pages) and process it.
     // Returns document ID if succesful; <=0 if not.
     function ScanAndProcess: integer;
-    // Returns server version, compile date, etc
-    function ServerInfo: string;
+    // Returns server version, compile date, etc in one big string
+    function ServerInfo: TJSONString;
     constructor Create;
     destructor Destroy; override;
   end;
@@ -297,9 +297,10 @@ begin
   end;
 end;
 
-function TTigerServerCore.ServerInfo: string;
+function TTigerServerCore.ServerInfo: TJSONString;
 begin
-  Result := 'Papertiger ' + LineEnding + 'version: based on commit ' + RevisionStr + ' (' + versiondate + ')' + LineEnding + 'build date: ' +
+  Result := TJSONString.Create(
+  'Papertiger ' + LineEnding + 'version: based on commit ' + RevisionStr + ' (' + versiondate + ')' + LineEnding + 'build date: ' +
 {$INCLUDE %DATE%}
     +' ' +
 {$INCLUDE %TIME%}
@@ -307,7 +308,7 @@ begin
 {$INCLUDE %FPCTARGETCPU%}
     ) + ' on ' + lowercase(
 {$INCLUDE %FPCTARGETOS%}
-    );
+    ));
 end;
 
 constructor TTigerServerCore.Create;
