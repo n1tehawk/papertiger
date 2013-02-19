@@ -87,7 +87,8 @@ begin
   // parse parameters; show help if no params given
   if (ParamCount=0) or (HasOption('h','help')) then
   begin
-    writeln(FTigerCore.ServerInfo);
+    //todo: decode json here
+    writeln(String(FTigerCore.ServerInfo));
     writeln('');
     WriteHelp;
     Terminate;
@@ -104,7 +105,8 @@ begin
 
   if HasOption('v','version') then
   begin
-    writeln(FTigerCore.ServerInfo);
+    //todo: decode json here
+    writeln(String(FTigerCore.ServerInfo));
     writeln('');
     Terminate;
     Exit;
