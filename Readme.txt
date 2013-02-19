@@ -37,11 +37,15 @@ For the client program, Lazarus 1.0.6 has been used for development.
 
 1. Compile hgversion.pas, e.g.:
 fpc hgversion.pas
-2. Compile the program you want
-2.1 With Lazarus:
+
+2. For the client, compile the package 3rdparty\ljgridutils\pkg\ljgridutilspkg.lpk so it is known to the IDE
+
+3. Compile the program(s) you want
+3.1 With Lazarus:
 lazbuild tigercgi.lpi
+lazbuild tigerclient.lpi
 lazbuild tigerserver.lpi
-2.2 With FreePascal:
+3.2 With FreePascal:
 - Run hgversion first to update the version info
 fpc -dCGI tigercgi.lpr
 fpc tigerserver.lpr
@@ -65,6 +69,8 @@ Installation instructions
   cat >> /usr/local/share/tessdata/configs/hocr << "EOF_DOCUMENT"
   tessedit_create_hocr 1
   EOF_DOCUMENT
+  
+Installing the command line server:
 - copy hocrwrap.sh to server directory (e.g. /opt/tigerserver/)
 - copy scanwrap.sh to server directory
 - copy tigerserver to server directory
@@ -96,6 +102,9 @@ Installing the cgi application:
   chmod u+rx scanwrap.sh
   chmod u+rx tigercgi
   chmod u+r  tigerserver.ini
+  
+Installing the client:
+- copy tigerclient.ini.template to tigerclient.ini and edit settings to match your environment
 
 
 Building Tesseract 3

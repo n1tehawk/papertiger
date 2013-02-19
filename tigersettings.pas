@@ -33,7 +33,7 @@ uses
   Classes, SysUtils, IniFiles;
 
 const
-  SettingsFile = 'tigerserver.ini';
+  SettingsFile = 'tigerserver.ini'; //Default settings filename
 
 type
 
@@ -41,12 +41,15 @@ type
 
   TTigerSettings = class(TObject)
   private
+    FCGIURL: string;
     FImageDirectory: string;
     FLanguage: string;
     FPDFDirectory: string;
     FScanDevice: string;
     FSettings: TINIFile;
+    FSettingsFileName: string; //name part only of the required settings file
   public
+    property CGIURL: string read FCGIURL write FCGIURL; //Client config: the URL that points to the tiger server
     property ImageDirectory: string read FImageDirectory write FImageDirectory; // Directory where scanned images must be/are stored.
     // Has trailing path delimiter.
     property Language: string read FLanguage write FLanguage; //Language used for text recognition. Use Tesseract notation. Default English.
@@ -54,6 +57,7 @@ type
     // Has trailing path delimiter.
     property ScanDevice: string read FScanDevice write FScanDevice; //Device to be used for scanning (in SANE notation)
     constructor Create;
+    constructor Create(SettingsFileName: string);
     destructor Destroy; override;
   end;
 
@@ -64,12 +68,18 @@ implementation
 constructor TTigerSettings.Create;
 begin
   //todo: handle config storage directory /etc on linux etc
-  FSettings := TINIFile.Create(SettingsFile);
+  // default settings file unless called with overridden constructor
+  if FSettingsFileName='' then FSettingsFileName:=SettingsFile;
+  FSettings := TINIFile.Create(FSettingsFileName);
+  // Default for Apache localhost:
+  FCGIURL:='127.0.0.1/cgi-bin/tigercgi/';
   FImageDirectory := '';
   FLanguage := 'eng';
   FPDFDirectory := '';
   FScanDevice := ''; //todo: find if there is some SANE default device name
   try
+    FCGIURL := FSettings.ReadString('General','CGIURL','127.0.0.1/cgi-bin/tigercgi/');
+
     // When reading the settings, expand ~ to home directory etc
     FImageDirectory := IncludeTrailingPathDelimiter(ExpandFileName(FSettings.ReadString('General', 'ImageDirectory', '~/scans')));
     //Default to current directory
@@ -82,11 +92,17 @@ begin
   end;
   // Fallback to directory where .ini file is stored
   if FImageDirectory = '' then
-    FImageDirectory := IncludeTrailingPathDelimiter(ExtractFilePath(SettingsFile));
+    FImageDirectory := IncludeTrailingPathDelimiter(ExtractFilePath(FSettingsFileName));
   if FLanguage = '' then
     FLanguage := 'eng';
   if FPDFDirectory = '' then
     FPDFDirectory := FImageDirectory;
+end;
+
+constructor TTigerSettings.Create(SettingsFileName: string);
+begin
+  FSettingsFileName:=SettingsFileName;
+  Create;
 end;
 
 destructor TTigerSettings.Destroy;
