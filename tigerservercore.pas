@@ -299,7 +299,7 @@ end;
 
 function TTigerServerCore.ServerInfo: TJSONString;
 begin
-  Result := TJSONString.Create(
+  result:=TJSONString.Create(
   'Papertiger ' + LineEnding + 'version: based on commit ' + RevisionStr + ' (' + versiondate + ')' + LineEnding + 'build date: ' +
 {$INCLUDE %DATE%}
     +' ' +

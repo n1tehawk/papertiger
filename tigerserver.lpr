@@ -88,7 +88,7 @@ begin
   if (ParamCount=0) or (HasOption('h','help')) then
   begin
     //todo: decode json here
-    writeln(String(FTigerCore.ServerInfo));
+    writeln(FTigerCore.ServerInfo.AsJSON);
     writeln('');
     WriteHelp;
     Terminate;
@@ -106,7 +106,7 @@ begin
   if HasOption('v','version') then
   begin
     //todo: decode json here
-    writeln(String(FTigerCore.ServerInfo));
+    writeln(FTigerCore.ServerInfo.AsJSON);
     writeln('');
     Terminate;
     Exit;
@@ -183,6 +183,8 @@ begin
   writeln(' Scan document, process.');
   writeln('-p <n> --pages=<n>');
   writeln(' Specify number of pages for processing/scanning multi page docs.');
+  writeln('-v --version');
+  writeln(' Show version information and exit.');
 end;
 
 var
