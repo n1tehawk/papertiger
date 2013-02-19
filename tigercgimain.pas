@@ -121,7 +121,7 @@ end;
 
 procedure TFPWebModule1.serverinfoRequest(Sender: TObject; ARequest: TRequest; AResponse: TResponse; var Handled: boolean);
 begin
-  AResponse.Contents.Add(String(FTigerCore.ServerInfo));
+  AResponse.Contents.Add('<p>'+String(FTigerCore.ServerInfo)+'</p>');
   Handled := true;
 end;
 
