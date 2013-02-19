@@ -72,9 +72,8 @@ type
     property Pages: integer read FPages write FPages;
     // Cleans up image (postprocessing): straightens them up, despeckles etc. Returns true if succesful
     function CleanImage(const ImageFile: string): boolean;
-    // Lists document specified by DocumentID or all documents (if DocumentID empty)
-    // Todo: replace return value by custom record in shared unit for cgi and client
-    function ListDocuments(DocumentID: string): string;
+    // Lists document specified by DocumentID or all documents (if DocumentID is INVALIDID)
+    function ListDocuments(DocumentID: integer): string;
     // Process (set of) existing (TIFF) image(s); should be named <image>.tif
     // Images are specified using the Images property
     // Specify resolution override to indicate image resolution to hocr2pdf
@@ -113,13 +112,10 @@ begin
   end;
 end;
 
-function TTigerServerCore.ListDocuments(DocumentID: string): string;
-var
-  DocumentIDNumber: integer;
+function TTigerServerCore.ListDocuments(DocumentID: integer): string;
 begin
-  DocumentIDNumber := StrToIntDef(DocumentID, DBINVALIDID);
-  Result := FTigerDB.ListDocuments(DocumentIDNumber);
-  //todo: json this up
+  Result := FTigerDB.ListDocuments(DocumentID);
+  //todo: json this up => array
 end;
 
 function TTigerServerCore.ProcessImages(DocumentName: string; Resolution: integer): string;

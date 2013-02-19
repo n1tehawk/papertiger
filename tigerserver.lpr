@@ -98,7 +98,7 @@ begin
   if HasOption('list') then
   begin
     writeln('Existing documents on server:');
-    writeln(FTigerCore.ListDocuments(''));
+    writeln(FTigerCore.ListDocuments(INVALIDID));
     Terminate;
     exit;
   end;

@@ -28,7 +28,7 @@ unit tigercgimain;
 interface
 
 uses
-  SysUtils, Classes, httpdefs, fpHTTP, fpWeb,
+  SysUtils, Classes, httpdefs, fpjson, jsonparser, fpHTTP, fpWeb,
   tigerutil, tigerservercore;
 
 type
@@ -88,7 +88,7 @@ begin
   {$ENDIF}
   AResponse.Contents.Add('<p>List of documents:</p>');
   try
-    AResponse.Contents.Add(FTigerCore.ListDocuments(''));
+    AResponse.Contents.Add(FTigerCore.ListDocuments(INVALIDID));
   except
     on E: Exception do
     begin
@@ -122,13 +122,32 @@ end;
 procedure TFPWebModule1.serverinfoRequest(Sender: TObject; ARequest: TRequest; AResponse: TResponse; var Handled: boolean);
 begin
   AResponse.ContentType:='application/json'; //let's see if this works and is necessary
+  {
+  or
+  AResponse.ContentType := 'text/html;charset=utf-8';
+  ??
+  }
   AResponse.Contents.Add(FTigerCore.ServerInfo.AsJSON);
   Handled := true;
 end;
 
 procedure TFPWebModule1.showdocumentRequest(Sender: TObject; ARequest: TRequest; AResponse: TResponse; var Handled: boolean);
+var
+  DocumentID: integer;
+  Query: TJSONObject;
 begin
-  AResponse.Contents.Add('<p>todo: support method ' + ARequest.QueryString + '.</p>');
+  //todo: modify+apply to other procedures where post is used
+  DocumentID:=INVALIDID;
+  try
+    // for uniformity, we use a generic json tag, though we could have used e.g. docid directly
+    Query:=TJSONParser.Create(ARequest.QueryFields.Values['json']).Parse as TJSONObject;
+    //for post: ARequest.Content
+    DocumentID:=Query.Integers['docid'];
+  except
+    TigerLog.WriteLog(etDebug,'showDocumentRequest: error parsing document id.');
+  end;
+  AResponse.Contents.Add('<p>'+ FTigerCore.ListDocuments(DocumentID) + '</p>');
+  //todo: output list as json array
   Handled := true;
 end;
 
