@@ -51,7 +51,7 @@ begin
     if Success then
     try
       if Assigned(VersionInfoJSON) then
-        VersionInfo:=String(VersionInfoJSON);
+        VersionInfo:=VersionInfoJSON;
     except
       on E: Exception do
       begin

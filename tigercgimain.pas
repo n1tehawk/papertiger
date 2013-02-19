@@ -121,6 +121,7 @@ end;
 
 procedure TFPWebModule1.serverinfoRequest(Sender: TObject; ARequest: TRequest; AResponse: TResponse; var Handled: boolean);
 begin
+  AResponse.ContentType:='application/json'; //let's see if this works and is necessary
   AResponse.Contents.Add(FTigerCore.ServerInfo.AsJSON);
   Handled := true;
 end;
