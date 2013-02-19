@@ -21,6 +21,7 @@ type
     mnuQuit: TMenuItem;
     procedure FormCreate(Sender: TObject);
     procedure mnuAboutClick(Sender: TObject);
+    procedure mnuQuitClick(Sender: TObject);
   private
     { private declarations }
     FCGIURL: string; //Base cgi URL used for connecting
@@ -44,11 +45,20 @@ var
   VersionInfoJSON: TJSONString;
 begin
   Success:=false;
-  VersionInfoJSON:=TJSONString.Create('');
+  //VersionInfoJSON:=TJSONString.Create('');
   try
     Success:=(HttpRequest(FCGIURL+'serverinfo',VersionInfoJSON,rmGet).Code=200);
     if Success then
-      VersionInfo:=String(VersionInfoJSON);
+    try
+      if Assigned(VersionInfoJSON) then
+        VersionInfo:=String(VersionInfoJSON);
+    except
+      on E: Exception do
+      begin
+        Success:=false;
+        VersionInfo:=' Technical details: exception '+E.Message;
+      end;
+    end;
     if Success then
     begin
       ShowMessage('Papertiger client version 0.1'+LineEnding+
@@ -57,11 +67,16 @@ begin
     else
     begin
       ShowMessage('Papertiger client version 0.1'+LineEnding+
-       'Papertiger server: error retrieving server information');
+       'Papertiger server: error retrieving server information. '+VersionInfo);
     end;
   finally
-    VersionInfoJSON.Free;
+    //VersionInfoJSON.Free;
   end;
+end;
+
+procedure TForm1.mnuQuitClick(Sender: TObject);
+begin
+  Close;
 end;
 
 procedure TForm1.FormCreate(Sender: TObject);

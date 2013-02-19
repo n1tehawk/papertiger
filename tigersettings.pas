@@ -72,18 +72,18 @@ begin
   if FSettingsFileName='' then FSettingsFileName:=SettingsFile;
   FSettings := TINIFile.Create(FSettingsFileName);
   // Default for Apache localhost:
-  FCGIURL:='127.0.0.1/cgi-bin/tigercgi/';
+  FCGIURL:='http://127.0.0.1/cgi-bin/tigercgi/';
   FImageDirectory := '';
-  FLanguage := 'eng';
+  FLanguage := 'eng'; //Default to English
   FPDFDirectory := '';
   FScanDevice := ''; //todo: find if there is some SANE default device name
   try
-    FCGIURL := FSettings.ReadString('General','CGIURL','127.0.0.1/cgi-bin/tigercgi/');
+    FCGIURL := FSettings.ReadString('General','CGIURL',FCGIURL);
 
     // When reading the settings, expand ~ to home directory etc
     FImageDirectory := IncludeTrailingPathDelimiter(ExpandFileName(FSettings.ReadString('General', 'ImageDirectory', '~/scans')));
     //Default to current directory
-    FLanguage := FSettings.ReadString('General', 'Language', 'eng'); //Default to English
+    FLanguage := FSettings.ReadString('General', 'Language', FLanguage);
     FPDFDirectory := IncludeTrailingPathDelimiter(ExpandFileName(FSettings.ReadString('General', 'PDFDirectory', '~/pdfs')));
     //Default to current directory
     FScanDevice := FSettings.ReadString('Sane', 'DeviceName', '')
