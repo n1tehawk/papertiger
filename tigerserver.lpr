@@ -48,7 +48,8 @@ uses
   {$IFDEF UNIX}{$IFDEF UseCThreads}
   cthreads,
   {$ENDIF}{$ENDIF}
-  Classes, SysUtils, CustApp, tigerservercore;
+  Classes, SysUtils, CustApp,
+  fpjson, jsonparser, tigerservercore;
 
 type
 
@@ -87,8 +88,7 @@ begin
   // parse parameters; show help if no params given
   if (ParamCount=0) or (HasOption('h','help')) then
   begin
-    //todo: decode json here
-    writeln(FTigerCore.ServerInfo.AsJSON);
+    writeln(FTigerCore.ServerInfo);
     writeln('');
     WriteHelp;
     Terminate;
@@ -105,9 +105,7 @@ begin
 
   if HasOption('v','version') then
   begin
-    //todo: decode json here
-    writeln(FTigerCore.ServerInfo.AsJSON);
-    writeln('');
+    writeln(FTigerCore.ServerInfo);
     Terminate;
     Exit;
   end;

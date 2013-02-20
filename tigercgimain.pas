@@ -120,14 +120,16 @@ begin
 end;
 
 procedure TFPWebModule1.serverinfoRequest(Sender: TObject; ARequest: TRequest; AResponse: TResponse; var Handled: boolean);
+var
+  OutputJSON: TJSONString;
 begin
   AResponse.ContentType:='application/json'; //let's see if this works and is necessary
-  {
-  or
-  AResponse.ContentType := 'text/html;charset=utf-8';
-  ??
-  }
-  AResponse.Contents.Add(FTigerCore.ServerInfo.AsJSON);
+  OutputJSON:=TJSONString.Create(FTigerCore.ServerInfo);
+  try
+    AResponse.Contents.Add(OutputJSON.AsJSON);
+  finally
+    OutputJSON.Free;
+  end;
   Handled := true;
 end;
 

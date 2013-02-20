@@ -45,13 +45,14 @@ var
   VersionInfoJSON: TJSONString;
 begin
   Success:=false;
-  //VersionInfoJSON:=TJSONString.Create('');
   try
     Success:=(HttpRequest(FCGIURL+'serverinfo',VersionInfoJSON,rmGet).Code=200);
     if Success then
     try
       if Assigned(VersionInfoJSON) then
-        VersionInfo:=VersionInfoJSON;
+      begin
+        VersionInfo:=VersionInfoJSON.AsString;
+      end;
     except
       on E: Exception do
       begin
