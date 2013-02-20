@@ -73,7 +73,7 @@ type
     // Cleans up image (postprocessing): straightens them up, despeckles etc. Returns true if succesful
     function CleanImage(const ImageFile: string): boolean;
     // Lists document specified by DocumentID or all documents (if DocumentID is INVALIDID)
-    function ListDocuments(DocumentID: integer): string;
+    procedure ListDocuments(DocumentID: integer; var DocumentArray: TJSONArray);
     // Process (set of) existing (TIFF) image(s); should be named <image>.tif
     // Images are specified using the Images property
     // Specify resolution override to indicate image resolution to hocr2pdf
@@ -112,10 +112,9 @@ begin
   end;
 end;
 
-function TTigerServerCore.ListDocuments(DocumentID: integer): string;
+procedure TTigerServerCore.ListDocuments(DocumentID: integer; var DocumentArray: TJSONArray);
 begin
-  Result := FTigerDB.ListDocuments(DocumentID);
-  //todo: json this up => array
+  FTigerDB.ListDocuments(DocumentID,DocumentArray);
 end;
 
 function TTigerServerCore.ProcessImages(DocumentName: string; Resolution: integer): string;
