@@ -84,7 +84,7 @@ type
     // Returns document ID if succesful; <=0 if not.
     function ScanAndProcess: integer;
     // Returns server version, compile date, etc in one big string
-    function ServerInfo: TJSONString;
+    function ServerInfo: String;
     constructor Create;
     destructor Destroy; override;
   end;
@@ -293,9 +293,9 @@ begin
   end;
 end;
 
-function TTigerServerCore.ServerInfo: TJSONString;
+function TTigerServerCore.ServerInfo: string;
 begin
-  result:=TJSONString.Create(
+  result:=
   'Papertiger ' + LineEnding + 'version: based on commit ' + RevisionStr + ' (' + versiondate + ')' + LineEnding + 'build date: ' +
 {$INCLUDE %DATE%}
     +' ' +
@@ -304,7 +304,7 @@ begin
 {$INCLUDE %FPCTARGETCPU%}
     ) + ' on ' + lowercase(
 {$INCLUDE %FPCTARGETOS%}
-    ));
+    );
 end;
 
 constructor TTigerServerCore.Create;
