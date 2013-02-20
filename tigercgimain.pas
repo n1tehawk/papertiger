@@ -78,21 +78,20 @@ begin
 end;
 
 procedure TFPWebModule1.listRequest(Sender: TObject; ARequest: TRequest; AResponse: TResponse; var Handled: boolean);
+var
+  DocumentArray: TJSONArray;
 begin
-  {$IFDEF DEBUG}
-  AResponse.Contents.Add('<p>papertiger build date: ' +
-{$INCLUDE %DATE%}
-    +' ' +
-{$INCLUDE %TIME%}
-    +'</p>');
-  {$ENDIF}
-  AResponse.Contents.Add('<p>List of documents:</p>');
+  AResponse.ContentType:='application/json';
+  DocumentArray:=TJSONArray.Create();
   try
-    AResponse.Contents.Add(FTigerCore.ListDocuments(INVALIDID));
+    FTigerCore.ListDocuments(INVALIDID,DocumentArray);
+    AResponse.Contents.Add(DocumentArray.AsJSON);
   except
     on E: Exception do
     begin
-      AResponse.Contents.Add('<p>todo: debug: exception ' + E.Message + '</p>');
+      DocumentArray.Clear;
+      DocumentArray.Add(TJSONSTring.Create('listRequest: exception ' + E.Message));
+      AResponse.Contents.Insert(0,DocumentArray.AsJSON);
     end;
   end;
   Handled := true;
@@ -123,7 +122,7 @@ procedure TFPWebModule1.serverinfoRequest(Sender: TObject; ARequest: TRequest; A
 var
   OutputJSON: TJSONString;
 begin
-  AResponse.ContentType:='application/json'; //let's see if this works and is necessary
+  AResponse.ContentType:='application/json';
   OutputJSON:=TJSONString.Create(FTigerCore.ServerInfo);
   try
     AResponse.Contents.Add(OutputJSON.AsJSON);
@@ -148,8 +147,7 @@ begin
   except
     TigerLog.WriteLog(etDebug,'showDocumentRequest: error parsing document id.');
   end;
-  AResponse.Contents.Add('<p>'+ FTigerCore.ListDocuments(DocumentID) + '</p>');
-  //todo: output list as json array
+  //todo: add show document=>just export tiff?
   Handled := true;
 end;
 

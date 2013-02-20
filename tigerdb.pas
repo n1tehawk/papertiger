@@ -23,6 +23,10 @@ unit tigerdb;
   FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
   IN THE SOFTWARE.
 }
+{
+For complex, array-like functions, use JSON objects etc. They can be easily passed on via the CGI server layer
+and the regular server application can decode them to text.
+}
 
 
 
@@ -37,7 +41,8 @@ uses
   DB {for EDatabaseError},
   ibconnection {Firebird},
   pqconnection {PostgreSQL},
-  sqlite3conn {SQLite};
+  sqlite3conn {SQLite},
+  fpjson;
 
 const
   DBINVALIDID = -1; //Used to return invalid primary key ids for db objects
@@ -59,7 +64,7 @@ type
     // Inserts a new scan record in database; retruns scan ID. Keep string values empty to insert NULLs; pass a pre 1900 date for TheScanDate to do the same.
     function InsertDocument(const DocumentName, PDFPath, DocumentHash: string; TheScanDate: TDateTime): integer;
     // Lists document with DocumentID or all documents if DocumentID=DBINVALIDID
-    function ListDocuments(const DocumentID: integer): string;
+    procedure ListDocuments(const DocumentID: integer; var DocumentArray: TJSONArray);
     constructor Create;
     destructor Destroy; override;
   end;
@@ -159,8 +164,12 @@ begin
   end;
 end;
 
-function TTigerDB.ListDocuments(const DocumentID: integer): string;
+procedure TTigerDB.ListDocuments(const DocumentID: integer; var DocumentArray: TJSONArray);
+// Will return an array containing objects/records for each document
+var
+  RecordObject: TJSONObject;
 begin
+  DocumentArray.Clear;
   if FReadTransaction.Active = false then
     FReadTransaction.StartTransaction;
   try
@@ -174,10 +183,15 @@ begin
     while not FReadQuery.EOF do
     begin
       if not (FReadQuery.BOF) then
-        Result := Result + #13 + #10;
-      Result := Result + FReadQuery.FieldByName('ID').AsString + ',' + FReadQuery.FieldByName('ID').AsString + ',' +
-        FReadQuery.FieldByName('DOCUMENTNAME').AsString + ',' + FReadQuery.FieldByName('PDFPATH').AsString + ',' +
-        FReadQuery.FieldByName('SCANDATE').AsString + ',' + FReadQuery.FieldByName('DOCUMENTHASH').AsString;
+      begin
+        RecordObject := TJSONObject.Create(['id', 'documentname', 'pdfpath', 'scandate', 'documenthash']);
+        RecordObject.Add('id', FReadQuery.FieldByName('ID').AsString);
+        RecordObject.Add('documentname', FReadQuery.FieldByName('DOCUMENTNAME').AsString);
+        RecordObject.Add('pdfpath', FReadQuery.FieldByName('PDFPATH').AsString);
+        RecordObject.Add('scandate', FReadQuery.FieldByName('SCANDATE').AsString);
+        RecordObject.Add('documenthash', FReadQuery.FieldByName('DOCUMENTHASH').AsString);
+        DocumentArray.Add(RecordObject);
+      end;
       FReadQuery.Next;
     end;
     FReadQuery.Close;
@@ -185,13 +199,15 @@ begin
   except
     on E: EDatabaseError do
     begin
-      Result := 'ListDocuments: db exception: ' + E.Message;
+      DocumentArray.Clear;
+      DocumentArray.Add(TJSONString.Create('ListDocuments: db exception: ' + E.Message));
       TigerLog.WriteLog(etError, 'ListDocuments: db exception: ' + E.Message);
       FReadTransaction.RollBack;
     end;
     on F: Exception do
     begin
-      Result := 'exception: message ' + F.Message;
+      DocumentArray.Clear;
+      DocumentArray.Add(TJSONString.Create('ListDocuments: exception: message ' + F.Message));
       TigerLog.WriteLog(etError, 'ListDocuments: exception: ' + F.Message);
     end;
   end;

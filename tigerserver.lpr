@@ -58,6 +58,7 @@ type
   TTigerServer = class(TCustomApplication)
   private
     FTigerCore: TTigerServerCore;
+    procedure ShowDocuments;
   protected
     procedure DoRun; override;
     // Main entry point into the program; processes command line options etc
@@ -69,6 +70,32 @@ type
 
 { TTigerServer }
 
+procedure TTigerServer.ShowDocuments;
+var
+  Document: TJSONObject;
+  DocumentsArray: TJSONArray;
+  i, Col: integer;
+begin
+  DocumentsArray:=TJSONArray.Create;
+  FTigerCore.ListDocuments(INVALIDID, DocumentsArray);
+  writeln('Existing documents on server:');
+  for i:=0 to DocumentsArray.Count-1 do
+  begin
+    Document:=DocumentsArray[i] as TJSONObject;
+    if i=0 then
+    begin
+      for Col:=0 to Document.Count-1 do
+      begin
+        write(Document.Names[Col]+';');
+      end;
+    end;
+    for Col:=0 to Document.Count-1 do
+    begin
+      write(Document.Items[Col].AsString+';');
+    end;
+  end;
+  writeln();
+end;
 
 procedure TTigerServer.DoRun;
 var
@@ -97,8 +124,7 @@ begin
 
   if HasOption('list') then
   begin
-    writeln('Existing documents on server:');
-    writeln(FTigerCore.ListDocuments(INVALIDID));
+    ShowDocuments;
     Terminate;
     exit;
   end;
