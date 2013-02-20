@@ -45,8 +45,9 @@ var
   VersionInfoJSON: TJSONString;
 begin
   Success:=false;
+  VersionInfoJSON:=TJSONString.Create('');
   try
-    Success:=(HttpRequest(FCGIURL+'serverinfo',VersionInfoJSON,rmGet).Code=200);
+    Success:=(HttpRequest(VersionInfoJSON,FCGIURL+'serverinfo',rmPost).Code=200);
     if Success then
     try
       if Assigned(VersionInfoJSON) then
@@ -71,7 +72,7 @@ begin
        'Papertiger server: error retrieving server information. '+VersionInfo);
     end;
   finally
-    //VersionInfoJSON.Free;
+    VersionInfoJSON.Free;
   end;
 end;
 
