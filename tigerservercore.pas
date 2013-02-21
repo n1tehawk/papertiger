@@ -75,7 +75,7 @@ type
     // Cleans up image (postprocessing): straightens them up, despeckles etc. Returns true if succesful
     function CleanImage(const ImageFile: string): boolean;
     // Get image identified by documentID and image number/sequence (starting with 1)
-    function GetImage(DocumentID, Sequence: integer; const ImageStream: TMemoryStream): boolean;
+    function GetImage(DocumentID, Sequence: integer; const ImageStream: TStream): boolean;
     // Lists document specified by DocumentID or all documents (if DocumentID is INVALIDID)
     procedure ListDocuments(DocumentID: integer; var DocumentsArray: TJSONArray);
     // Process (set of) existing (TIFF) image(s); should be named <image>.tif
@@ -118,12 +118,12 @@ begin
   end;
 end;
 
-function TTigerServerCore.GetImage(DocumentID, Sequence: integer; const ImageStream: TMemoryStream): boolean;
+function TTigerServerCore.GetImage(DocumentID, Sequence: integer; const ImageStream: TStream): boolean;
 var
   ImageFile: string;
+  MemStream: TMemoryStream;
 begin
   result:=false;
-  ImageStream.Clear;
   if DocumentID<>INVALIDID then
   begin
     ImageFile:=FTigerDB.ImagePath(DocumentID,Sequence);
@@ -137,7 +137,13 @@ begin
           TigerLog.WriteLog(etWarning,'GetImage: cannot read image '+ImageFile+'. Hack: trying again with mangled ImageDirectory');
           ImageFile:=FSettings.ImageDirectory+ExtractFileName(ImageFile);
         end;
-        ImageStream.LoadFromFile(ImageFile);
+        MemStream:=TMemoryStream.Create;
+        try
+          MemStream.LoadFromFile(ImageFile);
+          ImageStream.CopyFrom(MemStream,MemStream.Size);
+        finally
+          MemStream.Free;
+        end;
         result:=true;
       except
         on E: Exception do
