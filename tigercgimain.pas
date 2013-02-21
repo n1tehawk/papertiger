@@ -185,7 +185,7 @@ begin
       begin
         AResponse.ContentType := 'image/tiff; application=papertiger';
         // Indicate papertiger should be able to deal with this data
-        AResponse.ContentStream.Position := 0;
+        //AResponse.ContentStream.Position := 0; //apparently this is not allowed
         AResponse.ContentStream.CopyFrom(ImageStream, ImageStream.Size);
       end
       else
