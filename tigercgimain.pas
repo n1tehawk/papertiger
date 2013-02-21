@@ -160,7 +160,6 @@ procedure TFPWebModule1.showimageRequest(Sender: TObject; ARequest: TRequest;
 // Show image given by post with json docid integer
 var
   DocumentID, Sequence: integer;
-  ImageStream: TMemoryStream;
   Query: TJSONObject;
   Success: boolean;
 begin
@@ -178,25 +177,19 @@ begin
   if Success then
   begin
     //retrieve tiff and put in output stream
-    ImageStream := TMemoryStream.Create;
-    try
-      ImageStream.Position := 0;
-      if FTigerCore.GetImage(DocumentID, Sequence, ImageStream) then
-      begin
-        AResponse.ContentType := 'image/tiff; application=papertiger';
-        // Indicate papertiger should be able to deal with this data
-        //AResponse.ContentStream.Position := 0; //apparently this is not allowed
-        AResponse.ContentStream.CopyFrom(ImageStream, ImageStream.Size);
-      end
-      else
-      begin
-        // error message
-        //todo: for all error messages, return 500 or something instead of 200 ok
-        AResponse.Contents.Add('<p>Error getting image file for document ID ' +
-          IntToStr(DocumentID) + '</p>');
-      end;
-    finally
-      ImageStream.Free;
+    AResponse.ContentStream := TMemoryStream.Create;
+    AResponse.ContentStream.Position := 0;
+    if FTigerCore.GetImage(DocumentID, Sequence, AResponse.Contentstream) then
+    begin
+      // Indicate papertiger should be able to deal with this data:
+      AResponse.ContentType := 'image/tiff; application=papertiger';
+    end
+    else
+    begin
+      // error message
+      //todo: for all error messages, return 500 or something instead of 200 ok
+      AResponse.Contents.Add('<p>Error getting image file for document ID ' +
+        IntToStr(DocumentID) + '</p>');
     end;
   end
   else
