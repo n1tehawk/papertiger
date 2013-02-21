@@ -76,6 +76,7 @@ type
 
   procedure TTigerServer.ListDocuments;
   var
+    Cell: string;
     DateCell: TDateTime;
     Document: TJSONObject;
     DocumentsArray: TJSONArray;
@@ -92,7 +93,7 @@ type
   {$ENDIF DEBUG}
 
     // Check for empty array
-    if DocumentsArray.Count<1 then
+    if DocumentsArray.Count < 1 then
     begin
       writeln('*** no documents available ***');
       exit;
@@ -120,24 +121,43 @@ type
       for Col := 0 to Document.Count - 1 do
       begin
         //todo: for date, we get a number instead of a date. fix this
+        try
+          Cell := Document.Items[Col].AsString;
+        except
+          Cell := '[INVALID]';
+        end;
         case Document.Items[Col].JSONType of
           jtUnknown: Write('[UNKNOWN];');
-          jtNumber: Write(Document.Items[Col].AsString + ';');
+          jtNumber: Write(Cell + ';');
           jtString:
           begin
             // Try to detect ISO 8601 formatted UTC datetime. Note: only full datetime
             try
-              DateCell:=UniversalTimeToLocal(ScanDateTime(ISO8601FullDateFormat,Document.Items[Col].AsString));
+              // Scandatetime won't work, so do it the old-fashioned way
+              //2013-02-21T09:47:42.467Z
+              //0        1         2
+              //123456789012345678901234
+              if (copy(Cell, 5, 1) = '-') and (copy(Cell, 8, 1) = '-') and
+                (copy(Cell, 11, 1) = 'T') and (copy(Cell, 14, 1) = ':') and
+                (copy(Cell, 17, 1) = ':') and (copy(Cell, 20, 1) = '.') and
+                (copy(Cell, 24, 1) = 'Z') then
+              begin
+                DateCell := UniversalTimeToLocal(EncodeDateTime(
+                  StrToInt(copy(Cell, 1, 4)), StrToInt(copy(Cell, 6, 2)),
+                  StrToInt(copy(Cell, 9, 2)), StrToInt(copy(Cell, 12, 2)),
+                  StrToInt(copy(Cell, 15, 2)), StrToInt(copy(Cell, 18, 2)),
+                  StrToInt(copy(Cell, 21, 3))));
+              end;
             except
-              DateCell:=EncodeDateTime(0,0,0,0,0,0,0);
+              DateCell := EncodeDateTime(1, 1, 1, 0, 0, 0, 0);
             end;
-            if DateCell=EncodeDateTime(0,0,0,0,0,0,0) then
-              Write(Document.Items[Col].AsString + ';')
+            if DateCell = EncodeDateTime(1, 1, 1, 0, 0, 0, 0) then
+              Write(Cell + ';')
             else
               Write(DateTimeToStr(DateCell));
           end;
-          jtBoolean: Write(Document.Items[Col].AsString + ';');
-          jtNull: Write(Document.Items[Col].AsString + ';');
+          jtBoolean: Write(Cell + ';');
+          jtNull: Write(Cell + ';');
           jtArray: Write('[ARRAY];');
           jtObject: Write('[OBJECT];');
         end;
@@ -153,7 +173,8 @@ type
     PDF: string;
   begin
     // quick check parameters
-    ErrorMsg := CheckOptions('hi:l:p:sv', 'help image: language: list pages: scan version');
+    ErrorMsg := CheckOptions('hi:l:p:sv',
+      'help image: language: list pages: scan version');
     if ErrorMsg <> '' then
     begin
       ShowException(Exception.Create(ErrorMsg));
@@ -202,7 +223,8 @@ type
       //todo: add support for ; or , separated image names when pages>1
       FTigerCore.Images.Clear;
       FTigerCore.Images.Add(ExpandFileName(GetOptionValue('i', 'image')));
-      PDF := FTigerCore.ProcessImages('Document' + FormatDateTime('yyyymmddhhnnss', Now), 0);
+      PDF := FTigerCore.ProcessImages('Document' +
+        FormatDateTime('yyyymmddhhnnss', Now), 0);
       if PDF <> '' then
         writeln('Error creating PDF. Stopping.');
     end;

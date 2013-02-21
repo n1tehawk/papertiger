@@ -47,7 +47,7 @@ uses
 
 const
   DBINVALIDID = -1; //Used to return invalid primary key ids for db objects
-  ISO8601FullDateFormat = 'yyyy"-"mm"-"dd"T"hh":"nn":"sszzz"Z"'; //Format string used to go to/from ISO8601 dates
+  ISO8601FullDateFormat = 'yyyy"-"mm"-"dd"T"hh":"nn":"ss"."zzz"Z"'; //Format string used to go to/from ISO8601 dates
 
 type
   { TTigerDB }
