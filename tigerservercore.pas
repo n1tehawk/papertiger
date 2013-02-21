@@ -42,7 +42,7 @@ uses
   {$ENDIF}
   tigerutil {put this first for logging support},
   tigerdb, tigersettings,
-  scan, imagecleaner, ocr, pdf, fpjson;
+  scan, imagecleaner, ocr, pdf, fpjson, dateutils;
 
 const
   INVALIDID = DBINVALIDID; //Used to indicate document ID etc is invalid.
@@ -86,6 +86,8 @@ type
     function ScanAndProcess: integer;
     // Returns server version, compile date, etc in one big string
     function ServerInfo: String;
+    // Tries to parse full ISO8601 UTC datetime; returns datetime (1,1,0,0,0) if invalid
+    class function TryParseDate(DateString: string; out ParseDate: TDateTime): boolean;
     constructor Create;
     destructor Destroy; override;
   end;
@@ -306,6 +308,34 @@ begin
 {$INCLUDE %FPCTARGETOS%}
     );
 end;
+
+class function TTigerServerCore.TryParseDate(DateString: string; out ParseDate: TDateTime): boolean;
+// Try to detect ISO 8601 formatted UTC datetime. Note: only full datetime
+// Returns false if not a date.
+begin
+  result:=false;
+  try
+    // Scandatetime won't work, so do it the old-fashioned way
+    //2013-02-21T09:47:42.467Z
+    //0        1         2
+    //123456789012345678901234
+    if (copy(DateString, 5, 1) = '-') and (copy(DateString, 8, 1) = '-') and
+      (copy(DateString, 11, 1) = 'T') and (copy(DateString, 14, 1) = ':') and
+      (copy(DateString, 17, 1) = ':') and (copy(DateString, 20, 1) = '.') and
+      (copy(DateString, 24, 1) = 'Z') then
+    begin
+      ParseDate := UniversalTimeToLocal(EncodeDateTime(
+        StrToInt(copy(DateString, 1, 4)), StrToInt(copy(DateString, 6, 2)),
+        StrToInt(copy(DateString, 9, 2)), StrToInt(copy(DateString, 12, 2)),
+        StrToInt(copy(DateString, 15, 2)), StrToInt(copy(DateString, 18, 2)),
+        StrToInt(copy(DateString, 21, 3))));
+      result:=true;
+    end;
+  except
+    //ignore
+  end;
+end;
+
 
 constructor TTigerServerCore.Create;
 

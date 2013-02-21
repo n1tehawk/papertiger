@@ -52,8 +52,7 @@ uses {$IFDEF UNIX} {$IFDEF UseCThreads}
   CustApp,
   fpjson,
   jsonparser,
-  tigerservercore,
-  dateutils;
+  tigerservercore;
 
 type
 
@@ -131,30 +130,10 @@ type
           jtNumber: Write(Cell + ';');
           jtString:
           begin
-            // Try to detect ISO 8601 formatted UTC datetime. Note: only full datetime
-            try
-              // Scandatetime won't work, so do it the old-fashioned way
-              //2013-02-21T09:47:42.467Z
-              //0        1         2
-              //123456789012345678901234
-              if (copy(Cell, 5, 1) = '-') and (copy(Cell, 8, 1) = '-') and
-                (copy(Cell, 11, 1) = 'T') and (copy(Cell, 14, 1) = ':') and
-                (copy(Cell, 17, 1) = ':') and (copy(Cell, 20, 1) = '.') and
-                (copy(Cell, 24, 1) = 'Z') then
-              begin
-                DateCell := UniversalTimeToLocal(EncodeDateTime(
-                  StrToInt(copy(Cell, 1, 4)), StrToInt(copy(Cell, 6, 2)),
-                  StrToInt(copy(Cell, 9, 2)), StrToInt(copy(Cell, 12, 2)),
-                  StrToInt(copy(Cell, 15, 2)), StrToInt(copy(Cell, 18, 2)),
-                  StrToInt(copy(Cell, 21, 3))));
-              end;
-            except
-              DateCell := EncodeDateTime(1, 1, 1, 0, 0, 0, 0);
-            end;
-            if DateCell = EncodeDateTime(1, 1, 1, 0, 0, 0, 0) then
-              Write(Cell + ';')
+            if FTigerCore.TryParseDate(Cell,DateCell) then
+              Write(DateTimeToStr(DateCell))
             else
-              Write(DateTimeToStr(DateCell));
+              Write(Cell + ';');
           end;
           jtBoolean: Write(Cell + ';');
           jtNull: Write(Cell + ';');
@@ -165,6 +144,7 @@ type
     end;
     writeln();
   end;
+
 
   procedure TTigerServer.DoRun;
   var
