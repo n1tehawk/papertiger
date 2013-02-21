@@ -89,6 +89,13 @@ type
         [DocumentsArray.ClassName]);
   {$ENDIF DEBUG}
 
+    // Check for empty array
+    if DocumentsArray.Count<1 then
+    begin
+      writeln('*** no documents available ***');
+      exit;
+    end;
+
     // Check for empty object=>empty recordset
     Document := TJSONObject(DocumentsArray.Items[0]);
     if Document.JSONType <> jtObject then
@@ -96,6 +103,7 @@ type
       writeln('*** no documents available ***');
       exit;
     end;
+
     for i := 0 to DocumentsArray.Count - 1 do
     begin
       Document := (DocumentsArray[i] as TJSONObject);
@@ -105,10 +113,11 @@ type
         begin
           Write(Document.Names[Col] + ';');
         end;
+        writeln();
       end;
       for Col := 0 to Document.Count - 1 do
       begin
-        //todo: check if this works for boolean etc
+        //todo: for date, we get a number instead of a date. fix this
         case Document.Items[Col].JSONType of
           jtUnknown: Write('[UNKNOWN];');
           jtNumber: Write(Document.Items[Col].AsString + ';');

@@ -64,7 +64,7 @@ type
     // Inserts a new scan record in database; retruns scan ID. Keep string values empty to insert NULLs; pass a pre 1900 date for TheScanDate to do the same.
     function InsertDocument(const DocumentName, PDFPath, DocumentHash: string; TheScanDate: TDateTime): integer;
     // Lists document with DocumentID or all documents if DocumentID=DBINVALIDID
-    procedure ListDocuments(const DocumentID: integer; var DocumentArray: TJSONArray);
+    procedure ListDocuments(const DocumentID: integer; var DocumentsArray: TJSONArray);
     constructor Create;
     destructor Destroy; override;
   end;
@@ -164,12 +164,12 @@ begin
   end;
 end;
 
-procedure TTigerDB.ListDocuments(const DocumentID: integer; var DocumentArray: TJSONArray);
+procedure TTigerDB.ListDocuments(const DocumentID: integer; var DocumentsArray: TJSONArray);
 // Will return an array containing objects/records for each document
 var
   RecordObject: TJSONObject;
 begin
-  DocumentArray:=TJSONArray.Create; //clears any existing data at the same time
+  DocumentsArray:=TJSONArray.Create; //clears any existing data at the same time
   if FReadTransaction.Active = false then
     FReadTransaction.StartTransaction;
   try
@@ -182,16 +182,13 @@ begin
     FReadQuery.Open;
     while not FReadQuery.EOF do
     begin
-      if not (FReadQuery.BOF) then
-      begin
-        RecordObject := TJSONObject.Create();
-        RecordObject.Add('id', FReadQuery.FieldByName('ID').AsInteger);
-        RecordObject.Add('documentname', FReadQuery.FieldByName('DOCUMENTNAME').AsString);
-        RecordObject.Add('pdfpath', FReadQuery.FieldByName('PDFPATH').AsString);
-        RecordObject.Add('scandate', FReadQuery.FieldByName('SCANDATE').AsDateTime);
-        RecordObject.Add('documenthash', FReadQuery.FieldByName('DOCUMENTHASH').AsString);
-        DocumentArray.Add(RecordObject);
-      end;
+      RecordObject := TJSONObject.Create();
+      RecordObject.Add('id', FReadQuery.FieldByName('ID').AsInteger);
+      RecordObject.Add('documentname', FReadQuery.FieldByName('DOCUMENTNAME').AsString);
+      RecordObject.Add('pdfpath', FReadQuery.FieldByName('PDFPATH').AsString);
+      RecordObject.Add('scandate', FReadQuery.FieldByName('SCANDATE').AsDateTime);
+      RecordObject.Add('documenthash', FReadQuery.FieldByName('DOCUMENTHASH').AsString);
+      DocumentsArray.Add(RecordObject);
       FReadQuery.Next;
     end;
     FReadQuery.Close;
@@ -199,15 +196,15 @@ begin
   except
     on E: EDatabaseError do
     begin
-      DocumentArray.Clear;
-      DocumentArray.Add(TJSONString.Create('ListDocuments: db exception: ' + E.Message));
+      DocumentsArray.Clear;
+      DocumentsArray.Add(TJSONString.Create('ListDocuments: db exception: ' + E.Message));
       TigerLog.WriteLog(etError, 'ListDocuments: db exception: ' + E.Message);
       FReadTransaction.RollBack;
     end;
     on F: Exception do
     begin
-      DocumentArray.Clear;
-      DocumentArray.Add(TJSONString.Create('ListDocuments: exception: message ' + F.Message));
+      DocumentsArray.Clear;
+      DocumentsArray.Add(TJSONString.Create('ListDocuments: exception: message ' + F.Message));
       TigerLog.WriteLog(etError, 'ListDocuments: exception: ' + F.Message);
     end;
   end;
