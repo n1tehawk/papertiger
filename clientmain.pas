@@ -6,7 +6,8 @@ interface
 
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, Menus, Grids,
-  StdCtrls, tigersettings, LJGridUtils, FPJSON, jsonparser, httpclient;
+  StdCtrls, tigersettings, LJGridUtils, FPJSON, jsonparser, httpclient, imageformunit,
+  fpreadtiff {adds TIFF format read support to TImage};
 //todo: think about splitting up data access layer so you can e.g. build a CLI client
 
 type
@@ -14,7 +15,9 @@ type
   { TForm1 }
 
   TForm1 = class(TForm)
-    RefreshDocuments: TButton;
+    ShowImageButton: TButton;
+    ScanButton: TButton;
+    RefreshDocumentsButton: TButton;
     MainMenu1: TMainMenu;
     mnuFile: TMenuItem;
     mnuHelp: TMenuItem;
@@ -24,10 +27,14 @@ type
     procedure FormCreate(Sender: TObject);
     procedure mnuAboutClick(Sender: TObject);
     procedure mnuQuitClick(Sender: TObject);
-    procedure RefreshDocumentsClick(Sender: TObject);
+    procedure RefreshDocumentsButtonClick(Sender: TObject);
+    procedure ScanButtonClick(Sender: TObject);
+    procedure ShowImageButtonClick(Sender: TObject);
   private
     { private declarations }
     FCGIURL: string; //Base cgi URL used for connecting
+    // Refresh list of documents in grid
+    procedure RefreshDocuments;
   public
     { public declarations }
   end;
@@ -38,6 +45,7 @@ var
 implementation
 
 {$R *.lfm}
+{$i tigercommondefs.inc}
 
 { TForm1 }
 
@@ -84,7 +92,56 @@ begin
   Close;
 end;
 
-procedure TForm1.RefreshDocumentsClick(Sender: TObject);
+procedure TForm1.RefreshDocumentsButtonClick(Sender: TObject);
+begin
+  RefreshDocuments;
+end;
+
+procedure TForm1.ScanButtonClick(Sender: TObject);
+begin
+  //RequestResult:=HttpRequest(FCGIURL+'scan',
+  //todo: finish
+
+  //When succesful, add docs to list
+  RefreshDocuments;
+end;
+
+procedure TForm1.ShowImageButtonClick(Sender: TObject);
+var
+  DocumentID: integer;
+  RequestResult: THTTPResult;
+  TIFFStream: TMemoryStream;
+  VData: TJSONObject;
+begin
+  // Check for selected document
+  if DocumentsGrid.Row<1 then
+  begin
+    ShowMessage('No document selected. Please select a document in the grid first.');
+    exit;
+  end;
+  DocumentID:=StrToIntDef(DocumentsGrid.Cells[0,DocumentsGrid.Row],;
+
+  VData:=TJSONObject.Create;
+  TIFFStream:=TMemoryStream.Create;
+  try
+    VData.Add('documentid',DocumentID);
+    //post a request to show the image
+    RequestResult:=HttpRequestWithData(VData,FCGIURL+'showimage',rmPost);
+    if RequestResult.Code<>200 then
+    begin
+      showmessage('Error getting image from server. HTTP result code: '+inttostr(RequestResult.Code)+'/'+RequestResult.Text);
+      exit;
+    end;
+    imageform.Hide;
+    imageform.ScanImage.Picture.LoadFromStreamWithFileExt(TIFFStream,'.tiff');
+    ImageForm.Show;
+  finally
+    VData.Free;
+    TIFFStream.Free;
+  end;
+end;
+
+procedure TForm1.RefreshDocuments;
 var
   RequestResult: THTTPResult;
   VData: TJSONArray;

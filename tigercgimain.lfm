@@ -40,6 +40,12 @@ object FPWebModule1: TFPWebModule1
       Template.AllowTagParams = False
     end  
     item
+      Name = 'showimage'
+      Default = False
+      OnRequest = showdocumentRequest
+      Template.AllowTagParams = False
+    end  
+    item
       Name = 'showdocument'
       Default = False
       OnRequest = showdocumentRequest
