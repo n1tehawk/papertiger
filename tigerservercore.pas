@@ -128,7 +128,14 @@ begin
     ImageFile:=FTigerDB.ImagePath(DocumentID,ImageNumber);
     if ImageFile<>'' then
     begin
-      ImageStream.LoadFromFile(ImageFile);
+      try
+        ImageStream.LoadFromFile(ImageFile);
+      except
+        on E: Exception do
+        begin
+          TigerLog.WriteLog(etError,'GetImage: error trying to read image file '+ImageFile+'. Exception:'+E.Message);
+        end;
+      end;
     end;
   end;
 end;

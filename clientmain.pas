@@ -108,7 +108,7 @@ end;
 
 procedure TForm1.ShowImageButtonClick(Sender: TObject);
 var
-  DocumentID: integer;
+  DocumentID, Sequence: integer;
   RequestResult: THTTPResult;
   TIFFStream: TMemoryStream;
   VData: TJSONObject;
@@ -124,7 +124,9 @@ begin
   VData:=TJSONObject.Create;
   TIFFStream:=TMemoryStream.Create;
   try
+    Sequence:=1; //todo: add support for multi tiff images, e.g. using next/previous button & capturing errors
     VData.Add('documentid',DocumentID);
+    VData.Add('sequence',Sequence); //image order number
     //post a request to show the image
     RequestResult:=HttpRequestWithData(VData,FCGIURL+'showimage',TIFFStream,rmPost);
     if RequestResult.Code<>200 then

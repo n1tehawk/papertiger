@@ -146,7 +146,7 @@ end;
 procedure TFPWebModule1.showimageRequest(Sender: TObject; ARequest: TRequest; AResponse: TResponse; var Handled: boolean);
 // Show image given by post with json docid integer
 var
-  DocumentID: integer;
+  DocumentID, Sequence: integer;
   ImageStream: TMemoryStream;
   Query: TJSONObject;
   Success:boolean;
@@ -156,6 +156,7 @@ begin
     // for uniformity, we expect a POST+a generic json tag, though we could have used e.g. docid directly
     Query:=TJSONParser.Create(ARequest.Content).Parse as TJSONObject;
     DocumentID:=Query.Integers['documentid'];
+    Sequence:=Query.Integers['sequence']; //image order number
     Success:=true;
   except
     TigerLog.WriteLog(etDebug,'showDocumentRequest: error parsing document id.');
@@ -168,8 +169,11 @@ begin
     ImageStream:=TMemoryStream.Create;
     try
       ImageStream.Position:=0;
-      AResponse.ContentStream.Position:=0;
-      AResponse.ContentStream.CopyFrom(ImageStream,ImageStream.Size);
+      if FTigerCore.GetImage(DocumentID,Sequence,ImageStream) then
+      begin
+        AResponse.ContentStream.Position:=0;
+        AResponse.ContentStream.CopyFrom(ImageStream,ImageStream.Size);
+      end;
     finally
       ImageStream.Free;
     end;
