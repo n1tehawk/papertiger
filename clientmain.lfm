@@ -4,9 +4,45 @@ object Form1: TForm1
   Top = 155
   Width = 665
   Caption = 'Form1'
+  ClientHeight = 461
+  ClientWidth = 665
   Menu = MainMenu1
   OnCreate = FormCreate
-  LCLVersion = '1.0.6.0'
+  LCLVersion = '1.1'
+  object DocumentsGrid: TStringGrid
+    Left = 11
+    Height = 353
+    Top = 15
+    Width = 485
+    Columns = <    
+      item
+        Title.Caption = 'ID'
+      end    
+      item
+        Title.Caption = 'Name'
+      end    
+      item
+        Title.Caption = 'PDFPath'
+      end    
+      item
+        Title.Caption = 'ScanDate'
+      end    
+      item
+        Title.Caption = 'Hash'
+      end>
+    FixedCols = 0
+    RowCount = 1
+    TabOrder = 0
+  end
+  object RefreshDocuments: TButton
+    Left = 421
+    Height = 25
+    Top = 384
+    Width = 75
+    Caption = 'Refresh'
+    OnClick = RefreshDocumentsClick
+    TabOrder = 1
+  end
   object MainMenu1: TMainMenu
     left = 48
     top = 416

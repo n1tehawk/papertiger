@@ -169,7 +169,7 @@ procedure TTigerDB.ListDocuments(const DocumentID: integer; var DocumentArray: T
 var
   RecordObject: TJSONObject;
 begin
-  DocumentArray.Clear;
+  DocumentArray:=TJSONArray.Create; //clears any existing data at the same time
   if FReadTransaction.Active = false then
     FReadTransaction.StartTransaction;
   try
@@ -184,11 +184,11 @@ begin
     begin
       if not (FReadQuery.BOF) then
       begin
-        RecordObject := TJSONObject.Create(['id', 'documentname', 'pdfpath', 'scandate', 'documenthash']);
-        RecordObject.Add('id', FReadQuery.FieldByName('ID').AsString);
+        RecordObject := TJSONObject.Create();
+        RecordObject.Add('id', FReadQuery.FieldByName('ID').AsInteger);
         RecordObject.Add('documentname', FReadQuery.FieldByName('DOCUMENTNAME').AsString);
         RecordObject.Add('pdfpath', FReadQuery.FieldByName('PDFPATH').AsString);
-        RecordObject.Add('scandate', FReadQuery.FieldByName('SCANDATE').AsString);
+        RecordObject.Add('scandate', FReadQuery.FieldByName('SCANDATE').AsDateTime);
         RecordObject.Add('documenthash', FReadQuery.FieldByName('DOCUMENTHASH').AsString);
         DocumentArray.Add(RecordObject);
       end;
