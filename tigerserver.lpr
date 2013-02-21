@@ -80,7 +80,13 @@ type
     Document: TJSONObject;
     DocumentsArray: TJSONArray;
     i, Col: integer;
+    mem: TMemoryStream;
   begin
+    //todo: debug
+    mem:=TMemoryStream.Create;
+    if FTigerCore.GetImage(45,1,mem) then
+      writeln('got tiff for doc 45');
+    mem.Free;
     writeln('Existing documents on server:');
     DocumentsArray := TJSONArray.Create;
     FTigerCore.ListDocuments(INVALIDID, DocumentsArray);

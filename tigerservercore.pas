@@ -368,6 +368,7 @@ begin
   inherited Create;
   {$IFDEF DEBUG}
   TigerLog.WriteLog(etDebug, 'Starting TTigerServerCore');
+  TigerLog.WriteLog(etDebug, Self.ServerInfo);
   {$ENDIF}
   FSettings := TTigerSettings.Create;
   FCurrentOCRLanguage := FSettings.Language; //read language from settings; can be overridden by command line optoin
