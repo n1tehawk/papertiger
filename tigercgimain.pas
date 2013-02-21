@@ -42,8 +42,7 @@ type
     procedure listRequest(Sender: TObject; ARequest: TRequest; AResponse: TResponse; var Handled: boolean);
     procedure scanRequest(Sender: TObject; ARequest: TRequest; AResponse: TResponse; var Handled: boolean);
     procedure serverinfoRequest(Sender: TObject; ARequest: TRequest; AResponse: TResponse; var Handled: boolean);
-    procedure showdocumentRequest(Sender: TObject; ARequest: TRequest;
-      AResponse: TResponse; var Handled: Boolean);
+    procedure showdocumentRequest(Sender: TObject; ARequest: TRequest; AResponse: TResponse; var Handled: Boolean);
     procedure showimageRequest(Sender: TObject; ARequest: TRequest; AResponse: TResponse; var Handled: boolean);
     procedure unsupportedRequest(Sender: TObject; ARequest: TRequest; AResponse: TResponse; var Handled: boolean);
     procedure uploadimageRequest(Sender: TObject; ARequest: TRequest; AResponse: TResponse; var Handled: boolean);
@@ -140,10 +139,12 @@ procedure TFPWebModule1.showdocumentRequest(Sender: TObject;
   ARequest: TRequest; AResponse: TResponse; var Handled: Boolean);
 begin
   //todo: do the same as for showdocument except show the pdf
+  aresponse.contents.add('<p>todo debug this needs much work.</p>');
+  handled:=true;
 end;
 
 procedure TFPWebModule1.showimageRequest(Sender: TObject; ARequest: TRequest; AResponse: TResponse; var Handled: boolean);
-// Show document given by post with json docid integer
+// Show image given by post with json docid integer
 var
   DocumentID: integer;
   ImageStream: TMemoryStream;
@@ -152,7 +153,7 @@ var
 begin
   Success:=false;
   try
-    // for uniformity, we use a generic json tag, though we could have used e.g. docid directly
+    // for uniformity, we expect a POST+a generic json tag, though we could have used e.g. docid directly
     Query:=TJSONParser.Create(ARequest.Content).Parse as TJSONObject;
     DocumentID:=Query.Integers['documentid'];
     Success:=true;
