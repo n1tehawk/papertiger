@@ -1,4 +1,5 @@
 program tigerserver;
+
 { Paper Tiger paper scanning/OCR/archiving solution
 
   Copyright (c) 2012-2013 Reinier Olislagers
@@ -44,12 +45,14 @@ http://git.gnome.org/browse/ocrfeeder
 
 {$i tigerserver.inc}
 
-uses
-  {$IFDEF UNIX}{$IFDEF UseCThreads}
-  cthreads,
-  {$ENDIF}{$ENDIF}
-  Classes, SysUtils, CustApp,
-  fpjson, jsonparser, tigerservercore;
+uses {$IFDEF UNIX} {$IFDEF UseCThreads}
+  cthreads, {$ENDIF} {$ENDIF}
+  Classes,
+  SysUtils,
+  CustApp,
+  fpjson,
+  jsonparser,
+  tigerservercore;
 
 type
 
@@ -58,7 +61,7 @@ type
   TTigerServer = class(TCustomApplication)
   private
     FTigerCore: TTigerServerCore;
-    procedure ShowDocuments;
+    procedure ListDocuments;
   protected
     procedure DoRun; override;
     // Main entry point into the program; processes command line options etc
@@ -68,154 +71,176 @@ type
     procedure WriteHelp; virtual;
   end;
 
-{ TTigerServer }
+  { TTigerServer }
 
-procedure TTigerServer.ShowDocuments;
-var
-  Document: TJSONObject;
-  DocumentsArray: TJSONArray;
-  i, Col: integer;
-begin
-  DocumentsArray:=TJSONArray.Create;
-  FTigerCore.ListDocuments(INVALIDID, DocumentsArray);
-  writeln('Existing documents on server:');
-  for i:=0 to DocumentsArray.Count-1 do
+  procedure TTigerServer.ListDocuments;
+  var
+    Document: TJSONObject;
+    DocumentsArray: TJSONArray;
+    i, Col: integer;
   begin
-    Document:=DocumentsArray[i] as TJSONObject;
-    if i=0 then
+    writeln('Existing documents on server:');
+    DocumentsArray := TJSONArray.Create;
+    FTigerCore.ListDocuments(INVALIDID, DocumentsArray);
+  {$IFDEF DEBUG}
+    // Extra troubleshooting; useful in client/server environment
+    if DocumentsArray.JSONType <> jtArray then
+      Exception.CreateFmt('ListDocuments error: Got "%s", expected "TJSONArray".',
+        [DocumentsArray.ClassName]);
+  {$ENDIF DEBUG}
+
+    // Check for empty object=>empty recordset
+    Document := TJSONObject(DocumentsArray.Items[0]);
+    if Document.JSONType <> jtObject then
     begin
-      for Col:=0 to Document.Count-1 do
+      writeln('*** no documents available ***');
+      exit;
+    end;
+    for i := 0 to DocumentsArray.Count - 1 do
+    begin
+      Document := (DocumentsArray[i] as TJSONObject);
+      if i = 0 then // column headers
       begin
-        write(Document.Names[Col]+';');
+        for Col := 0 to Document.Count - 1 do
+        begin
+          Write(Document.Names[Col] + ';');
+        end;
+      end;
+      for Col := 0 to Document.Count - 1 do
+      begin
+        //todo: check if this works for boolean etc
+        case Document.Items[Col].JSONType of
+          jtUnknown: Write('[UNKNOWN];');
+          jtNumber: Write(Document.Items[Col].AsString + ';');
+          jtString: Write(Document.Items[Col].AsString + ';');
+          jtBoolean: Write(Document.Items[Col].AsString + ';');
+          jtNull: Write(Document.Items[Col].AsString + ';');
+          jtArray: Write('[ARRAY];');
+          jtObject: Write('[OBJECT];');
+        end;
       end;
     end;
-    for Col:=0 to Document.Count-1 do
+    writeln();
+  end;
+
+  procedure TTigerServer.DoRun;
+  var
+    DocumentID: integer;
+    ErrorMsg: string;
+    PDF: string;
+  begin
+    // quick check parameters
+    ErrorMsg := CheckOptions('hi:l:p:sv', 'help image: language: list pages: scan version');
+    if ErrorMsg <> '' then
     begin
-      write(Document.Items[Col].AsString+';');
+      ShowException(Exception.Create(ErrorMsg));
+      Terminate;
+      Exit;
     end;
-  end;
-  writeln();
-end;
 
-procedure TTigerServer.DoRun;
-var
-  DocumentID: integer;
-  ErrorMsg: String;
-  PDF: string;
-begin
-  // quick check parameters
-  ErrorMsg:=CheckOptions('hi:l:p:sv','help image: language: list pages: scan version');
-  if ErrorMsg<>'' then
-  begin
-    ShowException(Exception.Create(ErrorMsg));
-    Terminate;
-    Exit;
-  end;
+    // parse parameters; show help if no params given
+    if (ParamCount = 0) or (HasOption('h', 'help')) then
+    begin
+      writeln(FTigerCore.ServerInfo);
+      writeln('');
+      WriteHelp;
+      Terminate;
+      Exit;
+    end;
 
-  // parse parameters; show help if no params given
-  if (ParamCount=0) or (HasOption('h','help')) then
-  begin
-    writeln(FTigerCore.ServerInfo);
-    writeln('');
-    WriteHelp;
-    Terminate;
-    Exit;
-  end;
+    if HasOption('list') then
+    begin
+      ListDocuments;
+      Terminate;
+      exit;
+    end;
 
-  if HasOption('list') then
-  begin
-    ShowDocuments;
-    Terminate;
-    exit;
-  end;
-
-  if HasOption('v','version') then
-  begin
-    writeln(FTigerCore.ServerInfo);
-    Terminate;
-    Exit;
-  end;
+    if HasOption('v', 'version') then
+    begin
+      writeln(FTigerCore.ServerInfo);
+      Terminate;
+      Exit;
+    end;
 
 
-  if HasOption('l','language') then
-  begin
-    FTigerCore.CurrentOCRLanguage:=GetOptionValue('l','language');
-  end;
+    if HasOption('l', 'language') then
+    begin
+      FTigerCore.CurrentOCRLanguage := GetOptionValue('l', 'language');
+    end;
 
-  if HasOption('p','pages') then
-  begin
-    FTigerCore.Pages:=strtoint(GetOptionValue('p','pages'));
-  end;
+    if HasOption('p', 'pages') then
+    begin
+      FTigerCore.Pages := StrToInt(GetOptionValue('p', 'pages'));
+    end;
 
-  // Branching off into processing starts here
-  if HasOption('i','image') then
-  begin
-    //todo: add support for ; or , separated image names when pages>1
-    FTigerCore.Images.Clear;
-    FTigerCore.Images.Add(ExpandFileName(GetOptionValue('i','image')));
-    PDF:=FTigerCore.ProcessImages('Document'+FormatDateTime('yyyymmddhhnnss', Now),0);
-    if PDF<>'' then
-      writeln('Error creating PDF. Stopping.');
-  end;
+    // Branching off into processing starts here
+    if HasOption('i', 'image') then
+    begin
+      //todo: add support for ; or , separated image names when pages>1
+      FTigerCore.Images.Clear;
+      FTigerCore.Images.Add(ExpandFileName(GetOptionValue('i', 'image')));
+      PDF := FTigerCore.ProcessImages('Document' + FormatDateTime('yyyymmddhhnnss', Now), 0);
+      if PDF <> '' then
+        writeln('Error creating PDF. Stopping.');
+    end;
 
-  if HasOption('s','scan') then
-  begin
-    DocumentID:=INVALIDID;
-    try
-      DocumentID:=FTigerCore.ScanAndProcess;
-    except
-      on E: Exception do
-      begin
-      writeln('Exception: '+E.Message);
+    if HasOption('s', 'scan') then
+    begin
+      DocumentID := INVALIDID;
+      try
+        DocumentID := FTigerCore.ScanAndProcess;
+      except
+        on E: Exception do
+        begin
+          writeln('Exception: ' + E.Message);
+        end;
       end;
+      if DocumentID = INVALIDID then
+        writeln('Error while scanning')
+      else
+        writeln('Scanning complete.');
     end;
-    if DocumentID=INVALIDID then
-      writeln('Error while scanning')
-    else
-      writeln('Scanning complete.');
+
+    // stop program loop
+    Terminate;
   end;
 
-  // stop program loop
-  Terminate;
-end;
+  constructor TTigerServer.Create(TheOwner: TComponent);
+  begin
+    inherited Create(TheOwner);
+    StopOnException := True;
+    FTigerCore := TTigerServerCore.Create;
+  end;
 
-constructor TTigerServer.Create(TheOwner: TComponent);
-begin
-  inherited Create(TheOwner);
-  StopOnException:=True;
-  FTigerCore:=TTigerServerCore.Create;
-end;
+  destructor TTigerServer.Destroy;
+  begin
+    FTigerCore.Free;
+    inherited Destroy;
+  end;
 
-destructor TTigerServer.Destroy;
-begin
-  FTigerCore.Free;
-  inherited Destroy;
-end;
-
-procedure TTigerServer.WriteHelp;
-begin
-  writeln('Usage: ',ExeName,' -h');
-  writeln('-i <image> --image=<image>');
-  writeln(' Process image.');
-  writeln('-l <lang> --language=<language>');
-  writeln(' Language to be used for OCR.');
-  writeln(' eng (English) by default. See the OCR documentation for ');
-  writeln(' language codes (e.g. man tesseract)');
-  writeln('--list');
-  writeln(' list already scanned documents');
-  writeln('-s --scan');
-  writeln(' Scan document, process.');
-  writeln('-p <n> --pages=<n>');
-  writeln(' Specify number of pages for processing/scanning multi page docs.');
-  writeln('-v --version');
-  writeln(' Show version information and exit.');
-end;
+  procedure TTigerServer.WriteHelp;
+  begin
+    writeln('Usage: ', ExeName, ' -h');
+    writeln('-i <image> --image=<image>');
+    writeln(' Process image.');
+    writeln('-l <lang> --language=<language>');
+    writeln(' Language to be used for OCR.');
+    writeln(' eng (English) by default. See the OCR documentation for ');
+    writeln(' language codes (e.g. man tesseract)');
+    writeln('--list');
+    writeln(' list already scanned documents');
+    writeln('-s --scan');
+    writeln(' Scan document, process.');
+    writeln('-p <n> --pages=<n>');
+    writeln(' Specify number of pages for processing/scanning multi page docs.');
+    writeln('-v --version');
+    writeln(' Show version information and exit.');
+  end;
 
 var
   Application: TTigerServer;
 begin
-  Application:=TTigerServer.Create(nil);
+  Application := TTigerServer.Create(nil);
   Application.Run;
   Application.Free;
 end.
-
