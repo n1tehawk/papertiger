@@ -62,7 +62,7 @@
     <RunParams>
       <local>
         <FormatVersion Value="1"/>
-        <CommandLineParams Value="--version"/>
+        <CommandLineParams Value="--list"/>
       </local>
     </RunParams>
     <Units Count="2">
