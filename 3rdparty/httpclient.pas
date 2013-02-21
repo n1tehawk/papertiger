@@ -15,11 +15,20 @@ type
 
   TRequestMethod = (rmGet, rmHead, rmOptions, rmPost, rmPut, rmDelete);
 
+// Perform a get etc and return JSON result data in AResponse
 function HttpRequest(const AUrl: string; AResponse: TJSONData;
   const AMethod: TRequestMethod = rmGet): THttpResult;
+// Perform a post etc with JSON data in the request body and return JSON result data in AData
 function HttpRequestWithData(AData: TJSONData; const AUrl: string;
   const AMethod: TRequestMethod = rmPost;
   const AContentType: string = 'application/json'): THttpResult;
+// Perform a post etc with JSON data in the request body and return the result body as a memory stream
+function HttpRequestWithData(AData: TJSONData; const AUrl: string;
+  const ReturnStream: TMemoryStream;
+  const AMethod: TRequestMethod = rmPost;
+  const AContentType: string = 'application/json'
+  ): THttpResult;
+
 
 implementation
 
@@ -106,6 +115,43 @@ begin
     VHttp.RequestBody.Free;
     VHttp.RequestBody := nil;
     VData.Free;
+    VHttp.Free;
+  end;
+end;
+
+function HttpRequestWithData(AData: TJSONData; const AUrl: string;
+  const ReturnStream: TMemoryStream;
+  const AMethod: TRequestMethod;
+  const AContentType: string): THttpResult;
+var
+  VMethod: string;
+  VHttp: TFPHTTPClient;
+  VParser: TJSONParser;
+  VJSON: TJSONStringType;
+begin
+  VHttp := TFPHTTPClient.Create(nil);
+  try
+    case AMethod of
+      rmPost: VMethod := 'POST';
+      rmPut: VMethod := 'PUT';
+      rmDelete: VMethod := 'DELETE';
+    else
+      raise Exception.Create('HttpRequest: Invalid request method.');
+    end;
+    if Assigned(AData) then
+    begin
+      VHttp.RequestBody := TMemoryStream.Create;
+      VJSON := AData.AsJSON;
+      VHttp.RequestBody.Write(Pointer(VJSON)^, Length(VJSON));
+      VHttp.RequestBody.Position := 0;
+    end;
+    VHttp.AddHeader('Content-Type', AContentType);
+    VHttp.HTTPMethod(VMethod, AUrl, ReturnStream, []);
+    Result.Code := VHttp.ResponseStatusCode;
+    Result.Text := VHttp.ResponseStatusText;
+  finally
+    VHttp.RequestBody.Free;
+    VHttp.RequestBody := nil;
     VHttp.Free;
   end;
 end;

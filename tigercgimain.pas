@@ -42,7 +42,9 @@ type
     procedure listRequest(Sender: TObject; ARequest: TRequest; AResponse: TResponse; var Handled: boolean);
     procedure scanRequest(Sender: TObject; ARequest: TRequest; AResponse: TResponse; var Handled: boolean);
     procedure serverinfoRequest(Sender: TObject; ARequest: TRequest; AResponse: TResponse; var Handled: boolean);
-    procedure showdocumentRequest(Sender: TObject; ARequest: TRequest; AResponse: TResponse; var Handled: boolean);
+    procedure showdocumentRequest(Sender: TObject; ARequest: TRequest;
+      AResponse: TResponse; var Handled: Boolean);
+    procedure showimageRequest(Sender: TObject; ARequest: TRequest; AResponse: TResponse; var Handled: boolean);
     procedure unsupportedRequest(Sender: TObject; ARequest: TRequest; AResponse: TResponse; var Handled: boolean);
     procedure uploadimageRequest(Sender: TObject; ARequest: TRequest; AResponse: TResponse; var Handled: boolean);
   private
@@ -98,10 +100,12 @@ begin
 end;
 
 procedure TFPWebModule1.scanRequest(Sender: TObject; ARequest: TRequest; AResponse: TResponse; var Handled: boolean);
+// Scans page and adds it to existing document or creates new document if none given
 var
   DocumentID: integer;
   Message: string;
 begin
+  //todo implement existing document, look at showdocument
   //todo implement number of pages, language etc
   //todo: json this up
   try
@@ -132,22 +136,48 @@ begin
   Handled := true;
 end;
 
-procedure TFPWebModule1.showdocumentRequest(Sender: TObject; ARequest: TRequest; AResponse: TResponse; var Handled: boolean);
+procedure TFPWebModule1.showdocumentRequest(Sender: TObject;
+  ARequest: TRequest; AResponse: TResponse; var Handled: Boolean);
+begin
+  //todo: do the same as for showdocument except show the pdf
+end;
+
+procedure TFPWebModule1.showimageRequest(Sender: TObject; ARequest: TRequest; AResponse: TResponse; var Handled: boolean);
+// Show document given by post with json docid integer
 var
   DocumentID: integer;
+  ImageStream: TMemoryStream;
   Query: TJSONObject;
+  Success:boolean;
 begin
-  //todo: modify+apply to other procedures where post is used
-  DocumentID:=INVALIDID;
+  Success:=false;
   try
     // for uniformity, we use a generic json tag, though we could have used e.g. docid directly
-    Query:=TJSONParser.Create(ARequest.QueryFields.Values['json']).Parse as TJSONObject;
-    //for post: ARequest.Content
-    DocumentID:=Query.Integers['docid'];
+    Query:=TJSONParser.Create(ARequest.Content).Parse as TJSONObject;
+    DocumentID:=Query.Integers['documentid'];
+    Success:=true;
   except
     TigerLog.WriteLog(etDebug,'showDocumentRequest: error parsing document id.');
   end;
-  //todo: add show document=>just export tiff?
+
+  if Success then
+  begin
+    //retrieve tiff and put in output stream
+    AResponse.ContentType:='image/tiff; application=papertiger'; // Indicate papertiger should be able to deal with this data
+    ImageStream:=TMemoryStream.Create;
+    try
+      ImageStream.Position:=0;
+      AResponse.ContentStream.Position:=0;
+      AResponse.ContentStream.CopyFrom(ImageStream,ImageStream.Size);
+    finally
+      ImageStream.Free;
+    end;
+  end
+  else
+  begin
+    // error message
+    AResponse.Contents.Add('<p>Error retrieving document for ID '+inttostr(DocumentID)+'</p>');
+  end;
   Handled := true;
 end;
 

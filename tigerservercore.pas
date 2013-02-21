@@ -44,8 +44,9 @@ uses
   tigerdb, tigersettings,
   scan, imagecleaner, ocr, pdf, fpjson, dateutils;
 
+{$i tigercommondefs.inc}
+
 const
-  INVALIDID = DBINVALIDID; //Used to indicate document ID etc is invalid.
   ISO8601FullDateFormat = tigerdb.ISO8601FullDateFormat;
 
 type
@@ -73,6 +74,8 @@ type
     property Pages: integer read FPages write FPages;
     // Cleans up image (postprocessing): straightens them up, despeckles etc. Returns true if succesful
     function CleanImage(const ImageFile: string): boolean;
+    // Get image identified by documentID and image number/sequence (starting with 1)
+    function GetImage(DocumentID, ImageNumber: integer; const ImageStream: TMemoryStream): boolean;
     // Lists document specified by DocumentID or all documents (if DocumentID is INVALIDID)
     procedure ListDocuments(DocumentID: integer; var DocumentsArray: TJSONArray);
     // Process (set of) existing (TIFF) image(s); should be named <image>.tif
@@ -112,6 +115,21 @@ begin
     TigerLog.WriteLog(etInfo, 'CleanImage: not yet implemented. File argument Passed: ' + ImageFile);
   finally
     Cleaner.Free;
+  end;
+end;
+
+function TTigerServerCore.GetImage(DocumentID, ImageNumber: integer; const ImageStream: TMemoryStream): boolean;
+var
+  ImageFile: string;
+begin
+  ImageStream.Clear;
+  if DocumentID<>INVALIDID then
+  begin
+    ImageFile:=FTigerDB.ImagePath(DocumentID,ImageNumber);
+    if ImageFile<>'' then
+    begin
+      ImageStream.LoadFromFile(ImageFile);
+    end;
   end;
 end;
 
@@ -184,7 +202,7 @@ begin
         // todo: next call db update or insert images here to make sure images assigned to proper document
       end
       else
-        FDocumentID := DBINVALIDID; //invalidate any previously valid document ID
+        FDocumentID := INVALIDID; //invalidate any previously valid document ID
     end;
   end;
 end;
@@ -234,7 +252,7 @@ var
   StartDateString: string;
 begin
   Result := INVALIDID; //fail by default
-  FDocumentID := DBINVALIDID; //Avoid processing old documents after failure
+  FDocumentID := INVALIDID; //Avoid processing old documents after failure
 
   // Try a 300dpi scan, probably best for normal sized letters on paper
   Resolution := 300;
@@ -277,7 +295,7 @@ begin
 
     TigerLog.WriteLog(etDebug, 'going to process image(s): '+inttostr(FImageFiles.Count));
     ProcessImages(StartDateString, Resolution);
-    if FDocumentID = DBINVALIDID then
+    if FDocumentID = INVALIDID then
     begin
       TigerLog.WriteLog(etError, 'ScanAndProcess: Error: could not insert document/scan into database. Please try again.');
     end
@@ -286,7 +304,7 @@ begin
       for i := 0 to FPages - 1 do
       begin
         // Add images to database
-        FTigerDB.InsertImage(FDocumentID, FImageFiles[i], '');
+        FTigerDB.InsertImage(FDocumentID, i+1, FImageFiles[i], '');
       end;
       Result := FDocumentID;
     end;
@@ -295,7 +313,7 @@ begin
   end;
 end;
 
-function TTigerServerCore.ServerInfo: string;
+function TTigerServerCore.ServerInfo: String;
 begin
   result:=
   'Papertiger ' + LineEnding + 'version: based on commit ' + RevisionStr + ' (' + versiondate + ')' + LineEnding + 'build date: ' +

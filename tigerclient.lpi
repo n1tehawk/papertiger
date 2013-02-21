@@ -38,7 +38,6 @@
               <OverflowChecks Value="True"/>
               <StackChecks Value="True"/>
             </Checks>
-            <VerifyObjMethodCallValidity Value="True"/>
           </CodeGeneration>
           <Linking>
             <Options>
@@ -75,7 +74,7 @@
         <PackageName Value="LCL"/>
       </Item2>
     </RequiredPackages>
-    <Units Count="3">
+    <Units Count="4">
       <Unit0>
         <Filename Value="tigerclient.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -94,6 +93,14 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="HttpClient"/>
       </Unit2>
+      <Unit3>
+        <Filename Value="imageformunit.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="ImageForm"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+        <UnitName Value="imageformunit"/>
+      </Unit3>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

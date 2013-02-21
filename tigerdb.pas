@@ -44,9 +44,9 @@ uses
   sqlite3conn {SQLite},
   fpjson,
   dateutils;
+{$i tigercommondefs.inc}
 
 const
-  DBINVALIDID = -1; //Used to return invalid primary key ids for db objects
   ISO8601FullDateFormat = 'yyyy"-"mm"-"dd"T"hh":"nn":"ss"."zzz"Z"'; //Format string used to go to/from ISO8601 dates
 
 type
@@ -61,8 +61,12 @@ type
     FReadTransaction: TSQLTransaction; //Transaction for read-only access
     FReadWriteTransaction: TSQLTransaction; //Transaction for read/write access
   public
-    // Inserts a new image record in database; returns image ID. Keep string values empty to insert NULLs; pass a pre 1900 date for TheScanDate to do the same.
-    function InsertImage(const DocumentID: integer; const Path, ImageHash: string): integer;
+    // Returns path+filename for requested image - ImageNumber gives the order
+    function ImagePath(DocumentID: integer; ImageNumber: integer=1): string;
+    // Inserts a new image record in database (specify image number/sequence >1 to place image after existing images for a document)
+    // Keep string values empty to insert NULLs; pass a pre 1900 date for TheScanDate to do the same.
+    // Returns image ID.
+    function InsertImage(const DocumentID, Sequence: integer; const Path, ImageHash: string): integer;
     // Inserts a new scan record in database; retruns scan ID. Keep string values empty to insert NULLs; pass a pre 1900 date for TheScanDate to do the same.
     function InsertDocument(const DocumentName, PDFPath, DocumentHash: string; TheScanDate: TDateTime): integer;
     // Lists document with DocumentID or all documents if DocumentID=DBINVALIDID
@@ -82,15 +86,49 @@ const
 
 { TTigerDB }
 
-function TTigerDB.InsertImage(const DocumentID: integer; const Path, ImageHash: string): integer;
+function TTigerDB.ImagePath(DocumentID: integer; ImageNumber: integer=1): string;
+begin
+  result:='';
+  if DocumentID = INVALIDID then
+  begin
+    TigerLog.WriteLog(etWarning, 'ImagePath: invalid document ID requested. Cannot find image filename.');
+    exit;
+  end;
+
+  if FReadTransaction.Active = false then
+    FReadTransaction.StartTransaction;
+  try
+    FReadQuery.SQL.Text := 'SELECT PATH FROM IMAGES WHERE ID=' + IntToStr(DocumentID) +' AND SEQUENCE='+inttostr(ImageNumber);
+    FReadQuery.Open;
+    if not(FReadQuery.EOF) then
+      result:=FReadQuery.FieldByName('PATH').AsString;
+    FReadQuery.Close;
+    FReadTransaction.Commit;
+  except
+    on E: EDatabaseError do
+    begin
+      TigerLog.WriteLog(etError, 'ImagePath: db exception: ' + E.Message);
+      FReadTransaction.RollBack;
+    end;
+    on F: Exception do
+    begin
+      TigerLog.WriteLog(etError, 'ImagePath: exception: ' + F.Message);
+    end;
+  end;
+end;
+
+function TTigerDB.InsertImage(const DocumentID, Sequence: integer; const Path, ImageHash: string): integer;
 begin
   //todo: make this function insert or update image so it can modify existing records
-  Result := DBINVALIDID;
+  Result := INVALIDID;
   try
     if FReadWriteTransaction.Active = false then
       FReadWriteTransaction.StartTransaction;
     FInsertImage.Close;
     FInsertImage.ParamByName('DOCUMENTID').AsInteger := DocumentID;
+    if Sequence=0 then
+      raise Exception.Create('Sequence number 0 is not allowed. Please specify 1 or higher.');
+    FInsertImage.ParamByName('SEQUENCE').AsInteger := Sequence;
     if Path = '' then // NULL
       FInsertImage.ParamByName('PATH').Clear
     else
@@ -122,7 +160,7 @@ end;
 
 function TTigerDB.InsertDocument(const DocumentName, PDFPath, DocumentHash: string; TheScanDate: TDateTime): integer;
 begin
-  Result := DBINVALIDID;
+  Result := INVALIDID;
   try
     if FReadWriteTransaction.Active = false then
       FReadWriteTransaction.StartTransaction;
@@ -176,7 +214,7 @@ begin
   if FReadTransaction.Active = false then
     FReadTransaction.StartTransaction;
   try
-    if DocumentID = DBINVALIDID then
+    if DocumentID = INVALIDID then
       // All documents
       FReadQuery.SQL.Text := 'SELECT ID,DOCUMENTNAME,PDFPATH,SCANDATE,DOCUMENTHASH FROM DOCUMENTS'
     else
@@ -292,7 +330,7 @@ begin
   //Try to work around FPC 2.6.0 bug that doesn't do Open, but execute for INSERT statements
   FInsertImage.ParseSQL := false;
   //todo: replace with merge/insert replacing
-  SQL := 'INSERT INTO IMAGES (DOCUMENTID,PATH,IMAGEHASH) ' + 'VALUES (:DOCUMENTID,:PATH,:IMAGEHASH) RETURNING ID';
+  SQL := 'INSERT INTO IMAGES (DOCUMENTID,SEQUENCE,PATH,IMAGEHASH) ' + 'VALUES (:DOCUMENTID,:SEQUENCE,:PATH,:IMAGEHASH) RETURNING ID';
   FInsertImage.SQL.Text := SQL;
   FInsertImage.Prepare;
 
