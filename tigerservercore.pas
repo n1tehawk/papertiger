@@ -75,7 +75,7 @@ type
     // Cleans up image (postprocessing): straightens them up, despeckles etc. Returns true if succesful
     function CleanImage(const ImageFile: string): boolean;
     // Get image identified by documentID and image number/sequence (starting with 1)
-    function GetImage(DocumentID, ImageNumber: integer; const ImageStream: TMemoryStream): boolean;
+    function GetImage(DocumentID, Sequence: integer; const ImageStream: TMemoryStream): boolean;
     // Lists document specified by DocumentID or all documents (if DocumentID is INVALIDID)
     procedure ListDocuments(DocumentID: integer; var DocumentsArray: TJSONArray);
     // Process (set of) existing (TIFF) image(s); should be named <image>.tif
@@ -118,14 +118,14 @@ begin
   end;
 end;
 
-function TTigerServerCore.GetImage(DocumentID, ImageNumber: integer; const ImageStream: TMemoryStream): boolean;
+function TTigerServerCore.GetImage(DocumentID, Sequence: integer; const ImageStream: TMemoryStream): boolean;
 var
   ImageFile: string;
 begin
   ImageStream.Clear;
   if DocumentID<>INVALIDID then
   begin
-    ImageFile:=FTigerDB.ImagePath(DocumentID,ImageNumber);
+    ImageFile:=FTigerDB.ImagePath(DocumentID,Sequence);
     if ImageFile<>'' then
     begin
       try

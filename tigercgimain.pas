@@ -165,14 +165,20 @@ begin
   if Success then
   begin
     //retrieve tiff and put in output stream
-    AResponse.ContentType:='image/tiff; application=papertiger'; // Indicate papertiger should be able to deal with this data
+
     ImageStream:=TMemoryStream.Create;
     try
       ImageStream.Position:=0;
       if FTigerCore.GetImage(DocumentID,Sequence,ImageStream) then
       begin
+        AResponse.ContentType:='image/tiff; application=papertiger'; // Indicate papertiger should be able to deal with this data
         AResponse.ContentStream.Position:=0;
         AResponse.ContentStream.CopyFrom(ImageStream,ImageStream.Size);
+      end
+      else
+      begin
+        // error message
+        AResponse.Contents.Add('<p>Error getting image file for document ID '+inttostr(DocumentID)+'</p>');
       end;
     finally
       ImageStream.Free;
@@ -181,7 +187,7 @@ begin
   else
   begin
     // error message
-    AResponse.Contents.Add('<p>Error retrieving document for ID '+inttostr(DocumentID)+'</p>');
+    AResponse.Contents.Add('<p>Error retrieving image for document ID '+inttostr(DocumentID)+'</p>');
   end;
   Handled := true;
 end;
