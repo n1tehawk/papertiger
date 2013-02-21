@@ -119,20 +119,23 @@ begin
     ShowMessage('No document selected. Please select a document in the grid first.');
     exit;
   end;
-  DocumentID:=StrToIntDef(DocumentsGrid.Cells[0,DocumentsGrid.Row],;
+  DocumentID:=StrToInt(DocumentsGrid.Cells[0,DocumentsGrid.Row]);
 
   VData:=TJSONObject.Create;
   TIFFStream:=TMemoryStream.Create;
   try
     VData.Add('documentid',DocumentID);
     //post a request to show the image
-    RequestResult:=HttpRequestWithData(VData,FCGIURL+'showimage',rmPost);
+    RequestResult:=HttpRequestWithData(VData,FCGIURL+'showimage',TIFFStream,rmPost);
     if RequestResult.Code<>200 then
     begin
       showmessage('Error getting image from server. HTTP result code: '+inttostr(RequestResult.Code)+'/'+RequestResult.Text);
       exit;
     end;
     imageform.Hide;
+    TIFFStream.Position:=0;
+    TIFFStream.SaveToFile('d:\cop\test.tiff');
+    TIFFStream.Position:=0;
     imageform.ScanImage.Picture.LoadFromStreamWithFileExt(TIFFStream,'.tiff');
     ImageForm.Show;
   finally
