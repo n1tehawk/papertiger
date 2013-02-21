@@ -50,11 +50,9 @@ type
     FSettingsFileName: string; //name part only of the required settings file
   public
     property CGIURL: string read FCGIURL write FCGIURL; //Client config: the URL that points to the tiger server
-    property ImageDirectory: string read FImageDirectory write FImageDirectory; // Directory where scanned images must be/are stored.
-    // Has trailing path delimiter.
+    property ImageDirectory: string read FImageDirectory write FImageDirectory; // Directory where scanned images must be/are stored; Has trailing path delimiter.
     property Language: string read FLanguage write FLanguage; //Language used for text recognition. Use Tesseract notation. Default English.
-    property PDFDirectory: string read FPDFDirectory write FPDFDirectory; // Directory where resulting PDFs must be stored
-    // Has trailing path delimiter.
+    property PDFDirectory: string read FPDFDirectory write FPDFDirectory; // Directory where resulting PDFs must be stored; Has trailing path delimiter.
     property ScanDevice: string read FScanDevice write FScanDevice; //Device to be used for scanning (in SANE notation)
     constructor Create;
     constructor Create(SettingsFileName: string);

@@ -122,6 +122,7 @@ function TTigerServerCore.GetImage(DocumentID, Sequence: integer; const ImageStr
 var
   ImageFile: string;
 begin
+  result:=false;
   ImageStream.Clear;
   if DocumentID<>INVALIDID then
   begin
@@ -129,7 +130,15 @@ begin
     if ImageFile<>'' then
     begin
       try
+        // Cater for different ImageDirectory setting on this server.
+        // Although this is a bit of a hack, it allows testing from different servers
+        if not(fileexists(ImageFile)) then
+        begin
+          TigerLog.WriteLog(etWarning,'GetImage: cannot read image '+ImageFile+'. Hack: trying again with mangled ImageDirectory');
+          ImageFile:=FSettings.ImageDirectory+ExtractFileName(ImageFile);
+        end;
         ImageStream.LoadFromFile(ImageFile);
+        result:=true;
       except
         on E: Exception do
         begin
