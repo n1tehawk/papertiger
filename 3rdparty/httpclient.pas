@@ -106,7 +106,11 @@ begin
       VParser := TJSONParser.Create(VData);
       try
         FreeAndNil(AData);
-        AData := VParser.Parse;
+        try
+          AData := VParser.Parse;
+        except
+          //error occurred, can be logged/handled if needed
+        end;
       finally
         VParser.Free;
       end;
