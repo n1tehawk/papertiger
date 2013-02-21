@@ -38,14 +38,22 @@ type
   TFPWebModule1 = class(TFPWebModule)
     procedure DataModuleCreate(Sender: TObject);
     procedure DataModuleDestroy(Sender: TObject);
-    procedure deletedocumentRequest(Sender: TObject; ARequest: TRequest; AResponse: TResponse; var Handled: boolean);
-    procedure listRequest(Sender: TObject; ARequest: TRequest; AResponse: TResponse; var Handled: boolean);
-    procedure scanRequest(Sender: TObject; ARequest: TRequest; AResponse: TResponse; var Handled: boolean);
-    procedure serverinfoRequest(Sender: TObject; ARequest: TRequest; AResponse: TResponse; var Handled: boolean);
-    procedure showdocumentRequest(Sender: TObject; ARequest: TRequest; AResponse: TResponse; var Handled: Boolean);
-    procedure showimageRequest(Sender: TObject; ARequest: TRequest; AResponse: TResponse; var Handled: boolean);
-    procedure unsupportedRequest(Sender: TObject; ARequest: TRequest; AResponse: TResponse; var Handled: boolean);
-    procedure uploadimageRequest(Sender: TObject; ARequest: TRequest; AResponse: TResponse; var Handled: boolean);
+    procedure deletedocumentRequest(Sender: TObject; ARequest: TRequest;
+      AResponse: TResponse; var Handled: boolean);
+    procedure listRequest(Sender: TObject; ARequest: TRequest;
+      AResponse: TResponse; var Handled: boolean);
+    procedure scanRequest(Sender: TObject; ARequest: TRequest;
+      AResponse: TResponse; var Handled: boolean);
+    procedure serverinfoRequest(Sender: TObject; ARequest: TRequest;
+      AResponse: TResponse; var Handled: boolean);
+    procedure showdocumentRequest(Sender: TObject; ARequest: TRequest;
+      AResponse: TResponse; var Handled: boolean);
+    procedure showimageRequest(Sender: TObject; ARequest: TRequest;
+      AResponse: TResponse; var Handled: boolean);
+    procedure unsupportedRequest(Sender: TObject; ARequest: TRequest;
+      AResponse: TResponse; var Handled: boolean);
+    procedure uploadimageRequest(Sender: TObject; ARequest: TRequest;
+      AResponse: TResponse; var Handled: boolean);
   private
     { private declarations }
     FTigerCore: TTigerServerCore;
@@ -72,33 +80,36 @@ begin
   FTigerCore.Free;
 end;
 
-procedure TFPWebModule1.deletedocumentRequest(Sender: TObject; ARequest: TRequest; AResponse: TResponse; var Handled: boolean);
+procedure TFPWebModule1.deletedocumentRequest(Sender: TObject;
+  ARequest: TRequest; AResponse: TResponse; var Handled: boolean);
 begin
   AResponse.Contents.Add('<p>todo: support method ' + ARequest.QueryString + '.</p>');
-  Handled := true;
+  Handled := True;
 end;
 
-procedure TFPWebModule1.listRequest(Sender: TObject; ARequest: TRequest; AResponse: TResponse; var Handled: boolean);
+procedure TFPWebModule1.listRequest(Sender: TObject; ARequest: TRequest;
+  AResponse: TResponse; var Handled: boolean);
 var
   DocumentArray: TJSONArray;
 begin
-  AResponse.ContentType:='application/json';
-  DocumentArray:=TJSONArray.Create();
+  AResponse.ContentType := 'application/json';
+  DocumentArray := TJSONArray.Create();
   try
-    FTigerCore.ListDocuments(INVALIDID,DocumentArray);
+    FTigerCore.ListDocuments(INVALIDID, DocumentArray);
     AResponse.Contents.Add(DocumentArray.AsJSON);
   except
     on E: Exception do
     begin
       DocumentArray.Clear;
       DocumentArray.Add(TJSONSTring.Create('listRequest: exception ' + E.Message));
-      AResponse.Contents.Insert(0,DocumentArray.AsJSON);
+      AResponse.Contents.Insert(0, DocumentArray.AsJSON);
     end;
   end;
-  Handled := true;
+  Handled := True;
 end;
 
-procedure TFPWebModule1.scanRequest(Sender: TObject; ARequest: TRequest; AResponse: TResponse; var Handled: boolean);
+procedure TFPWebModule1.scanRequest(Sender: TObject; ARequest: TRequest;
+  AResponse: TResponse; var Handled: boolean);
 // Scans page and adds it to existing document or creates new document if none given
 var
   DocumentID: integer;
@@ -118,67 +129,71 @@ begin
     AResponse.Contents.Add('<p>' + Message + '</p>');
     TigerLog.WriteLog(etError, 'scanRequest ' + Message);
   end;
-  Handled := true;
+  Handled := True;
 end;
 
-procedure TFPWebModule1.serverinfoRequest(Sender: TObject; ARequest: TRequest; AResponse: TResponse; var Handled: boolean);
+procedure TFPWebModule1.serverinfoRequest(Sender: TObject; ARequest: TRequest;
+  AResponse: TResponse; var Handled: boolean);
 var
   OutputJSON: TJSONString;
 begin
-  AResponse.ContentType:='application/json';
-  OutputJSON:=TJSONString.Create(FTigerCore.ServerInfo);
+  AResponse.ContentType := 'application/json';
+  OutputJSON := TJSONString.Create(FTigerCore.ServerInfo);
   try
     AResponse.Contents.Add(OutputJSON.AsJSON);
   finally
     OutputJSON.Free;
   end;
-  Handled := true;
+  Handled := True;
 end;
 
 procedure TFPWebModule1.showdocumentRequest(Sender: TObject;
-  ARequest: TRequest; AResponse: TResponse; var Handled: Boolean);
+  ARequest: TRequest; AResponse: TResponse; var Handled: boolean);
 begin
   //todo: do the same as for showdocument except show the pdf
   aresponse.contents.add('<p>todo debug this needs much work.</p>');
-  handled:=true;
+  handled := True;
 end;
 
-procedure TFPWebModule1.showimageRequest(Sender: TObject; ARequest: TRequest; AResponse: TResponse; var Handled: boolean);
+procedure TFPWebModule1.showimageRequest(Sender: TObject; ARequest: TRequest;
+  AResponse: TResponse; var Handled: boolean);
 // Show image given by post with json docid integer
 var
   DocumentID, Sequence: integer;
   ImageStream: TMemoryStream;
   Query: TJSONObject;
-  Success:boolean;
+  Success: boolean;
 begin
-  Success:=false;
+  Success := False;
   try
     // for uniformity, we expect a POST+a generic json tag, though we could have used e.g. docid directly
-    Query:=TJSONParser.Create(ARequest.Content).Parse as TJSONObject;
-    DocumentID:=Query.Integers['documentid'];
-    Sequence:=Query.Integers['sequence']; //image order number
-    Success:=true;
+    Query := TJSONParser.Create(ARequest.Content).Parse as TJSONObject;
+    DocumentID := Query.Integers['documentid'];
+    Sequence := Query.Integers['sequence']; //image order number
+    Success := True;
   except
-    TigerLog.WriteLog(etDebug,'showDocumentRequest: error parsing document id.');
+    TigerLog.WriteLog(etDebug, 'showDocumentRequest: error parsing document id.');
   end;
 
   if Success then
   begin
     //retrieve tiff and put in output stream
-
-    ImageStream:=TMemoryStream.Create;
+    ImageStream := TMemoryStream.Create;
     try
-      ImageStream.Position:=0;
-      if FTigerCore.GetImage(DocumentID,Sequence,ImageStream) then
+      ImageStream.Position := 0;
+      if FTigerCore.GetImage(DocumentID, Sequence, ImageStream) then
       begin
-        AResponse.ContentType:='image/tiff; application=papertiger'; // Indicate papertiger should be able to deal with this data
-        AResponse.ContentStream.Position:=0;
-        AResponse.ContentStream.CopyFrom(ImageStream,ImageStream.Size);
+        AResponse.ContentType := 'image/tiff; application=papertiger';
+        // Indicate papertiger should be able to deal with this data
+        AResponse.ContentStream.Position := 0;
+        AResponse.ContentStream.CopyFrom(ImageStream, ImageStream.Size);
       end
       else
       begin
         // error message
-        AResponse.Contents.Add('<p>Error getting image file for document ID '+inttostr(DocumentID)+'</p>');
+        //todo: for all error messages, return 500 or something instead of 200 ok
+        AResponse.Contents.Add('<p>Error getting image file for document ID ' +
+          IntToStr(DocumentID) + '</p>');
       end;
     finally
       ImageStream.Free;
@@ -187,33 +202,26 @@ begin
   else
   begin
     // error message
-    AResponse.Contents.Add('<p>Error retrieving image for document ID '+inttostr(DocumentID)+'</p>');
+    AResponse.Contents.Add('<p>Error retrieving image for document ID ' +
+      IntToStr(DocumentID) + '</p>');
   end;
-  Handled := true;
+  Handled := True;
 end;
 
-procedure TFPWebModule1.unsupportedRequest(Sender: TObject; ARequest: TRequest; AResponse: TResponse; var Handled: boolean);
+procedure TFPWebModule1.unsupportedRequest(Sender: TObject; ARequest: TRequest;
+  AResponse: TResponse; var Handled: boolean);
 begin
   AResponse.Contents.Add('<p>Unsupported method.</p>');
-  Handled := true;
+  Handled := True;
 end;
 
-procedure TFPWebModule1.uploadimageRequest(Sender: TObject; ARequest: TRequest; AResponse: TResponse; var Handled: boolean);
+procedure TFPWebModule1.uploadimageRequest(Sender: TObject; ARequest: TRequest;
+  AResponse: TResponse; var Handled: boolean);
 begin
   AResponse.Contents.Add('<p>todo: support method ' + ARequest.QueryString + '.</p>');
-  Handled := true;
+  Handled := True;
 end;
 
 initialization
   RegisterHTTPModule('TFPWebModule1', TFPWebModule1);
 end.
-
-
-
-
-
-
-
-
-
-

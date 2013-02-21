@@ -98,7 +98,7 @@ begin
   if FReadTransaction.Active = false then
     FReadTransaction.StartTransaction;
   try
-    FReadQuery.SQL.Text := 'SELECT PATH FROM IMAGES WHERE ID=' + IntToStr(DocumentID) +' AND SEQUENCE='+inttostr(Sequence);
+    FReadQuery.SQL.Text := 'SELECT PATH FROM IMAGES WHERE DOCUMENTID=' + IntToStr(DocumentID) +' AND SEQUENCE='+inttostr(Sequence);
     FReadQuery.Open;
     if not(FReadQuery.EOF) then
       result:=FReadQuery.FieldByName('PATH').AsString;
