@@ -61,8 +61,8 @@ type
     FReadTransaction: TSQLTransaction; //Transaction for read-only access
     FReadWriteTransaction: TSQLTransaction; //Transaction for read/write access
   public
-    // Returns path+filename for requested image - ImageNumber gives the order
-    function ImagePath(DocumentID: integer; ImageNumber: integer=1): string;
+    // Returns path+filename for requested image - Sequence gives the order/image number
+    function ImagePath(DocumentID: integer; Sequence: integer=1): string;
     // Inserts a new image record in database (specify image number/sequence >1 to place image after existing images for a document)
     // Keep string values empty to insert NULLs; pass a pre 1900 date for TheScanDate to do the same.
     // Returns image ID.
@@ -86,7 +86,7 @@ const
 
 { TTigerDB }
 
-function TTigerDB.ImagePath(DocumentID: integer; ImageNumber: integer=1): string;
+function TTigerDB.ImagePath(DocumentID: integer; Sequence: integer=1): string;
 begin
   result:='';
   if DocumentID = INVALIDID then
@@ -98,7 +98,7 @@ begin
   if FReadTransaction.Active = false then
     FReadTransaction.StartTransaction;
   try
-    FReadQuery.SQL.Text := 'SELECT PATH FROM IMAGES WHERE ID=' + IntToStr(DocumentID) +' AND SEQUENCE='+inttostr(ImageNumber);
+    FReadQuery.SQL.Text := 'SELECT PATH FROM IMAGES WHERE ID=' + IntToStr(DocumentID) +' AND SEQUENCE='+inttostr(Sequence);
     FReadQuery.Open;
     if not(FReadQuery.EOF) then
       result:=FReadQuery.FieldByName('PATH').AsString;
