@@ -52,7 +52,8 @@ uses {$IFDEF UNIX} {$IFDEF UseCThreads}
   CustApp,
   fpjson,
   jsonparser,
-  tigerservercore;
+  tigerservercore,
+  dateutils;
 
 type
 
@@ -75,6 +76,7 @@ type
 
   procedure TTigerServer.ListDocuments;
   var
+    DateCell: TDateTime;
     Document: TJSONObject;
     DocumentsArray: TJSONArray;
     i, Col: integer;
@@ -121,7 +123,19 @@ type
         case Document.Items[Col].JSONType of
           jtUnknown: Write('[UNKNOWN];');
           jtNumber: Write(Document.Items[Col].AsString + ';');
-          jtString: Write(Document.Items[Col].AsString + ';');
+          jtString:
+          begin
+            // Try to detect ISO 8601 formatted UTC datetime. Note: only full datetime
+            try
+              DateCell:=UniversalTimeToLocal(ScanDateTime(ISO8601FullDateFormat,Document.Items[Col].AsString));
+            except
+              DateCell:=EncodeDateTime(0,0,0,0,0,0,0);
+            end;
+            if DateCell=EncodeDateTime(0,0,0,0,0,0,0) then
+              Write(Document.Items[Col].AsString + ';')
+            else
+              Write(DateTimeToStr(DateCell));
+          end;
           jtBoolean: Write(Document.Items[Col].AsString + ';');
           jtNull: Write(Document.Items[Col].AsString + ';');
           jtArray: Write('[ARRAY];');

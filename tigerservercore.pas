@@ -46,6 +46,7 @@ uses
 
 const
   INVALIDID = DBINVALIDID; //Used to indicate document ID etc is invalid.
+  ISO8601FullDateFormat = tigerdb.ISO8601FullDateFormat;
 
 type
 

@@ -42,10 +42,12 @@ uses
   ibconnection {Firebird},
   pqconnection {PostgreSQL},
   sqlite3conn {SQLite},
-  fpjson;
+  fpjson,
+  dateutils;
 
 const
   DBINVALIDID = -1; //Used to return invalid primary key ids for db objects
+  ISO8601FullDateFormat = 'yyyy"-"mm"-"dd"T"hh":"nn":"sszzz"Z"'; //Format string used to go to/from ISO8601 dates
 
 type
   { TTigerDB }
@@ -72,7 +74,7 @@ type
 implementation
 
 uses
-  dbconfig, dateutils;
+  dbconfig;
 
 const
   SettingsFile = 'tigerserver.ini';
@@ -169,6 +171,7 @@ procedure TTigerDB.ListDocuments(const DocumentID: integer; var DocumentsArray: 
 var
   RecordObject: TJSONObject;
 begin
+  //todo: convert to generic db query => json array function
   DocumentsArray:=TJSONArray.Create; //clears any existing data at the same time
   if FReadTransaction.Active = false then
     FReadTransaction.StartTransaction;
@@ -186,7 +189,10 @@ begin
       RecordObject.Add('id', FReadQuery.FieldByName('ID').AsInteger);
       RecordObject.Add('documentname', FReadQuery.FieldByName('DOCUMENTNAME').AsString);
       RecordObject.Add('pdfpath', FReadQuery.FieldByName('PDFPATH').AsString);
-      RecordObject.Add('scandate', FReadQuery.FieldByName('SCANDATE').AsDateTime);
+      // Convert dates to ISO 8601 UTC-based date/times e.g.:
+      // 2013-02-21T09:47:42.467Z
+      // Assuming the dates stored in the DB are UTC.
+      RecordObject.Add('scandate', FormatDateTime(ISO8601FullDateFormat,FReadQuery.FieldByName('SCANDATE').AsDateTime));
       RecordObject.Add('documenthash', FReadQuery.FieldByName('DOCUMENTHASH').AsString);
       DocumentsArray.Add(RecordObject);
       FReadQuery.Next;
