@@ -17,7 +17,7 @@ type
 
 function HttpRequest(const AUrl: string; AResponse: TJSONData;
   const AMethod: TRequestMethod = rmGet): THttpResult;
-function HttpRequest(AData: TJSONData; const AUrl: string;
+function HttpRequestWithData(AData: TJSONData; const AUrl: string;
   const AMethod: TRequestMethod = rmPost;
   const AContentType: string = 'application/json'): THttpResult;
 
@@ -61,7 +61,7 @@ begin
   end;
 end;
 
-function HttpRequest(AData: TJSONData; const AUrl: string;
+function HttpRequestWithData(AData: TJSONData; const AUrl: string;
   const AMethod: TRequestMethod; const AContentType: string): THttpResult;
 var
   VMethod: string;
