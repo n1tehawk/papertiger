@@ -50,7 +50,7 @@ begin
   Success:=false;
   VersionInfoJSON:=TJSONString.Create('');
   try
-    Success:=(HttpRequest(VersionInfoJSON,FCGIURL+'serverinfo',rmPost).Code=200);
+    Success:=(HttpRequestWithData(VersionInfoJSON,FCGIURL+'serverinfo',rmPost).Code=200);
     if Success then
     try
       if Assigned(VersionInfoJSON) then
@@ -87,11 +87,12 @@ end;
 procedure TForm1.RefreshDocumentsClick(Sender: TObject);
 var
   RequestResult: THTTPResult;
-  VData: TJSONArray = nil;
+  VData: TJSONArray;
 begin
+  VData:=TJSONArray.Create; //needs to be assigned for HTTPRequest
   try
     ClearGrid(DocumentsGrid);
-    RequestResult:=HTTPRequest(FCGIURL+'listdocuments',VData,rmGet);
+    RequestResult:=HttpRequest(FCGIURL+'list',VData,rmGet);
     if RequestResult.Code<>200 then
     begin
       showmessage('Error getting document list from server. HTTP result code: '+inttostr(RequestResult.Code)+'/'+RequestResult.Text);
@@ -99,7 +100,7 @@ begin
     end;
     LoadJSON(DocumentsGrid,VData,false,false,false);
   finally
-    FreeAndNil(VData);
+    VData.Free;
   end;
 end;
 
