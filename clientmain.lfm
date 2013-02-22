@@ -71,6 +71,22 @@ object Form1: TForm1
     OnClick = ShowPDFButtonClick
     TabOrder = 4
   end
+  object NumberPagesControl: TEdit
+    Left = 496
+    Height = 23
+    Top = 24
+    Width = 40
+    TabOrder = 5
+    Text = '1'
+  end
+  object Label1: TLabel
+    Left = 552
+    Height = 15
+    Top = 24
+    Width = 31
+    Caption = 'pages'
+    ParentColor = False
+  end
   object MainMenu1: TMainMenu
     left = 48
     top = 416

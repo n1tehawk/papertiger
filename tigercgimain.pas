@@ -22,7 +22,10 @@ unit tigercgimain;
   FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
   IN THE SOFTWARE.
 }
-
+{
+If we send responses as JSON, always send an object or an array, not simply a string, float or integer.
+Dates/times in JSON should be represented as ISO 8601 UTC (no timezone) formatted strings
+}
 {$i tigerserver.inc}
 
 interface
@@ -38,22 +41,24 @@ type
   TFPWebModule1 = class(TFPWebModule)
     procedure DataModuleCreate(Sender: TObject);
     procedure DataModuleDestroy(Sender: TObject);
+    procedure adddocumentRequest(Sender: TObject; ARequest: TRequest;
+      AResponse: TResponse; var Handled: Boolean); //adds new empty document, returns documentid
     procedure deletedocumentRequest(Sender: TObject; ARequest: TRequest;
-      AResponse: TResponse; var Handled: boolean);
+      AResponse: TResponse; var Handled: boolean); //delete document identified by documentid
     procedure listRequest(Sender: TObject; ARequest: TRequest;
-      AResponse: TResponse; var Handled: boolean);
+      AResponse: TResponse; var Handled: boolean); //list all documents
     procedure scanRequest(Sender: TObject; ARequest: TRequest;
-      AResponse: TResponse; var Handled: boolean);
+      AResponse: TResponse; var Handled: boolean); //scans single image and adds it to document identified by documentid
     procedure serverinfoRequest(Sender: TObject; ARequest: TRequest;
-      AResponse: TResponse; var Handled: boolean);
+      AResponse: TResponse; var Handled: boolean); //lists server info (version etc)
     procedure showdocumentRequest(Sender: TObject; ARequest: TRequest;
-      AResponse: TResponse; var Handled: boolean);
+      AResponse: TResponse; var Handled: boolean); //show PDF document identified by documentid
     procedure showimageRequest(Sender: TObject; ARequest: TRequest;
-      AResponse: TResponse; var Handled: boolean);
+      AResponse: TResponse; var Handled: boolean); //show image (TIFF) identified by documentid and sequence
     procedure unsupportedRequest(Sender: TObject; ARequest: TRequest;
-      AResponse: TResponse; var Handled: boolean);
+      AResponse: TResponse; var Handled: boolean); //handler for invalid requests
     procedure uploadimageRequest(Sender: TObject; ARequest: TRequest;
-      AResponse: TResponse; var Handled: boolean);
+      AResponse: TResponse; var Handled: boolean); //upload image and process in order (after any existing images), adding it to document identified by documentid
   private
     { private declarations }
     FTigerCore: TTigerServerCore;
@@ -69,6 +74,35 @@ implementation
 {$R *.lfm}
 
 { TFPWebModule1 }
+
+//todo: use/add updatedocument that allows changing document name etc
+
+procedure TFPWebModule1.adddocumentRequest(Sender: TObject; ARequest: TRequest;
+  AResponse: TResponse; var Handled: Boolean);
+var
+  DocumentID: integer;
+  OutputJSON: TJSONObject;
+begin
+  DocumentID:=FTigerCore.AddDocument;
+  if DocumentID=INVALIDID then
+  begin
+    AResponse.Code:=404;
+    AResponse.CodeText:='Error inserting new document.';
+    AResponse.Contents.Add('<p>Error inserting new document.</p>');
+  end
+  else
+  begin
+    AResponse.ContentType := 'application/json';
+    OutputJSON := TJSONObject.Create();
+    try
+      OutputJSON.Add('documentid',DocumentID);
+      AResponse.Contents.Add(OutputJSON.AsJSON);
+    finally
+      OutputJSON.Free;
+    end;
+  end;
+  Handled := True;
+end;
 
 procedure TFPWebModule1.DataModuleCreate(Sender: TObject);
 begin
@@ -110,24 +144,45 @@ end;
 
 procedure TFPWebModule1.scanRequest(Sender: TObject; ARequest: TRequest;
   AResponse: TResponse; var Handled: boolean);
-// Scans page and adds it to existing document or creates new document if none given
+// Scans page and adds it to existing document
 var
   DocumentID: integer;
+  InputJSON: TJSONObject;
   Message: string;
+  Success: boolean;
 begin
-  //todo implement existing document, look at showdocument
-  //todo implement number of pages, language etc
-  //todo: json this up
+  Success:=false;
   try
-    DocumentID := FTigerCore.ScanAndProcess;
-    if DocumentID <> INVALIDID then
-      AResponse.Contents.Add('<p>Scanning succeeded.</p>')
-    else
-      AResponse.Contents.Add('<p>Scanning failed; an error occurred.</p>');
+    // for uniformity, we expect a POST+a generic json tag, though we could have used e.g. docid directly
+    //todo: adapt so InputJSON in URL is also accepted (for gets)
+    InputJSON := TJSONParser.Create(ARequest.Content).Parse as TJSONObject;
+    DocumentID := InputJSON.Integers['documentid'];
+    Success := True;
   except
-    Message := 'Scanning failed; an excecption occurred.';
-    AResponse.Contents.Add('<p>' + Message + '</p>');
-    TigerLog.WriteLog(etError, 'scanRequest ' + Message);
+    TigerLog.WriteLog(etDebug, 'showDocumentRequest: error parsing document id.');
+  end;
+
+  //todo implement language etc
+  if Success then
+  begin
+    try
+      Success:=FTigerCore.ScanSinglePage(DocumentID);
+    except
+      Message := 'Scanning failed; an excecption occurred.';
+      AResponse.Contents.Add('<p>' + Message + '</p>');
+      TigerLog.WriteLog(etError, 'scanRequest ' + Message);
+    end;
+  end;
+
+  if Success=false then
+  begin
+    AResponse.Contents.Add('<p>Error scanning document for document ID '+inttostr(DocumentID)+'</p>');
+    AResponse.Code:=500;
+    AResponse.CodeText:='Error scanning document for document ID '+inttostr(DocumentID);
+  end
+  else
+  begin
+    AResponse.Contents.Add('<p>Scanning succeeded.</p>')
   end;
   Handled := True;
 end;
@@ -135,11 +190,12 @@ end;
 procedure TFPWebModule1.serverinfoRequest(Sender: TObject; ARequest: TRequest;
   AResponse: TResponse; var Handled: boolean);
 var
-  OutputJSON: TJSONString;
+  OutputJSON: TJSONObject;
 begin
   AResponse.ContentType := 'application/json';
-  OutputJSON := TJSONString.Create(FTigerCore.ServerInfo);
+  OutputJSON := TJSONObject.Create();
   try
+    OutputJSON.Add('serverinfo',FTigerCore.ServerInfo);
     AResponse.Contents.Add(OutputJSON.AsJSON);
   finally
     OutputJSON.Free;
@@ -152,15 +208,15 @@ procedure TFPWebModule1.showdocumentRequest(Sender: TObject;
 // Show pdf given by post with json docid integer
 var
   DocumentID: integer;
-  Query: TJSONObject;
+  InputJSON: TJSONObject;
   Success: boolean;
 begin
   Success := False;
   try
     // for uniformity, we expect a POST+a generic json tag, though we could have used e.g. docid directly
-    //todo: adapt so query in URL is also accepted (for gets)
-    Query := TJSONParser.Create(ARequest.Content).Parse as TJSONObject;
-    DocumentID := Query.Integers['documentid'];
+    //todo: adapt so InputJSON in URL is also accepted (for gets)
+    InputJSON := TJSONParser.Create(ARequest.Content).Parse as TJSONObject;
+    DocumentID := InputJSON.Integers['documentid'];
     Success := True;
   except
     TigerLog.WriteLog(etDebug, 'showDocumentRequest: error parsing document id.');
@@ -266,6 +322,8 @@ procedure TFPWebModule1.unsupportedRequest(Sender: TObject; ARequest: TRequest;
   AResponse: TResponse; var Handled: boolean);
 begin
   AResponse.Contents.Add('<p>Unsupported method.</p>');
+  AResponse.Code:=404;
+  AResponse.CodeText:='Unsupported method';
   Handled := True;
 end;
 
