@@ -166,6 +166,7 @@ begin
   Success := False;
   try
     // for uniformity, we expect a POST+a generic json tag, though we could have used e.g. docid directly
+    //todo: adapt so query in URL is also accepted (for gets)
     Query := TJSONParser.Create(ARequest.Content).Parse as TJSONObject;
     DocumentID := Query.Integers['documentid'];
     Sequence := Query.Integers['sequence']; //image order number
@@ -179,7 +180,6 @@ begin
     //retrieve tiff and put in output stream
     AResponse.ContentStream := TMemoryStream.Create;
     try
-      AResponse.ContentStream.Position := 0;
       // Load tiff into content stream:
       if FTigerCore.GetImage(DocumentID, Sequence, AResponse.ContentStream) then
       begin
@@ -190,8 +190,9 @@ begin
       end
       else
       begin
-        // error message
+        // Not found? error message
         //todo: for all error messages, return 500 or something instead of 200 ok
+        AResponse.Code:=404;
         AResponse.Contents.Add('<p>Error getting image file for document ID ' +
           IntToStr(DocumentID) + '</p>');
       end;
@@ -202,6 +203,7 @@ begin
   else
   begin
     // error message
+    AResponse.Code:=404;
     AResponse.Contents.Add('<p>Error retrieving image for document ID ' +
       IntToStr(DocumentID) + '</p>');
   end;
