@@ -137,21 +137,25 @@ begin
     end;
     CommunicationJSON:=TJSONObject.Create;
     try
+      Screen.Cursor:=crHourglass;
       try
         CommunicationJSON.Add('documentid',DocumentID); //pass newly created document
         RequestResult:=HTTPRequestWithData(CommunicationJSON,FCGIURL+'scan',rmPost);
         if RequestResult.Code<>200 then
         begin
+          Screen.Cursor:=crDefault;
           showmessage('Error from server. HTTP result code: '+inttostr(RequestResult.Code)+'/'+RequestResult.Text);
           exit;
         end;
       except
         on E: Exception do
         begin
+          Screen.Cursor:=crDefault;
           showmessage('Error parsing scan response from server. Technical details: '+E.Message);
         end;
       end;
     finally
+      Screen.Cursor:=crDefault;
       CommunicationJSON.Free;
     end;
   end;

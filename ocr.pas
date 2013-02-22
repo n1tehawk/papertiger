@@ -111,19 +111,28 @@ begin
     // Output position & word text in hocr format:
     Command:=OCRCommand+' "'+FImageFile+'" "'+OutputFile+'" -l '+FLanguage+' hocr';
     HOCRResult:=ExecuteCommand(Command,false);
-    if HOCRResult=0 then
-    begin
-      FHOCRFile:=OutputFile+'.html';
-      {$IFDEF DEBUG}
-      TigerLog.WriteLog(etDebug,'Result: hocr done: '+FHOCRFile);
-      {$ENDIF}
-      result:=true;
-    end
-    else
-    begin
-      //todo: should this be an error? I get resultcode 1 - is that perhaps ocr failure? could be no problem
-      TigerLog.WriteLog(etError,'RecognizeText: Error generating hocr. Result code: '+inttostr(HOCRResult)+LineEnding+
-        'Command given was: '+Command);
+    case HOCRResult of
+      0:
+      begin
+        FHOCRFile:=OutputFile+'.html';
+        {$IFDEF DEBUG}
+        TigerLog.WriteLog(etDebug,'Result: hocr done: '+FHOCRFile);
+        {$ENDIF}
+        result:=true;
+      end;
+      1:  //OCR error, need not be a problem
+      begin
+        FHOCRFile:=OutputFile+'.html';
+        {$IFDEF DEBUG}
+        TigerLog.WriteLog(etDebug,'Result: hocr found no text for: '+FHOCRFile);
+        {$ENDIF}
+        result:=true;
+      end;
+      else
+        begin
+          TigerLog.WriteLog(etError,'RecognizeText: Error generating hocr. Result code: '+inttostr(HOCRResult)+LineEnding+
+            'Command given was: '+Command);
+        end;
     end;
   end
   else
