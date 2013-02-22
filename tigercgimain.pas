@@ -207,7 +207,7 @@ begin
     // error message
     AResponse.Code:=404;
     AResponse.CodeText:='Error retrieving image for document ID ' +
-      IntToStr(DocumentID)';
+      IntToStr(DocumentID);
     AResponse.Contents.Add('<p>Error retrieving image for document ID ' +
       IntToStr(DocumentID) + '</p>');
   end;
