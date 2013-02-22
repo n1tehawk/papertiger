@@ -110,6 +110,10 @@ begin
           AData := VParser.Parse;
         except
           //error occurred, can be logged/handled if needed
+          on E: Exception do
+          begin
+            AData := TJSONString.Create('Error while parsing JSON data: exception: '+E.Message);
+          end;
         end;
       finally
         VParser.Free;
@@ -130,7 +134,6 @@ function HttpRequestWithData(AData: TJSONData; const AUrl: string;
 var
   VMethod: string;
   VHttp: TFPHTTPClient;
-  VParser: TJSONParser;
   VJSON: TJSONStringType;
 begin
   VHttp := TFPHTTPClient.Create(nil);
