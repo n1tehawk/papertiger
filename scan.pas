@@ -143,14 +143,21 @@ begin
   Options := ' "' + FFileName + '" ' + ScanDevicePart + ' --mode=' + ScanType + ' --resolution=' +
     IntToStr(FResolution) + ' --swdeskew=yes --swcrop=yes --format=tiff';
   TigerLog.WriteLog(etDebug, 'Executing: ' + ScanCommand + Options);
-  if ExecuteCommand(ScanCommand + Options, false) = 0 then
-  begin
-    TigerLog.WriteLog(etDebug, 'Scan succeeded.');
-    Result := true;
-  end
-  else
-  begin
-    TigerLog.WriteLog(etError, 'TScanner.Scan: error occurred running command: ' + ScanCommand + Options);
+  try
+    if ExecuteCommand(ScanCommand + Options, false) = 0 then
+    begin
+      TigerLog.WriteLog(etDebug, 'Scan succeeded.');
+      Result := true;
+    end
+    else
+    begin
+      TigerLog.WriteLog(etError, 'TScanner.Scan: error occurred running command: ' + ScanCommand + Options);
+    end;
+  except
+    on E: Exception do
+    begin
+      TigerLog.WriteLog(etError, 'TScanner.Scan: exception ('+E.Message+') occurred running command: ' + ScanCommand + Options);
+    end;
   end;
 end;
 

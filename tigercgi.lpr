@@ -3,7 +3,7 @@ program tigercgi;
 {$mode objfpc}{$H+}
 
 uses
-  fpCGI, tigercgimain;
+  fpCGI, tigercgimain, tigerservercore, tigerdb, scan, ocr;
 
 begin
   Application.Initialize;
