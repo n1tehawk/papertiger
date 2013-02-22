@@ -193,6 +193,8 @@ begin
         // Not found? error message
         //todo: for all error messages, return 500 or something instead of 200 ok
         AResponse.Code:=404;
+        AResponse.CodeText:='Error getting image file for document ID ' +
+          IntToStr(DocumentID)
         AResponse.Contents.Add('<p>Error getting image file for document ID ' +
           IntToStr(DocumentID) + '</p>');
       end;
@@ -204,6 +206,8 @@ begin
   begin
     // error message
     AResponse.Code:=404;
+    AResponse.CodeText:='Error retrieving image for document ID ' +
+      IntToStr(DocumentID)'l
     AResponse.Contents.Add('<p>Error retrieving image for document ID ' +
       IntToStr(DocumentID) + '</p>');
   end;
