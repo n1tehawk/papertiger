@@ -67,7 +67,9 @@ type
     // Keep string values empty to insert NULLs; pass a pre 1900 date for TheScanDate to do the same.
     // Returns image ID.
     function InsertImage(const DocumentID, Sequence: integer; const Path, ImageHash: string): integer;
-    // Inserts a new scan record in database; retruns scan ID. Keep string values empty to insert NULLs; pass a pre 1900 date for TheScanDate to do the same.
+    // Inserts a new scan record in database; retruns scan ID.
+    // Keep string values empty to insert NULLs;
+    // TheScanDate: pass UTC date/time, pass a pre 1900 date to specify unknown date
     function InsertDocument(const DocumentName, PDFPath, DocumentHash: string; TheScanDate: TDateTime): integer;
     // Lists document with DocumentID or all documents if DocumentID=DBINVALIDID
     procedure ListDocuments(const DocumentID: integer; var DocumentsArray: TJSONArray);

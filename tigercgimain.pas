@@ -178,18 +178,25 @@ begin
   begin
     //retrieve tiff and put in output stream
     AResponse.ContentStream := TMemoryStream.Create;
-    AResponse.ContentStream.Position := 0;
-    if FTigerCore.GetImage(DocumentID, Sequence, AResponse.Contentstream) then
-    begin
-      // Indicate papertiger should be able to deal with this data:
-      AResponse.ContentType := 'image/tiff; application=papertiger';
-    end
-    else
-    begin
-      // error message
-      //todo: for all error messages, return 500 or something instead of 200 ok
-      AResponse.Contents.Add('<p>Error getting image file for document ID ' +
-        IntToStr(DocumentID) + '</p>');
+    try
+      AResponse.ContentStream.Position := 0;
+      // Load tiff into content stream:
+      if FTigerCore.GetImage(DocumentID, Sequence, AResponse.ContentStream) then
+      begin
+        // Indicate papertiger should be able to deal with this data:
+        AResponse.ContentType := 'image/tiff; application=papertiger';
+        AResponse.ContentLength:=AResponse.ContentStream.Size; //apparently doesn't happen automatically?
+        AResponse.SendContent;
+      end
+      else
+      begin
+        // error message
+        //todo: for all error messages, return 500 or something instead of 200 ok
+        AResponse.Contents.Add('<p>Error getting image file for document ID ' +
+          IntToStr(DocumentID) + '</p>');
+      end;
+    finally
+      AResponse.ContentStream.Free;
     end;
   end
   else

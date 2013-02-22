@@ -220,7 +220,7 @@ begin
       begin
         {todo: don't use now but get timestamp from oldest image and use that as scandate??? Or leave like this as
          the scan command has actually been issued now}
-        FDocumentID := FTigerDB.InsertDocument(DocumentName, Result, '', Now);
+        FDocumentID := FTigerDB.InsertDocument(DocumentName, Result, '', LocalTimeToUniversal(Now));
         // todo: next call db update or insert images here to make sure images assigned to proper document
       end
       else
