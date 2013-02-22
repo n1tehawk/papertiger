@@ -71,6 +71,9 @@ implementation
 
 uses processutils;
 
+// Common constants etc:
+{$i tigercommondefs.inc}
+
 const
   //todo: perhaps write FPC wrapper instead of bash scanwrap.sh
   ScanCommand = './scanwrap.sh';
@@ -158,8 +161,7 @@ begin
   inherited Create;
   FColorType := stLineArt; //Lineart is suitable for OCR for black & white docments?!?
   //todo: we would like to scan graphics in B&W or even colour, then text as lineart. This would probably require fiddling with the hOCR output to get the text areas etc???
-  // Tesseract requires a tif extension
-  FFileName := SysUtils.GetTempFileName(GetTempDir(false), 'SCN') + '.tif';
+  FFileName := SysUtils.GetTempFileName(GetTempDir(false), 'SCN') + TesseractTIFFExtension;
   FResolution := 300;
   //todo: check whether sane works by --version ??
 
