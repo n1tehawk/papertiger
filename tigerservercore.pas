@@ -67,6 +67,8 @@ type
     FTigerDB: TTigerDB;
   protected
   public
+    // Adds new, empty document, returns document ID
+    function AddDocument: integer;
     // Language to be used for OCR. Will not be saved in settings
     property CurrentOCRLanguage: string read FCurrentOCRLanguage write FCurrentOCRLanguage;
     // Image files to be OCRed or files that result from scanning
@@ -89,7 +91,11 @@ type
     function ProcessImages(DocumentName: string; Resolution: integer): string;
     // Scan a document (with one or more pages) and process it.
     // Returns document ID if succesful; <=0 if not.
+    // Only useful for command-line use
     function ScanAndProcess: integer;
+    // Scans a single page and adds it to an existing document.
+    // Returns success
+    function ScanSinglePage(DocumentID: integer): boolean;
     // Returns server version, compile date, etc in one big string
     function ServerInfo: String;
     // Tries to parse full ISO8601 UTC datetime; returns datetime (1,1,0,0,0) if invalid
@@ -105,6 +111,18 @@ implementation
 // Get revision from our source code repository:
 // If you have a file not found error for revision.inc, please make sure you compile hgversion.pas before compiling this project.
 {$i revision.inc}
+function TTigerServerCore.AddDocument: integer;
+begin
+  result:=INVALIDID;
+  try
+    result:=FTigerDB.InsertDocument('','','',LocalTimeToUniversal(Now));
+  except
+    on E: Exception do
+    begin
+      TigerLog.WriteLog('AddDocument: error adding new document. '+E.Message);
+    end;
+  end;
+end;
 
 function TTigerServerCore.CleanImage(const ImageFile: string): boolean;
 var
@@ -370,6 +388,57 @@ begin
         FTigerDB.InsertImage(FDocumentID, i+1, FImageFiles[i], '');
       end;
       Result := FDocumentID;
+    end;
+  finally
+    Scanner.Free;
+  end;
+end;
+
+function TTigerServerCore.ScanSinglePage(DocumentID: integer): boolean;
+var
+  i: integer;
+  Resolution: integer;
+  Scanner: TScanner;
+  Sequence: integer;
+  StartDate: TDateTime;
+  StartDateString: string;
+begin
+  Result := false; //fail by default
+  FDocumentID := DocumentID; //Avoid processing old documents after failure
+
+  // Try a 300dpi scan, probably best for normal sized letters on paper
+  Resolution := 300;
+  if not (ForceDirectories(FSettings.ImageDirectory)) then
+    raise Exception.Create('Image directory ' + FSettings.ImageDirectory + ' does not exist and cannot be created.');
+  Scanner := TScanner.Create;
+
+  try
+    Scanner.Resolution := Resolution;
+    Scanner.ColorType := stLineArt;
+    StartDate := Now(); //local time
+    StartDateString := FormatDateTime('yyyymmddhhnnss', StartDate);
+
+    TigerLog.WriteLog(etInfo, 'Going to scan single page; start date: ' + StartDateString);
+
+    Sequence:=FTigerDB.GetHighestSequence(DocumentID)+1; //insert image after existing images
+    Scanner.FileName := FSettings.ImageDirectory + StartDateString + '_' + format('%.4d', [Sequence]) + TESSERACTTIFFEXTENSION;
+    if not (Scanner.Scan) then
+      raise Exception.CreateFmt('TigerServerCore: an error occurred while scanning document %s', [Scanner.FileName]);
+    TigerLog.WriteLog(etDebug, 'Image file: ' + Scanner.FileName);
+    FImageFiles.Clear;
+    FImageFiles.Add(Scanner.FileName); //We need to fill this for processimages
+
+    TigerLog.WriteLog(etDebug, 'going to process single image) '+Scanner.FileName);
+    ProcessImages(StartDateString, Resolution);
+    if FDocumentID = INVALIDID then
+    begin
+      TigerLog.WriteLog(etError, 'ScanAndProcess: Error: could not insert document/scan into database. Please try again.');
+    end
+    else
+    begin
+      // Add images to database
+      FTigerDB.InsertImage(FDocumentID, Sequence, FImageFiles[Sequence], '');
+      Result := true;
     end;
   finally
     Scanner.Free;

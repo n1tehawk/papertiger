@@ -7,7 +7,8 @@ interface
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, Menus, Grids,
   StdCtrls, tigersettings, LJGridUtils, FPJSON, jsonparser, httpclient, imageformunit,
-  fpreadtiff {adds TIFF format read support to TImage}, lclintf;
+  fpreadtiff {adds TIFF format read support to TImage}, lclintf,
+  magick_wand, ImageMagick {for conversion from TIFF formats unsupported by FPC to regular bitmaps};
 //todo: think about splitting up data access layer so you can e.g. build a CLI client
 
 type
@@ -15,6 +16,8 @@ type
   { TForm1 }
 
   TForm1 = class(TForm)
+    NumberPagesControl: TEdit;
+    Label1: TLabel;
     ShowImageButton: TButton;
     ScanButton: TButton;
     RefreshDocumentsButton: TButton;
@@ -55,18 +58,15 @@ procedure TForm1.mnuAboutClick(Sender: TObject);
 var
   Success:boolean;
   VersionInfo: string;
-  VersionInfoJSON: TJSONString;
+  ReturnJSON: TJSONObject;
 begin
   Success:=false;
-  VersionInfoJSON:=TJSONString.Create('');
+  ReturnJSON:=TJSONObject.Create;
   try
-    Success:=(HttpRequestWithData(VersionInfoJSON,FCGIURL+'serverinfo',rmPost).Code=200);
+    Success:=(HttpRequestWithData(ReturnJSON,FCGIURL+'serverinfo',rmPost).Code=200);
     if Success then
     try
-      if Assigned(VersionInfoJSON) then
-      begin
-        VersionInfo:=VersionInfoJSON.AsString;
-      end;
+      VersionInfo:=ReturnJSON.Strings['serverinfo'];
     except
       on E: Exception do
       begin
@@ -85,7 +85,7 @@ begin
        'Papertiger server: error retrieving server information. '+VersionInfo);
     end;
   finally
-    VersionInfoJSON.Free;
+    ReturnJSON.Free;
   end;
 end;
 
@@ -100,12 +100,66 @@ begin
 end;
 
 procedure TForm1.ScanButtonClick(Sender: TObject);
+var
+  CurrentPage: integer;
+  DocumentID: integer; //New document ID returned by the server
+  NumberPages: integer; //Number of pages user requested for sca
+  RequestResult: THttpResult;
+  CommunicationJSON: TJSONObject;
 begin
-  //RequestResult:=HttpRequest(FCGIURL+'scan',
-  //todo: finish
+  DocumentID:=INVALIDID;
+  NumberPages:=StrToIntDef(NumberPagesControl.Text,1);
+  CommunicationJSON:=TJSONObject.Create;
+  try
+    try
+      RequestResult:=HttpRequest(FCGIURL+'adddocument',CommunicationJSON,rmGet);
+      if RequestResult.Code<>200 then
+      begin
+        showmessage('Error from server. HTTP result code: '+inttostr(RequestResult.Code)+'/'+RequestResult.Text);
+        exit;
+      end;
+      DocumentID:=CommunicationJSON.Integers['documentid'];
+    except
+      on E: Exception do
+      begin
+        showmessage('Error parsing addocument response from server. Technical details: '+E.Message);
+      end;
+    end;
+  finally
+    CommunicationJSON.Free;
+  end;
+
+  for CurrentPage:=1 to NumberPages do
+  begin
+    if CurrentPage>1 then
+    begin
+      ShowMessage('Please put page '+inttostr(CurrentPage)+' in the scanner.');
+    end;
+    CommunicationJSON:=TJSONObject.Create;
+    try
+      try
+        CommunicationJSON.Add('documentid',DocumentID); //pass newly created document
+        RequestResult:=HTTPRequestWithData(CommunicationJSON,FCGIURL+'scan',rmPost);
+        if RequestResult.Code<>200 then
+        begin
+          showmessage('Error from server. HTTP result code: '+inttostr(RequestResult.Code)+'/'+RequestResult.Text);
+          exit;
+        end;
+      except
+        on E: Exception do
+        begin
+          showmessage('Error parsing scan response from server. Technical details: '+E.Message);
+        end;
+      end;
+    finally
+      CommunicationJSON.Free;
+    end;
+  end;
+
 
   //When succesful, add docs to list
   RefreshDocuments;
+  ShowMessage('Scan complete.');
 end;
 
 procedure TForm1.ShowImageButtonClick(Sender: TObject);
@@ -138,7 +192,7 @@ begin
     end;
     imageform.Hide;
     TIFFStream.Position:=0;
-    //todo: fix tiff only supporting 8 and 16 bits samples. What do we have? 1 bit?
+    //todo: fix tiff only supporting 8 and 16 bits samples=>imagemagick. What do we have? 1 bit?
     try
       imageform.ScanImage.Picture.LoadFromStreamWithFileExt(TIFFStream,'.tiff');
       ImageForm.Show;

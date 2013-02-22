@@ -104,6 +104,8 @@ Installing the cgi application:
   chmod u+r  tigerserver.ini
   
 Installing the client:
+- prerequisites: *nix: imagemagick dev libraries installed: e.g. aptitude install imagemagick
+- prerequisites: Windows: imagemagick DLL e.g. Q16 x86 or x64 (depending on papertiger client bitness) version downloaded from http://www.imagemagick.org/script/binary-releases.php in client directory
 - copy tigerclient.ini.template to tigerclient.ini and edit settings to match your environment
 
 

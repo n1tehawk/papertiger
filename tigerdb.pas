@@ -61,16 +61,18 @@ type
     FReadTransaction: TSQLTransaction; //Transaction for read-only access
     FReadWriteTransaction: TSQLTransaction; //Transaction for read/write access
   public
+    // Returns highest existing sequence for images or 0 if error
+    function GetHighestSequence(DocumentID: integer): integer;
     // Returns path+filename for requested image - Sequence gives the order/image number
     function ImagePath(DocumentID: integer; Sequence: integer=1): string;
+    // Inserts a new scan record in database; retruns scan ID.
+    // Keep string values empty to insert NULLs;
+    // TheScanDate: please pass UTC date/time, pass a pre 1900 date to specify unknown date
+    function InsertDocument(const DocumentName, PDFPath, DocumentHash: string; TheScanDate: TDateTime): integer;
     // Inserts a new image record in database (specify image number/sequence >1 to place image after existing images for a document)
     // Keep string values empty to insert NULLs; pass a pre 1900 date for TheScanDate to do the same.
     // Returns image ID.
     function InsertImage(const DocumentID, Sequence: integer; const Path, ImageHash: string): integer;
-    // Inserts a new scan record in database; retruns scan ID.
-    // Keep string values empty to insert NULLs;
-    // TheScanDate: pass UTC date/time, pass a pre 1900 date to specify unknown date
-    function InsertDocument(const DocumentName, PDFPath, DocumentHash: string; TheScanDate: TDateTime): integer;
     // Lists document with DocumentID or all documents if DocumentID=DBINVALIDID
     procedure ListDocuments(const DocumentID: integer; var DocumentsArray: TJSONArray);
     // Returns path+filename for requested PDF
@@ -89,6 +91,39 @@ const
 
 
 { TTigerDB }
+
+function TTigerDB.GetHighestSequence(DocumentID: integer): integer;
+begin
+  result:=0;
+  if DocumentID = INVALIDID then
+  begin
+    TigerLog.WriteLog(etWarning, 'GetHighestSequence: invalid document ID requested.');
+    exit;
+  end;
+
+  if FReadTransaction.Active = false then
+    FReadTransaction.StartTransaction;
+  try
+    //todo: rename sequence field with imageorder, also in all parameters etc. Sequence is a reserved word
+    // Select top sequence number; I just don't want to understand GROUP BY and this works.
+    FReadQuery.SQL.Text := 'SELECT SEQUENCE FROM IMAGES WHERE DOCUMENTID=' + IntToStr(DocumentID) +' ORDER BY SEQUENCE DESC ROWS 1';
+    FReadQuery.Open;
+    if not(FReadQuery.EOF) then
+      result:=FReadQuery.FieldByName('SEQUENCE').AsInteger;
+    FReadQuery.Close;
+    FReadTransaction.Commit;
+  except
+    on E: EDatabaseError do
+    begin
+      TigerLog.WriteLog(etError, 'GetHighestSequence: db exception: ' + E.Message);
+      FReadTransaction.RollBack;
+    end;
+    on F: Exception do
+    begin
+      TigerLog.WriteLog(etError, 'GetHighestSequence: exception: ' + F.Message);
+    end;
+  end;
+end;
 
 function TTigerDB.ImagePath(DocumentID: integer; Sequence: integer=1): string;
 begin
