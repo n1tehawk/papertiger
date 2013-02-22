@@ -7,7 +7,7 @@ interface
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, Menus, Grids,
   StdCtrls, tigersettings, LJGridUtils, FPJSON, jsonparser, httpclient, imageformunit,
-  fpreadtiff {adds TIFF format read support to TImage};
+  fpreadtiff {adds TIFF format read support to TImage}, lclintf;
 //todo: think about splitting up data access layer so you can e.g. build a CLI client
 
 type
@@ -24,12 +24,14 @@ type
     mnuAbout: TMenuItem;
     mnuQuit: TMenuItem;
     DocumentsGrid: TStringGrid;
+    ShowPDFButton: TButton;
     procedure FormCreate(Sender: TObject);
     procedure mnuAboutClick(Sender: TObject);
     procedure mnuQuitClick(Sender: TObject);
     procedure RefreshDocumentsButtonClick(Sender: TObject);
     procedure ScanButtonClick(Sender: TObject);
     procedure ShowImageButtonClick(Sender: TObject);
+    procedure ShowPDFButtonClick(Sender: TObject);
   private
     { private declarations }
     FCGIURL: string; //Base cgi URL used for connecting
@@ -137,11 +139,66 @@ begin
     imageform.Hide;
     TIFFStream.Position:=0;
     //todo: fix tiff only supporting 8 and 16 bits samples. What do we have? 1 bit?
-    imageform.ScanImage.Picture.LoadFromStreamWithFileExt(TIFFStream,'.tiff');
-    ImageForm.Show;
+    try
+      imageform.ScanImage.Picture.LoadFromStreamWithFileExt(TIFFStream,'.tiff');
+      ImageForm.Show;
+    except
+      on E: Exception do
+      begin
+        showmessage('Error showing image'+LineEnding+
+        'Technical details: '+E.Message);
+      end;
+    end;
+
   finally
     VData.Free;
     TIFFStream.Free;
+  end;
+end;
+
+procedure TForm1.ShowPDFButtonClick(Sender: TObject);
+var
+  DocumentID: integer;
+  RequestResult: THTTPResult;
+  PDFFile: string;
+  PDFStream: TMemoryStream;
+  VData: TJSONObject;
+begin
+  // Check for selected document
+  if DocumentsGrid.Row<1 then
+  begin
+    ShowMessage('No document selected. Please select a document in the grid first.');
+    exit;
+  end;
+  DocumentID:=StrToInt(DocumentsGrid.Cells[0,DocumentsGrid.Row]);
+
+  VData:=TJSONObject.Create;
+  PDFStream:=TMemoryStream.Create;
+  try
+    VData.Add('documentid',DocumentID);
+    //post a request to get the PDF
+    RequestResult:=HttpRequestWithData(VData,FCGIURL+'showdocument',PDFStream,rmPost);
+    if RequestResult.Code<>200 then
+    begin
+      showmessage('Error getting PDF from server. HTTP result code: '+inttostr(RequestResult.Code)+'/'+RequestResult.Text);
+      exit;
+    end;
+    imageform.Hide;
+    PDFStream.Position:=0;
+    try
+      PDFFile:=sysutils.GetTempFileName('','tpdf');
+      PDFStream.SaveToFile(PDFFile);
+      OpenDocument(PDFFile);
+    except
+      on E: Exception do
+      begin
+        showmessage('Error showing PDF'+LineEnding+
+        'Technical details: '+E.Message);
+      end;
+    end;
+  finally
+    VData.Free;
+    PDFStream.Free;
   end;
 end;
 
