@@ -73,6 +73,8 @@ type
     function InsertDocument(const DocumentName, PDFPath, DocumentHash: string; TheScanDate: TDateTime): integer;
     // Lists document with DocumentID or all documents if DocumentID=DBINVALIDID
     procedure ListDocuments(const DocumentID: integer; var DocumentsArray: TJSONArray);
+    // Returns path+filename for requested PDF
+    function PDFPath(DocumentID: integer): string;
     constructor Create;
     destructor Destroy; override;
   end;
@@ -252,6 +254,37 @@ begin
       DocumentsArray.Clear;
       DocumentsArray.Add(TJSONString.Create('ListDocuments: exception: message ' + F.Message));
       TigerLog.WriteLog(etError, 'ListDocuments: exception: ' + F.Message);
+    end;
+  end;
+end;
+
+function TTigerDB.PDFPath(DocumentID: integer): string;
+begin
+  result:='';
+  if DocumentID = INVALIDID then
+  begin
+    TigerLog.WriteLog(etWarning, 'PDFPath: invalid document ID requested. Cannot find PDF filename.');
+    exit;
+  end;
+
+  if FReadTransaction.Active = false then
+    FReadTransaction.StartTransaction;
+  try
+    FReadQuery.SQL.Text := 'SELECT PDFPATH FROM DOCUMENTS WHERE ID=' + IntToStr(DocumentID);
+    FReadQuery.Open;
+    if not(FReadQuery.EOF) then
+      result:=FReadQuery.FieldByName('PDFPATH').AsString;
+    FReadQuery.Close;
+    FReadTransaction.Commit;
+  except
+    on E: EDatabaseError do
+    begin
+      TigerLog.WriteLog(etError, 'PDFPath: db exception: ' + E.Message);
+      FReadTransaction.RollBack;
+    end;
+    on F: Exception do
+    begin
+      TigerLog.WriteLog(etError, 'PDFPath: exception: ' + F.Message);
     end;
   end;
 end;

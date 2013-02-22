@@ -77,6 +77,8 @@ type
     function CleanImage(const ImageFile: string): boolean;
     // Get image identified by documentID and image number/sequence (starting with 1)
     function GetImage(DocumentID, Sequence: integer; const ImageStream: TStream): boolean;
+    // Get PDF identified by DocumentID
+    function GetPDF(DocumentID: integer; const ImageStream: TStream): boolean;
     // Lists document specified by DocumentID or all documents (if DocumentID is INVALIDID)
     procedure ListDocuments(DocumentID: integer; var DocumentsArray: TJSONArray);
     // Process (set of) existing (TIFF) image(s); should be named <image>.tif
@@ -150,6 +152,44 @@ begin
         on E: Exception do
         begin
           TigerLog.WriteLog(etError,'GetImage: error trying to read image file '+ImageFile+'. Exception:'+E.Message);
+        end;
+      end;
+    end;
+  end;
+end;
+
+function TTigerServerCore.GetPDF(DocumentID: integer; const ImageStream: TStream
+  ): boolean;
+var
+  PDFFile: string;
+  MemStream: TMemoryStream;
+begin
+  result:=false;
+  if DocumentID<>INVALIDID then
+  begin
+    PDFFile:=FTigerDB.PDFPath(DocumentID);
+    if PDFFile<>'' then
+    begin
+      try
+        // Cater for different PDFDirectory setting on this server.
+        // Although this is a bit of a hack, it allows testing from different servers
+        if not(fileexists(PDFFile)) then
+        begin
+          TigerLog.WriteLog(etWarning,'GetPDF: cannot read PDF '+PDFFile+'. Hack: trying again with mangled PDFDirectory');
+          PDFFile:=FSettings.PDFDirectory+ExtractFileName(PDFFile);
+        end;
+        MemStream:=TMemoryStream.Create;
+        try
+          MemStream.LoadFromFile(PDFFile);
+          ImageStream.CopyFrom(MemStream,MemStream.Size);
+        finally
+          MemStream.Free;
+        end;
+        result:=true;
+      except
+        on E: Exception do
+        begin
+          TigerLog.WriteLog(etError,'GetPDF: error trying to read PDF file '+PDFFile+'. Exception:'+E.Message);
         end;
       end;
     end;

@@ -149,10 +149,59 @@ end;
 
 procedure TFPWebModule1.showdocumentRequest(Sender: TObject;
   ARequest: TRequest; AResponse: TResponse; var Handled: boolean);
+// Show pdf given by post with json docid integer
+var
+  DocumentID: integer;
+  Query: TJSONObject;
+  Success: boolean;
 begin
-  //todo: do the same as for showdocument except show the pdf
-  aresponse.contents.add('<p>todo debug this needs much work.</p>');
-  handled := True;
+  Success := False;
+  try
+    // for uniformity, we expect a POST+a generic json tag, though we could have used e.g. docid directly
+    //todo: adapt so query in URL is also accepted (for gets)
+    Query := TJSONParser.Create(ARequest.Content).Parse as TJSONObject;
+    DocumentID := Query.Integers['documentid'];
+    Success := True;
+  except
+    TigerLog.WriteLog(etDebug, 'showDocumentRequest: error parsing document id.');
+  end;
+
+  if Success then
+  begin
+    //retrieve pdf and put in output stream
+    AResponse.ContentStream := TMemoryStream.Create;
+    try
+      // Load tiff into content stream:
+      if FTigerCore.GetPDF(DocumentID, AResponse.ContentStream) then
+      begin
+        // Indicate papertiger should be able to deal with this data:
+        AResponse.ContentType := 'application/pdf';
+        AResponse.ContentLength:=AResponse.ContentStream.Size; //apparently doesn't happen automatically?
+        AResponse.SendContent;
+      end
+      else
+      begin
+        // Not found? error message
+        AResponse.Code:=404;
+        AResponse.CodeText:='Error getting PDF file for document ID ' +
+          IntToStr(DocumentID);
+        AResponse.Contents.Add('<p>Error getting PDF file for document ID ' +
+          IntToStr(DocumentID) + '</p>');
+      end;
+    finally
+      AResponse.ContentStream.Free;
+    end;
+  end
+  else
+  begin
+    // error message
+    AResponse.Code:=404;
+    AResponse.CodeText:='Error retrieving PDF for document ID ' +
+      IntToStr(DocumentID);
+    AResponse.Contents.Add('<p>Error retrieving PDF for document ID ' +
+      IntToStr(DocumentID) + '</p>');
+  end;
+  Handled := True;
 end;
 
 procedure TFPWebModule1.showimageRequest(Sender: TObject; ARequest: TRequest;
@@ -172,7 +221,7 @@ begin
     Sequence := Query.Integers['sequence']; //image order number
     Success := True;
   except
-    TigerLog.WriteLog(etDebug, 'showDocumentRequest: error parsing document id.');
+    TigerLog.WriteLog(etDebug, 'showimageRequest: error parsing document id.');
   end;
 
   if Success then
@@ -191,7 +240,6 @@ begin
       else
       begin
         // Not found? error message
-        //todo: for all error messages, return 500 or something instead of 200 ok
         AResponse.Code:=404;
         AResponse.CodeText:='Error getting image file for document ID ' +
           IntToStr(DocumentID);
