@@ -44,6 +44,7 @@ uses
   tigerdb, tigersettings,
   scan, imagecleaner, ocr, pdf, fpjson, dateutils;
 
+// Common constants etc:
 {$i tigercommondefs.inc}
 
 const
@@ -292,9 +293,9 @@ begin
     for i := 0 to FPages - 1 do
     begin
       if FPages = 1 then
-        Scanner.FileName := FSettings.ImageDirectory + StartDateString + '.tif'
+        Scanner.FileName := FSettings.ImageDirectory + StartDateString + TESSERACTTIFFEXTENSION
       else
-        Scanner.FileName := FSettings.ImageDirectory + StartDateString + '_' + format('%.4d', [i]) + '.tif';
+        Scanner.FileName := FSettings.ImageDirectory + StartDateString + '_' + format('%.4d', [i]) + TESSERACTTIFFEXTENSION;
       if not (Scanner.Scan) then
         raise Exception.CreateFmt('TigerServerCore: an error occurred while scanning document %s', [Scanner.FileName]);
       TigerLog.WriteLog(etDebug, 'Image file: ' + Scanner.FileName);

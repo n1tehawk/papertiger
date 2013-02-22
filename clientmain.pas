@@ -135,10 +135,8 @@ begin
       exit;
     end;
     imageform.Hide;
-    //todo: debug; we get the wrong file, it's not a tiff... Should the stuff be encoded or something?
     TIFFStream.Position:=0;
-    TIFFStream.SaveToFile('d:\cop\test.tiff');
-    TIFFStream.Position:=0;
+    //todo: fix tiff only supporting 8 and 16 bits samples. What do we have? 1 bit?
     imageform.ScanImage.Picture.LoadFromStreamWithFileExt(TIFFStream,'.tiff');
     ImageForm.Show;
   finally
