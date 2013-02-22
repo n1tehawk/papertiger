@@ -186,7 +186,7 @@ begin
     imageform.Hide;
     PDFStream.Position:=0;
     try
-      PDFFile:=sysutils.GetTempFileName('','tpdf');
+      PDFFile:=ChangeFileExt(sysutils.GetTempFileName('','tpdf'), '.pdf');
       PDFStream.SaveToFile(PDFFile);
       OpenDocument(PDFFile);
     except
