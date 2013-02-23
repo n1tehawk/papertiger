@@ -47,6 +47,8 @@ type
       AResponse: TResponse; var Handled: boolean); //delete document identified by documentid
     procedure listRequest(Sender: TObject; ARequest: TRequest;
       AResponse: TResponse; var Handled: boolean); //list all documents
+    procedure processdocumentRequest(Sender: TObject; ARequest: TRequest; //process document identified by documentid: OCR images, create PDF
+      AResponse: TResponse; var Handled: Boolean);
     procedure scanRequest(Sender: TObject; ARequest: TRequest;
       AResponse: TResponse; var Handled: boolean); //scans single image and adds it to document identified by documentid
     procedure serverinfoRequest(Sender: TObject; ARequest: TRequest;
@@ -140,6 +142,30 @@ begin
     end;
   end;
   Handled := True;
+end;
+
+procedure TFPWebModule1.processdocumentRequest(Sender: TObject;
+  ARequest: TRequest; AResponse: TResponse; var Handled: Boolean);
+var
+  DocumentID: integer;
+  InputJSON: TJSONObject;
+  Message: string;
+begin
+  try
+    // for uniformity, we expect a POST+a generic json tag, though we could have used e.g. docid directly
+    //todo: adapt so InputJSON in URL is also accepted (for gets)
+    InputJSON := TJSONParser.Create(ARequest.Content).Parse as TJSONObject;
+    DocumentID := InputJSON.Integers['documentid'];
+    //todo: figure out how to get resolution
+    if FTigerCore.ProcessImages(DocumentID, 0)='' then
+      raise Exception.Create('Got empty PDF for document '+inttostr(DocumentID));
+  except
+    Message := 'Processing images failed.';
+    TigerLog.WriteLog(etDebug, 'processdocumentRequest: '+Message);
+    AResponse.Contents.Add('<p>' + Message + '</p>');
+    AResponse.Code:=500;
+    AResponse.CodeText:=Message;
+  end;
 end;
 
 procedure TFPWebModule1.scanRequest(Sender: TObject; ARequest: TRequest;

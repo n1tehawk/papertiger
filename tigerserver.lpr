@@ -149,6 +149,7 @@ type
   procedure TTigerServer.DoRun;
   var
     DocumentID: integer;
+    i: integer;
     ErrorMsg: string;
     PDF: string;
   begin
@@ -203,31 +204,46 @@ type
       //todo: add support for ; or , separated image names when pages>1
       FTigerCore.Images.Clear;
       FTigerCore.Images.Add(ExpandFileName(GetOptionValue('i', 'image')));
-      PDF := FTigerCore.ProcessImages('Document' +
-        FormatDateTime('yyyymmddhhnnss', Now), 0);
-      if PDF <> '' then
-        writeln('Error creating PDF. Stopping.');
+      DocumentID:=FTigerCore.AddDocument; //'Document' +
+          FormatDateTime('yyyymmddhhnnss', Now);
+      if DocumentID<>INVALIDID then
+      begin
+        PDF := FTigerCore.ProcessImages(DocumentID, 0);
+        if PDF <> '' then
+          writeln('Error creating PDF. Stopping.');
+      end;
     end;
 
     if HasOption('s', 'scan') then
     begin
-      // todo: rewrite akin to cgi approach: first add document, then scan pages etc; remove scanandprocess perhaps
-      writeln('todo rewrite me');
-      {
       DocumentID := INVALIDID;
+      PDF := '';
       try
-        //DocumentID := FTigerCore.ScanAndProcess;
+        DocumentID:=FTigerCore.AddDocument;
+        if DocumentID<>INVALIDID then
+        begin
+          for i:=1 to FTigerCore.Pages do
+          begin
+            FTigerCore.ScanSinglePage(DocumentID);
+            if (FTigerCore.Pages>1) and (i<FTigerCore.Pages) then
+            begin
+              writeln('Please put page '+inttostr(i)+' in the scanner and press enter to continue.');
+              readln;
+            end;
+          end;
+          PDF:=FTigerCore.ProcessImages(DocumentID, 0);
+        end;
       except
         on E: Exception do
         begin
           writeln('Exception: ' + E.Message);
         end;
       end;
-      if DocumentID = INVALIDID then
+      if PDF = '' then
         writeln('Error while scanning')
       else
         writeln('Scanning complete.');
-      }
+
     end;
 
     // stop program loop

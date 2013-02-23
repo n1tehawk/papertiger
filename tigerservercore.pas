@@ -88,7 +88,7 @@ type
     // Specify resolution override to indicate image resolution to hocr2pdf
     // Specify 0 to leave alone and let hocr detect resolution or fallback to 300dpi
     // Returns resulting pdf file (including path)
-    function ProcessImages(DocumentName: string; Resolution: integer): string;
+    function ProcessImages(DocumentID: integer; Resolution: integer): string;
     // Scans a single page and adds it to an existing document.
     // Returns result status
     function ScanSinglePage(DocumentID: integer): boolean;
@@ -182,7 +182,7 @@ begin
   result:=false;
   if DocumentID<>INVALIDID then
   begin
-    PDFFile:=FTigerDB.PDFPath(DocumentID);
+    PDFFile:=FTigerDB.GetPDFPath(DocumentID);
     if PDFFile<>'' then
     begin
       try
@@ -216,7 +216,7 @@ begin
   FTigerDB.ListDocuments(DocumentID,DocumentsArray);
 end;
 
-function TTigerServerCore.ProcessImages(DocumentName: string; Resolution: integer): string;
+function TTigerServerCore.ProcessImages(DocumentID: integer; Resolution: integer): string;
 var
   HOCRFile: string;
   i: integer;
@@ -231,8 +231,9 @@ begin
   Result := '';
   if not (ForceDirectories(FSettings.PDFDirectory)) then
     raise Exception.CreateFmt('PDF directory %s does not exist and cannot be created.',[FSettings.PDFDirectory]);
-  if DocumentName='' then
-    raise Exception.Create('ProcessImages: cannot accept empty DocumentName. Please fix the program code.');
+  if DocumentID=INVALIDID then
+    raise Exception.Create('ProcessImages: document ID must be valid. Please fix the program code.');
+  //todo: add image if not already in db?
   for i := 0 to FImageFiles.Count - 1 do
   begin
     Success := CleanImage(FImageFiles[i]);
@@ -264,8 +265,12 @@ begin
         //todo: add metadata stuff to pdf unit
         //todo: add compression to pdf unit?
         Success := PDF.CreatePDF;
-        TigerLog.WriteLog(etDebug,'ProcessImages: Got PDF: '+PDF.PDFFile);
-        Result := PDF.PDFFile;
+        if Success then
+        begin
+          TigerLog.WriteLog(etDebug,'ProcessImages: Got PDF: '+PDF.PDFFile);
+          FTigerDB.SetPDFPath(DocumentID,PDF.PDFFile);
+          Result := PDF.PDFFile;
+        end;
         //todo: update pdf name based on OCR?!?
       finally
         PDF.Free;
@@ -346,8 +351,6 @@ begin
     FImageFiles.Add(Scanner.FileName); //We need to fill this for processimages
 
     TigerLog.WriteLog(etDebug, 'going to process single image) '+Scanner.FileName);
-    //todo: take this out, add it to a final step in the calling code that processes all images and creates a pdf.
-    ProcessImages(StartDateString, Resolution);
     if FDocumentID = INVALIDID then
     begin
       TigerLog.WriteLog(etError, 'ScanAndProcess: Error: could not insert document/scan into database. Please try again.');

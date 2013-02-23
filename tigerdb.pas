@@ -60,6 +60,7 @@ type
     FReadQuery: TSQLQuery; //Query used for reading data
     FReadTransaction: TSQLTransaction; //Transaction for read-only access
     FReadWriteTransaction: TSQLTransaction; //Transaction for read/write access
+    FWriteQuery: TSQLQuery; //Query used for writing misc data.
   public
     // Returns highest existing sequence for images or 0 if error
     function GetHighestSequence(DocumentID: integer): integer;
@@ -75,8 +76,10 @@ type
     function InsertImage(const DocumentID, Sequence: integer; const Path, ImageHash: string): integer;
     // Lists document with DocumentID or all documents if DocumentID=DBINVALIDID
     procedure ListDocuments(const DocumentID: integer; var DocumentsArray: TJSONArray);
-    // Returns path+filename for requested PDF
-    function PDFPath(DocumentID: integer): string;
+    // Returns path+filename for PDF associated with document
+    function GetPDFPath(DocumentID: integer): string;
+    // Sets path+filename for PDF associated with document. Returns result.
+    function SetPDFPath(DocumentID: integer; PDFPath: string): boolean;
     constructor Create;
     destructor Destroy; override;
   end;
@@ -293,7 +296,7 @@ begin
   end;
 end;
 
-function TTigerDB.PDFPath(DocumentID: integer): string;
+function TTigerDB.GetPDFPath(DocumentID: integer): string;
 begin
   result:='';
   if DocumentID = INVALIDID then
@@ -320,6 +323,39 @@ begin
     on F: Exception do
     begin
       TigerLog.WriteLog(etError, 'PDFPath: exception: ' + F.Message);
+    end;
+  end;
+end;
+
+function TTigerDB.SetPDFPath(DocumentID: integer; PDFPath: string): boolean;
+begin
+  Result := false;
+  try
+    if FReadWriteTransaction.Active = false then
+      FReadWriteTransaction.StartTransaction;
+    FWriteQuery.Close;
+    FWriteQuery.SQL.Text:='UPDATE DOCUMENTS SET PDFPATH=:PDFPATH WHERE DOCUMENTID='+inttostr(DocumentID);
+
+    if PDFPath = '' then // NULL
+      FWriteQuery.ParamByName('PDFPATH').Clear
+    else
+      FWriteQuery.ParamByName('PDFPATH').AsString := PDFPath;
+    FWriteQuery.ExecSQL;
+    FWriteQuery.Close;
+    FReadWriteTransaction.Commit;
+    result:=true;
+  except
+    on E: EDatabaseError do
+    begin
+      if FReadWriteTransaction.Active then
+        FReadWriteTransaction.Rollback;
+      TigerLog.WriteLog(etError, 'SetPDFPath: Database error: ' + E.Message, true);
+    end;
+    on F: Exception do
+    begin
+      if FReadWriteTransaction.Active then
+        FReadWriteTransaction.Rollback;
+      TigerLog.WriteLog(etError, 'SetPDFPath: Exception: ' + F.Message, true);
     end;
   end;
 end;
@@ -361,6 +397,7 @@ begin
     FInsertImage := TSQLQuery.Create(nil);
     FInsertScan := TSQLQuery.Create(nil);
     FReadQuery := TSQLQuery.Create(nil);
+    FWriteQuery := TSQLQuery.Create(nil);
 
     // Check for existing database
     if (FDB.HostName = '') and (FileExists(FDB.DatabaseName) = false) then
@@ -414,6 +451,9 @@ begin
 
   FReadQuery.Database := FDB;
   FReadQuery.Transaction := FReadTransaction;
+
+  FWriteQuery.Database := FDB;
+  FWriteQuery.Transaction := FReadWriteTransaction;
 end;
 
 destructor TTigerDB.Destroy;
@@ -431,6 +471,7 @@ begin
   FInsertImage.Free;
   FInsertScan.Free;
   FReadQuery.Free;
+  FWriteQuery.Free;
   FReadWriteTransaction.Free;
   FReadTransaction.Free;
   FDB.Free;
