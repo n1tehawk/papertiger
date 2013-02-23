@@ -227,7 +227,7 @@ type
             FTigerCore.ScanSinglePage(DocumentID);
             if (FTigerCore.Pages>1) and (i<FTigerCore.Pages) then
             begin
-              writeln('Please put page '+inttostr(i)+' in the scanner and press enter to continue.');
+              writeln('Please put page '+inttostr(i+1)+' in the scanner and press enter to continue.');
               readln;
             end;
           end;

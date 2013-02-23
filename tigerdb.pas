@@ -334,7 +334,7 @@ begin
     if FReadWriteTransaction.Active = false then
       FReadWriteTransaction.StartTransaction;
     FWriteQuery.Close;
-    FWriteQuery.SQL.Text:='UPDATE DOCUMENTS SET PDFPATH=:PDFPATH WHERE DOCUMENTID='+inttostr(DocumentID);
+    FWriteQuery.SQL.Text:='UPDATE DOCUMENTS SET PDFPATH=:PDFPATH WHERE ID='+inttostr(DocumentID);
 
     if PDFPath = '' then // NULL
       FWriteQuery.ParamByName('PDFPATH').Clear
