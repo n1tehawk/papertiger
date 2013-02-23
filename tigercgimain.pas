@@ -168,8 +168,9 @@ begin
     try
       Success:=FTigerCore.ScanSinglePage(DocumentID);
     except
-      Message := 'Scanning failed; an excecption occurred.';
+      Message := 'Scanning failed; an exception occurred.';
       AResponse.Contents.Add('<p>' + Message + '</p>');
+      AResponse.Code:=500;
       TigerLog.WriteLog(etError, 'scanRequest ' + Message);
     end;
   end;

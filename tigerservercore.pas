@@ -152,10 +152,10 @@ begin
     begin
       try
         // Cater for different ImageDirectory setting on this server.
-        // Although this is a bit of a hack, it allows testing from different servers
+        // Although this is a bit of a hack, it allows testing from different servers with different mountpoints
         if not(fileexists(ImageFile)) then
         begin
-          TigerLog.WriteLog(etWarning,'GetImage: cannot read image '+ImageFile+'. Hack: trying again with mangled ImageDirectory');
+          TigerLog.WriteLog(etWarning,'GetImage: cannot read image "'+ImageFile+'". Hack: trying again with mangled ImageDirectory');
           ImageFile:=FSettings.ImageDirectory+ExtractFileName(ImageFile);
         end;
         MemStream:=TMemoryStream.Create;
