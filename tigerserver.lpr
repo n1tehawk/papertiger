@@ -204,8 +204,8 @@ type
       //todo: add support for ; or , separated image names when pages>1
       FTigerCore.Images.Clear;
       FTigerCore.Images.Add(ExpandFileName(GetOptionValue('i', 'image')));
-      DocumentID:=FTigerCore.AddDocument; //'Document' +
-          FormatDateTime('yyyymmddhhnnss', Now);
+      DocumentID:=FTigerCore.AddDocument('Document ' +
+          FormatDateTime('yyyymmddhhnnss', Now));
       if DocumentID<>INVALIDID then
       begin
         PDF := FTigerCore.ProcessImages(DocumentID, 0);
@@ -219,7 +219,8 @@ type
       DocumentID := INVALIDID;
       PDF := '';
       try
-        DocumentID:=FTigerCore.AddDocument;
+        DocumentID:=FTigerCore.AddDocument('Document ' +
+          FormatDateTime('yyyymmddhhnnss', Now));
         if DocumentID<>INVALIDID then
         begin
           for i:=1 to FTigerCore.Pages do
