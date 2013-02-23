@@ -52,6 +52,9 @@ implementation
 
 {$R *.lfm}
 {$i tigercommondefs.inc}
+// Get revision from our source code repository:
+// If you have a file not found error for revision.inc, please make sure you compile hgversion.pas before compiling this project.
+{$i revision.inc}
 
 function StreamToMemory(Stream: TStream): Pointer;
 begin
@@ -132,9 +135,9 @@ end;
 
 procedure TForm1.mnuAboutClick(Sender: TObject);
 var
-  Success:boolean;
-  VersionInfo: string;
+  Message: string;
   ReturnJSON: TJSONObject;
+  Success:boolean;
 begin
   Success:=false;
   ReturnJSON:=TJSONObject.Create;
@@ -142,24 +145,27 @@ begin
     Success:=(HttpRequestWithData(ReturnJSON,FCGIURL+'serverinfo',rmPost).Code=200);
     if Success then
     try
-      VersionInfo:=ReturnJSON.Strings['serverinfo'];
+      Message:=ReturnJSON.Strings['serverinfo'];
     except
       on E: Exception do
       begin
         Success:=false;
-        VersionInfo:=' Technical details: exception '+E.Message;
+        Message:='Error getting server info. Technical details: exception '+E.Message;
       end;
     end;
-    if Success then
-    begin
-      ShowMessage('Papertiger client version 0.1'+LineEnding+
-       'Papertiger server: '+VersionInfo);
-    end
-    else
-    begin
-      ShowMessage('Papertiger client version 0.1'+LineEnding+
-       'Papertiger server: error retrieving server information. '+VersionInfo);
-    end;
+    Message:='Papertiger client' + LineEnding + 'version: based on commit ' + RevisionStr + ' (' + versiondate + ')' + LineEnding + 'build date: ' +
+  {$INCLUDE %DATE%}
+      +' ' +
+  {$INCLUDE %TIME%}
+      +LineEnding + 'Compiled for CPU: ' + lowercase(
+  {$INCLUDE %FPCTARGETCPU%}
+      ) + ' on ' + lowercase(
+  {$INCLUDE %FPCTARGETOS%}
+      ) +LineEnding+
+       'Uses ImageMagick software.'+LineEnding+
+       LineEnding+
+       'Papertiger server: '+Message;
+    ShowMessage(Message);
   finally
     ReturnJSON.Free;
   end;
