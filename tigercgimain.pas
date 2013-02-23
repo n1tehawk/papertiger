@@ -85,7 +85,8 @@ var
   DocumentID: integer;
   OutputJSON: TJSONObject;
 begin
-  DocumentID:=FTigerCore.AddDocument;
+  DocumentID:=FTigerCore.AddDocument('Document ' +
+    FormatDateTime('yyyymmddhhnnss', Now));
   if DocumentID=INVALIDID then
   begin
     AResponse.Code:=404;
@@ -166,6 +167,7 @@ begin
     AResponse.Code:=500;
     AResponse.CodeText:=Message;
   end;
+  Handled := True;
 end;
 
 procedure TFPWebModule1.scanRequest(Sender: TObject; ARequest: TRequest;

@@ -67,8 +67,8 @@ type
     FTigerDB: TTigerDB;
   protected
   public
-    // Adds new, empty document, returns document ID
-    function AddDocument: integer;
+    // Adds new, empty document (with name if specified), returns document ID
+    function AddDocument(DocumentName: string=''): integer;
     // Language to be used for OCR. Will not be saved in settings
     property CurrentOCRLanguage: string read FCurrentOCRLanguage write FCurrentOCRLanguage;
     // Image files to be OCRed or files that result from scanning
@@ -108,11 +108,11 @@ implementation
 // If you have a file not found error for revision.inc, please make sure you compile hgversion.pas before compiling this project.
 {$i revision.inc}
 
-function TTigerServerCore.AddDocument: integer;
+function TTigerServerCore.AddDocument(DocumentName: string=''): integer;
 begin
   result:=INVALIDID;
   try
-    result:=FTigerDB.InsertDocument('','','',LocalTimeToUniversal(Now));
+    result:=FTigerDB.InsertDocument(DocumentName,'','',LocalTimeToUniversal(Now));
   except
     on E: Exception do
     begin
