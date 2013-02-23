@@ -53,10 +53,24 @@ implementation
 {$R *.lfm}
 {$i tigercommondefs.inc}
 
-procedure LoadMagickBitmap(ImageStream: TMemoryStream; Bmp: TBitmap);
+function StreamToMemory(Stream: TStream): Pointer;
+begin
+  if Assigned(Stream) then
+    begin
+      Result := AllocMem(Stream.Size);
+      Stream.Position := 0;
+      Stream.Read(Result^, Stream.Size);
+    end
+  else
+    Result := nil;
+end;
+
+
+procedure LoadMagickBitmap(ImageStream: TStream; Bmp: TBitmap);
 // Let imagemagick convert an image and return a bitmap.
 // Adapted from code from theo on the Lazarus forum.
 var
+  ImageBufferPtr: Pointer;
   status: MagickBooleanType;
   wand: PMagickWand;
   img: Pimage;
@@ -69,7 +83,21 @@ var
 begin
   wand := NewMagickWand;
   try
-    status := MagickReadImageBlob(wand, @ImageStream,ImageStream.Size);
+    // First convert stream to regular chunk of memory
+    ImageBufferPtr:=StreamToMemory(ImageStream);
+    if ImageBufferPtr=nil then
+    begin
+      raise Exception.Create('LoadMagickBitmap: could not read image. Details: stream conversion failed.');
+    end
+    else
+    begin
+      try
+        status := MagickReadImageBlob(wand, ImageBufferPtr, ImageStream.Size);
+      finally
+        FreeMem(ImageBufferPtr);
+      end;
+    end;
+
     if (status = MagickFalse) then
     begin
       description := MagickGetException(wand, @severity);
@@ -99,6 +127,7 @@ begin
     wand := DestroyMagickWand(wand);
   end;
 end;
+
 { TForm1 }
 
 procedure TForm1.mnuAboutClick(Sender: TObject);
@@ -242,18 +271,25 @@ begin
       exit;
     end;
     imageform.Hide;
-    TIFFStream.Position:=0;
-
-    try
-      // Use ImageMagick to convert to a viewable bitmap; FPC tiff routines don't support black & white tiff
-      LoadMagickBitmap(TIFFStream, imageform.ScanImage.Picture.Bitmap);
-      //imageform.ScanImage.Picture.LoadFromStreamWithFileExt(TIFFStream,'.tiff');
-      ImageForm.Show;
-    except
-      on E: Exception do
-      begin
-        showmessage('Error showing image'+LineEnding+
-        'Technical details: '+E.Message);
+    if TIFFStream.Size=0 then
+    begin
+      ShowMessage('Got an empty image from server.');
+      exit;
+    end
+    else
+    begin
+      TIFFStream.Position:=0;
+      try
+        // Use ImageMagick to convert to a viewable bitmap; FPC tiff routines don't support black & white tiff
+        LoadMagickBitmap(TIFFStream, imageform.ScanImage.Picture.Bitmap);
+        //imageform.ScanImage.Picture.LoadFromStreamWithFileExt(TIFFStream,'.tiff');
+        ImageForm.Show;
+      except
+        on E: Exception do
+        begin
+          showmessage('Error showing image'+LineEnding+
+          'Technical details: '+E.Message);
+        end;
       end;
     end;
   finally

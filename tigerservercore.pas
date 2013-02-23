@@ -428,6 +428,7 @@ begin
     FImageFiles.Clear;
     FImageFiles.Add(Scanner.FileName); //We need to fill this for processimages
 
+    //todo: check the proper insert image occurs in the database
     TigerLog.WriteLog(etDebug, 'going to process single image) '+Scanner.FileName);
     ProcessImages(StartDateString, Resolution);
     if FDocumentID = INVALIDID then
