@@ -119,8 +119,27 @@ end;
 
 procedure TFPWebModule1.deletedocumentRequest(Sender: TObject;
   ARequest: TRequest; AResponse: TResponse; var Handled: boolean);
+var
+  DocumentID: integer;
+  InputJSON: TJSONObject;
+  Message: string;
 begin
-  AResponse.Contents.Add('<p>todo: support method ' + ARequest.QueryString + '.</p>');
+  try
+    // for uniformity, we expect a POST+a generic json tag, though we could have used e.g. docid directly
+    //todo: adapt so InputJSON in URL is also accepted (for gets)
+    InputJSON := TJSONParser.Create(ARequest.Content).Parse as TJSONObject;
+    DocumentID := InputJSON.Integers['documentid'];
+    if DocumentID=INVALIDID then
+      raise Exception.Create('Received invalid document ID.');
+    if FTigerCore.DeleteDocument(DocumentID)=false then
+      raise Exception.CreateFmt('FTigerCore.DeleteDocument failed to delete document ID %i',[DocumentID]);
+  except
+    Message := 'Deleting document failed.';
+    TigerLog.WriteLog(etDebug, 'deletedocumentRequest: '+Message);
+    AResponse.Contents.Add('<p>' + Message + '</p>');
+    AResponse.Code:=500;
+    AResponse.CodeText:=Message;
+  end;
   Handled := True;
 end;
 
@@ -368,8 +387,29 @@ end;
 
 procedure TFPWebModule1.uploadimageRequest(Sender: TObject; ARequest: TRequest;
   AResponse: TResponse; var Handled: boolean);
+var
+  DocumentID: integer;
+  InputJSON: TJSONObject;
+  Message: string;
 begin
-  AResponse.Contents.Add('<p>todo: support method ' + ARequest.QueryString + '.</p>');
+  try
+    // for uniformity, we expect a POST+a generic json tag, though we could have used e.g. docid directly
+    //todo: adapt so InputJSON in URL is also accepted (for gets)
+    InputJSON := TJSONParser.Create(ARequest.Content).Parse as TJSONObject;
+    DocumentID := InputJSON.Integers['documentid'];
+    //todo: actually get document as well
+    jklasdf
+    if DocumentID=INVALIDID then
+      raise Exception.Create('Received invalid document ID.');
+    if FTigerCore.ProcessImages(DocumentID, 0)='' then
+      raise Exception.Create('Got empty PDF for document '+inttostr(DocumentID));
+  except
+    Message := 'Uploading image failed.';
+    TigerLog.WriteLog(etDebug, 'uploadimageRequest: '+Message);
+    AResponse.Contents.Add('<p>' + Message + '</p>');
+    AResponse.Code:=500;
+    AResponse.CodeText:=Message;
+  end;
   Handled := True;
 end;
 

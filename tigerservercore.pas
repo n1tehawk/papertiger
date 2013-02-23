@@ -77,6 +77,8 @@ type
     property Pages: integer read FPages write FPages;
     // Cleans up image (postprocessing): straightens them up, despeckles etc. Returns true if succesful
     function CleanImage(const ImageFile: string): boolean;
+    // Delete document and associated images from DB and filesystem
+    function DeleteDocument(const DocumentID: integer): boolean;
     // Get image identified by documentID and image number/sequence (starting with 1)
     function GetImage(DocumentID, Sequence: integer; const ImageStream: TStream): boolean;
     // Get PDF identified by DocumentID
@@ -134,6 +136,13 @@ begin
   finally
     Cleaner.Free;
   end;
+end;
+
+function TTigerServerCore.DeleteDocument(const DocumentID: integer): boolean;
+begin
+  //todo: get all images, delete from fs
+  //todo: get pdf, delete from fs
+  //todo: delete document and images from db
 end;
 
 function TTigerServerCore.GetImage(DocumentID, Sequence: integer; const ImageStream: TStream): boolean;

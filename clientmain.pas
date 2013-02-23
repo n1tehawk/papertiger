@@ -17,6 +17,8 @@ type
   { TForm1 }
 
   TForm1 = class(TForm)
+    OpenDialog1: TOpenDialog;
+    UploadImageButton: TButton;
     NumberPagesControl: TEdit;
     Label1: TLabel;
     ShowImageButton: TButton;
@@ -29,6 +31,8 @@ type
     mnuQuit: TMenuItem;
     DocumentsGrid: TStringGrid;
     ShowPDFButton: TButton;
+    DeleteButton: TButton;
+    procedure DeleteButtonClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure mnuAboutClick(Sender: TObject);
     procedure mnuQuitClick(Sender: TObject);
@@ -36,11 +40,16 @@ type
     procedure ScanButtonClick(Sender: TObject);
     procedure ShowImageButtonClick(Sender: TObject);
     procedure ShowPDFButtonClick(Sender: TObject);
+    procedure UploadImageButtonClick(Sender: TObject);
   private
     { private declarations }
     FCGIURL: string; //Base cgi URL used for connecting
+    // Asks the server to add a new document and returns the document ID
+    function AddDocument: integer;
     // Refresh list of documents in grid
     procedure RefreshDocuments;
+    // Shows pdf for relevant document
+    procedure ShowPDF(DocumentID: integer);
   public
     { public declarations }
   end;
@@ -155,16 +164,13 @@ begin
   RefreshDocuments;
 end;
 
-procedure TForm1.ScanButtonClick(Sender: TObject);
+function TForm1.AddDocument: integer;
 var
   CurrentPage: integer;
-  DocumentID: integer; //New document ID returned by the server
-  NumberPages: integer; //Number of pages user requested for sca
   RequestResult: THttpResult;
   CommunicationJSON: TJSONObject;
 begin
-  DocumentID:=INVALIDID;
-  NumberPages:=StrToIntDef(NumberPagesControl.Text,1);
+  result:=INVALIDID;
   CommunicationJSON:=TJSONObject.Create;
   try
     try
@@ -174,17 +180,30 @@ begin
         showmessage('Error from server. HTTP result code: '+inttostr(RequestResult.Code)+'/'+RequestResult.Text);
         exit;
       end;
-      DocumentID:=CommunicationJSON.Integers['documentid'];
+      result:=CommunicationJSON.Integers['documentid'];
     except
       on E: Exception do
       begin
-        showmessage('Error parsing addocument response from server. Technical details: '+E.Message);
+        showmessage('Error interpreting response from server. Technical details: '+E.Message);
         exit;
       end;
     end;
   finally
     CommunicationJSON.Free;
   end;
+end;
+
+procedure TForm1.ScanButtonClick(Sender: TObject);
+var
+  CurrentPage: integer;
+  DocumentID: integer; //New document ID returned by the server
+  NumberPages: integer; //Number of pages user requested for sca
+  RequestResult: THttpResult;
+  CommunicationJSON: TJSONObject;
+begin
+  NumberPages:=StrToIntDef(NumberPagesControl.Text,1);
+
+  DocumentID:=AddDocument;
 
   for CurrentPage:=1 to NumberPages do
   begin
@@ -209,7 +228,7 @@ begin
         on E: Exception do
         begin
           Screen.Cursor:=crDefault;
-          showmessage('Error parsing scan response from server. Technical details: '+E.Message);
+          showmessage('Error interpreting response from server. Technical details: '+E.Message);
           exit;
         end;
       end;
@@ -238,13 +257,15 @@ begin
   except
     on E: Exception do
     begin
-      showmessage('Error parsing processdocument response from server. Technical details: '+E.Message);
+      showmessage('Error interpreting response from server. Technical details: '+E.Message);
       exit;
     end;
   end;
+  //todo: investigate leak
 
   //When succesful, add docs to list
   RefreshDocuments;
+  ShowPDF(DocumentID);
   ShowMessage('Scan complete.');
 end;
 
@@ -307,10 +328,6 @@ end;
 procedure TForm1.ShowPDFButtonClick(Sender: TObject);
 var
   DocumentID: integer;
-  RequestResult: THTTPResult;
-  PDFFile: string;
-  PDFStream: TMemoryStream;
-  VData: TJSONObject;
 begin
   // Check for selected document
   if DocumentsGrid.Row<1 then
@@ -320,6 +337,63 @@ begin
   end;
   DocumentID:=StrToInt(DocumentsGrid.Cells[0,DocumentsGrid.Row]);
 
+  ShowPDF(DocumentID);
+end;
+
+procedure TForm1.UploadImageButtonClick(Sender: TObject);
+var
+  DocumentID: integer;
+  ImageFile: string;
+begin
+  if DocumentsGrid.Row<1 then
+  begin
+    // Create new document if user wants to
+    if (MessageDlg('Create document?',
+      'No document selected. Create a new document for this image?',
+      mtConfirmation,[mbOK,mbCancel],0,mbOK)=mrCancel) then exit;
+    DocumentID:=AddDocument;
+  end
+  else
+  begin
+    DocumentID:=StrToInt(DocumentsGrid.Cells[0,DocumentsGrid.Row]);
+  end;
+
+
+  OpenDialog1.Execute;
+  ImageFile:=OpenDialog1.FileName;
+  if ImageFile<>'' then
+  begin
+    //todo: upload the image file along with the document ID
+  end;
+end;
+
+procedure TForm1.RefreshDocuments;
+var
+  RequestResult: THTTPResult;
+  VData: TJSONArray;
+begin
+  VData:=TJSONArray.Create; //needs to be assigned for HTTPRequest
+  try
+    ClearGrid(DocumentsGrid);
+    RequestResult:=HttpRequest(FCGIURL+'list',VData,rmGet);
+    if RequestResult.Code<>200 then
+    begin
+      showmessage('Error getting document list from server. HTTP result code: '+inttostr(RequestResult.Code)+'/'+RequestResult.Text);
+      exit;
+    end;
+    LoadJSON(DocumentsGrid,VData,false,false,false);
+  finally
+    VData.Free;
+  end;
+end;
+
+procedure TForm1.ShowPDF(DocumentID: integer);
+var
+  RequestResult: THTTPResult;
+  PDFFile: string;
+  PDFStream: TMemoryStream;
+  VData: TJSONObject;
+begin
   VData:=TJSONObject.Create;
   PDFStream:=TMemoryStream.Create;
   try
@@ -350,26 +424,6 @@ begin
   end;
 end;
 
-procedure TForm1.RefreshDocuments;
-var
-  RequestResult: THTTPResult;
-  VData: TJSONArray;
-begin
-  VData:=TJSONArray.Create; //needs to be assigned for HTTPRequest
-  try
-    ClearGrid(DocumentsGrid);
-    RequestResult:=HttpRequest(FCGIURL+'list',VData,rmGet);
-    if RequestResult.Code<>200 then
-    begin
-      showmessage('Error getting document list from server. HTTP result code: '+inttostr(RequestResult.Code)+'/'+RequestResult.Text);
-      exit;
-    end;
-    LoadJSON(DocumentsGrid,VData,false,false,false);
-  finally
-    VData.Free;
-  end;
-end;
-
 procedure TForm1.FormCreate(Sender: TObject);
 var
   Settings: TTigerSettings;
@@ -379,6 +433,58 @@ begin
     FCGIURL:=Settings.CGIURL;
   finally
     Settings.Free;
+  end;
+end;
+
+procedure TForm1.DeleteButtonClick(Sender: TObject);
+var
+  CommunicationJSON: TJSONObject;
+  DocumentID: integer;
+  DocumentPrompt: string;
+  ImageFile: string;
+begin
+  if DocumentsGrid.Row<1 then
+  begin
+    ShowMessage('Please select the document you want to delete first.');
+  end
+  else
+  begin
+    DocumentID:=StrToInt(DocumentsGrid.Cells[0,DocumentsGrid.Row]);
+  end;
+
+  // Create new document if user wants to
+  if DocumentsGrid.Cells[1,DocumentsGrid.Row]='' then
+    DocumentPrompt:='ID '+ inttostr(DocumentID)+'?'
+  else
+    DocumentPrompt:='"'+DocumentsGrid.Cells[1,DocumentsGrid.Row]+'"?';
+
+  if (MessageDlg('Delete document?',
+    'Are you sure you want to delete document '+DocumentPrompt,
+    mtConfirmation,[mbOK,mbCancel],0,mbCancel)=mrCancel) then exit;
+
+  CommunicationJSON:=TJSONObject.Create;
+  try
+    Screen.Cursor:=crHourglass;
+    CommunicationJSON.Add('documentid',DocumentID); //indicate what document we want to delete
+    try
+      RequestResult:=HTTPRequest(FCGIURL+'deletedocument',CommunicationJSON,rmGet);
+      if RequestResult.Code<>200 then
+      begin
+        Screen.Cursor:=crDefault;
+        showmessage('Error from server. HTTP result code: '+inttostr(RequestResult.Code)+'/'+RequestResult.Text);
+        exit;
+      end;
+    except
+      on E: Exception do
+      begin
+        Screen.Cursor:=crDefault;
+        showmessage('Error interpreting response from server. Technical details: '+E.Message);
+        exit;
+      end;
+    end;
+  finally
+    Screen.Cursor:=crDefault;
+    CommunicationJSON.Free;
   end;
 end;
 
