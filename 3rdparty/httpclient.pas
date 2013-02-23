@@ -102,17 +102,18 @@ begin
     Result.Text := VHttp.ResponseStatusText;
     if VData.Size > 0 then
     begin
+      FreeAndNil(AData);
       VData.Position := 0;
       VParser := TJSONParser.Create(VData);
       try
-        FreeAndNil(AData);
         try
           AData := VParser.Parse;
         except
           //error occurred, can be logged/handled if needed
           on E: Exception do
           begin
-            AData := TJSONString.Create('Error while parsing JSON data: exception: '+E.Message);
+            FreeAndNil(AData); //more for luck, really
+            AData := (TJSONString.Create('Error while parsing JSON data: exception: '+E.Message)) as TJSONData;
           end;
         end;
       finally

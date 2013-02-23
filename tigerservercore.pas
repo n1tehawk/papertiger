@@ -90,7 +90,7 @@ type
     // Returns resulting pdf file (including path)
     function ProcessImages(DocumentName: string; Resolution: integer): string;
     // Scans a single page and adds it to an existing document.
-    // Returns success
+    // Returns result status
     function ScanSinglePage(DocumentID: integer): boolean;
     // Returns server version, compile date, etc in one big string
     function ServerInfo: String;
@@ -355,7 +355,7 @@ begin
     else
     begin
       // Add images to database
-      FTigerDB.InsertImage(FDocumentID, Sequence, FImageFiles[Sequence], '');
+      FTigerDB.InsertImage(FDocumentID, Sequence, FImageFiles[0], '');
       Result := true;
     end;
   finally
