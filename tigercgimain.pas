@@ -166,7 +166,7 @@ begin
     AResponse.CodeText:=Message;
   end;
 
-  //todo implement language etc
+  //todo implement resolution, language etc
   if Success then
   begin
     try

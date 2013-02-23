@@ -109,7 +109,7 @@ begin
         try
           AData := VParser.Parse;
         except
-          //error occurred, can be logged/handled if needed
+          //error occurred, e.g. we have regular HTML instead of JSON
           on E: Exception do
           begin
             FreeAndNil(AData); //more for luck, really

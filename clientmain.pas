@@ -56,24 +56,11 @@ implementation
 // If you have a file not found error for revision.inc, please make sure you compile hgversion.pas before compiling this project.
 {$i revision.inc}
 
-function StreamToMemory(Stream: TStream): Pointer;
-begin
-  if Assigned(Stream) then
-    begin
-      Result := AllocMem(Stream.Size);
-      Stream.Position := 0;
-      Stream.Read(Result^, Stream.Size);
-    end
-  else
-    Result := nil;
-end;
 
-
-procedure LoadMagickBitmap(ImageStream: TStream; Bmp: TBitmap);
+procedure LoadMagickBitmap(ImageMemoryPtr: Pointer; ImageSize: integer; Bmp: TBitmap);
 // Let imagemagick convert an image and return a bitmap.
 // Adapted from code from theo on the Lazarus forum.
 var
-  ImageBufferPtr: Pointer;
   status: MagickBooleanType;
   wand: PMagickWand;
   img: Pimage;
@@ -86,20 +73,7 @@ var
 begin
   wand := NewMagickWand;
   try
-    // First convert stream to regular chunk of memory
-    ImageBufferPtr:=StreamToMemory(ImageStream);
-    if ImageBufferPtr=nil then
-    begin
-      raise Exception.Create('LoadMagickBitmap: could not read image. Details: stream conversion failed.');
-    end
-    else
-    begin
-      try
-        status := MagickReadImageBlob(wand, ImageBufferPtr, ImageStream.Size);
-      finally
-        FreeMem(ImageBufferPtr);
-      end;
-    end;
+    status := MagickReadImageBlob(wand, ImageMemoryPtr, ImageSize);
 
     if (status = MagickFalse) then
     begin
@@ -220,8 +194,8 @@ begin
     CommunicationJSON:=TJSONObject.Create;
     try
       Screen.Cursor:=crHourglass;
+      CommunicationJSON.Add('documentid',DocumentID); //pass newly created document
       try
-        CommunicationJSON.Add('documentid',DocumentID); //pass newly created document
         RequestResult:=HTTPRequestWithData(CommunicationJSON,FCGIURL+'scan',rmPost);
         if RequestResult.Code<>200 then
         begin
@@ -239,7 +213,14 @@ begin
       end;
     finally
       Screen.Cursor:=crDefault;
-      CommunicationJSON.Free;
+      {
+      rather mem leaks than this getting runtime error 210 etc.
+      FreeAndNil(CommunicationJSON);
+      or
+      // The JSON could have been changed by the httprequest code, so
+      if assigned(CommunicationJSON) and (CommunicationJSON.JSONType=jtObject) then
+        CommunicationJSON.Free;
+      }
     end;
   end;
 
@@ -288,7 +269,7 @@ begin
       TIFFStream.Position:=0;
       try
         // Use ImageMagick to convert to a viewable bitmap; FPC tiff routines don't support black & white tiff
-        LoadMagickBitmap(TIFFStream, imageform.ScanImage.Picture.Bitmap);
+        LoadMagickBitmap(TIFFStream.Memory, TIFFStream.Size, imageform.ScanImage.Picture.Bitmap);
         //imageform.ScanImage.Picture.LoadFromStreamWithFileExt(TIFFStream,'.tiff');
         ImageForm.Show;
       except
