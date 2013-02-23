@@ -105,7 +105,7 @@ Installing the cgi application:
   
 Installing the client:
 - prerequisites: *nix: imagemagick dev libraries installed: e.g. aptitude install imagemagick
-- prerequisites: Windows: imagemagick DLL e.g. Q16 x86 or x64 (depending on papertiger client bitness) version downloaded from http://www.imagemagick.org/script/binary-releases.php in client directory
+- prerequisites: Windows: imagemagick DLLs e.g. Q16 x86 or x64 (depending on papertiger client bitness) version downloaded from http://www.imagemagick.org/script/binary-releases.php in client directory or in path
 - copy tigerclient.ini.template to tigerclient.ini and edit settings to match your environment
 
 
@@ -171,3 +171,149 @@ https://code.google.com/p/sumatrapdf/wiki/CommandLineArguments
 sumatrapdf -reuse-instance -page <pageNo>
 Scrolls the first indicated file to the indicated page.
 Tells an already open SumatraPDF to load the indicated files. If there are several running instances, behavior is undefined.
+
+ImageMagick DLLs on Windows
+===========================
+The following dlls seem sufficient for converting TIFF images for the client - I just copied all dlls:
+CORE_RL_bzlib_.dll
+CORE_RL_jbig_.dll
+CORE_RL_jp2_.dll
+CORE_RL_jpeg_.dll
+CORE_RL_lcms_.dll
+CORE_RL_libxml_.dll
+CORE_RL_Magick++_.dll
+CORE_RL_magick_.dll
+CORE_RL_png_.dll
+CORE_RL_tiff_.dll
+CORE_RL_ttf_.dll
+CORE_RL_wand_.dll
+CORE_RL_xlib_.dll
+CORE_RL_zlib_.dll
+X11.dll
+Xext.dll
+
+In modules\coders (just copied all dlls)
+IM_MOD_RL_aai_.dll
+IM_MOD_RL_art_.dll
+IM_MOD_RL_avs_.dll
+IM_MOD_RL_bgr_.dll
+IM_MOD_RL_bmp_.dll
+IM_MOD_RL_braille_.dll
+IM_MOD_RL_cals_.dll
+IM_MOD_RL_caption_.dll
+IM_MOD_RL_cin_.dll
+IM_MOD_RL_cip_.dll
+IM_MOD_RL_clipboard_.dll
+IM_MOD_RL_clip_.dll
+IM_MOD_RL_cmyk_.dll
+IM_MOD_RL_cut_.dll
+IM_MOD_RL_dcm_.dll
+IM_MOD_RL_dds_.dll
+IM_MOD_RL_debug_.dll
+IM_MOD_RL_dib_.dll
+IM_MOD_RL_djvu_.dll
+IM_MOD_RL_dng_.dll
+IM_MOD_RL_dot_.dll
+IM_MOD_RL_dps_.dll
+IM_MOD_RL_dpx_.dll
+IM_MOD_RL_emf_.dll
+IM_MOD_RL_ept_.dll
+IM_MOD_RL_exr_.dll
+IM_MOD_RL_fax_.dll
+IM_MOD_RL_fd_.dll
+IM_MOD_RL_fits_.dll
+IM_MOD_RL_fpx_.dll
+IM_MOD_RL_gif_.dll
+IM_MOD_RL_gradient_.dll
+IM_MOD_RL_gray_.dll
+IM_MOD_RL_hald_.dll
+IM_MOD_RL_hdr_.dll
+IM_MOD_RL_histogram_.dll
+IM_MOD_RL_hrz_.dll
+IM_MOD_RL_html_.dll
+IM_MOD_RL_icon_.dll
+IM_MOD_RL_info_.dll
+IM_MOD_RL_inline_.dll
+IM_MOD_RL_ipl_.dll
+IM_MOD_RL_jbig_.dll
+IM_MOD_RL_jnx_.dll
+IM_MOD_RL_jp2_.dll
+IM_MOD_RL_jpeg_.dll
+IM_MOD_RL_label_.dll
+IM_MOD_RL_mac_.dll
+IM_MOD_RL_magick_.dll
+IM_MOD_RL_map_.dll
+IM_MOD_RL_matte_.dll
+IM_MOD_RL_mat_.dll
+IM_MOD_RL_meta_.dll
+IM_MOD_RL_miff_.dll
+IM_MOD_RL_mono_.dll
+IM_MOD_RL_mpc_.dll
+IM_MOD_RL_mpeg_.dll
+IM_MOD_RL_mpr_.dll
+IM_MOD_RL_msl_.dll
+IM_MOD_RL_mtv_.dll
+IM_MOD_RL_mvg_.dll
+IM_MOD_RL_null_.dll
+IM_MOD_RL_otb_.dll
+IM_MOD_RL_palm_.dll
+IM_MOD_RL_pango_.dll
+IM_MOD_RL_pattern_.dll
+IM_MOD_RL_pcd_.dll
+IM_MOD_RL_pcl_.dll
+IM_MOD_RL_pcx_.dll
+IM_MOD_RL_pdb_.dll
+IM_MOD_RL_pdf_.dll
+IM_MOD_RL_pes_.dll
+IM_MOD_RL_pict_.dll
+IM_MOD_RL_pix_.dll
+IM_MOD_RL_plasma_.dll
+IM_MOD_RL_png_.dll
+IM_MOD_RL_pnm_.dll
+IM_MOD_RL_preview_.dll
+IM_MOD_RL_ps2_.dll
+IM_MOD_RL_ps3_.dll
+IM_MOD_RL_psd_.dll
+IM_MOD_RL_ps_.dll
+IM_MOD_RL_pwp_.dll
+IM_MOD_RL_raw_.dll
+IM_MOD_RL_rgb_.dll
+IM_MOD_RL_rla_.dll
+IM_MOD_RL_rle_.dll
+IM_MOD_RL_scr_.dll
+IM_MOD_RL_sct_.dll
+IM_MOD_RL_sfw_.dll
+IM_MOD_RL_sgi_.dll
+IM_MOD_RL_stegano_.dll
+IM_MOD_RL_sun_.dll
+IM_MOD_RL_svg_.dll
+IM_MOD_RL_tga_.dll
+IM_MOD_RL_thumbnail_.dll
+IM_MOD_RL_tiff_.dll
+IM_MOD_RL_tile_.dll
+IM_MOD_RL_tim_.dll
+IM_MOD_RL_ttf_.dll
+IM_MOD_RL_txt_.dll
+IM_MOD_RL_uil_.dll
+IM_MOD_RL_url_.dll
+IM_MOD_RL_uyvy_.dll
+IM_MOD_RL_vicar_.dll
+IM_MOD_RL_vid_.dll
+IM_MOD_RL_viff_.dll
+IM_MOD_RL_wbmp_.dll
+IM_MOD_RL_webp_.dll
+IM_MOD_RL_wmf_.dll
+IM_MOD_RL_wpg_.dll
+IM_MOD_RL_xbm_.dll
+IM_MOD_RL_xcf_.dll
+IM_MOD_RL_xc_.dll
+IM_MOD_RL_xpm_.dll
+IM_MOD_RL_xps_.dll
+IM_MOD_RL_xtrn_.dll
+IM_MOD_RL_xwd_.dll
+IM_MOD_RL_x_.dll
+IM_MOD_RL_ycbcr_.dll
+IM_MOD_RL_yuv_.dll
+
+in modules\filters
+analyze.dll

@@ -52,6 +52,10 @@
             </CompilerMessages>
             <CustomOptions Value="-dDEBUG"/>
             <CompilerPath Value="$(CompPath)"/>
+            <ExecuteBefore>
+              <Command Value="hgversion$(ExeExt)"/>
+              <CompileReasons Run="False"/>
+            </ExecuteBefore>
           </Other>
         </CompilerOptions>
       </Item2>
@@ -135,6 +139,10 @@
         <MsgFileName Value=""/>
       </CompilerMessages>
       <CompilerPath Value="$(CompPath)"/>
+      <ExecuteBefore>
+        <Command Value="hgversion$(ExeExt)"/>
+        <CompileReasons Run="False"/>
+      </ExecuteBefore>
     </Other>
   </CompilerOptions>
   <Debugging>
