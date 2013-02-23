@@ -111,6 +111,7 @@ implementation
 // Get revision from our source code repository:
 // If you have a file not found error for revision.inc, please make sure you compile hgversion.pas before compiling this project.
 {$i revision.inc}
+
 function TTigerServerCore.AddDocument: integer;
 begin
   result:=INVALIDID;
@@ -133,7 +134,7 @@ begin
   try
     //todo: write me
     result:=true;
-    TigerLog.WriteLog(etInfo, 'CleanImage: not yet implemented. File argument Passed: ' + ImageFile);
+    TigerLog.WriteLog(etInfo, 'CleanImage: not yet implemented. File argument passed: ' + ImageFile);
   finally
     Cleaner.Free;
   end;

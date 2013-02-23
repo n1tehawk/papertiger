@@ -159,7 +159,11 @@ begin
     DocumentID := InputJSON.Integers['documentid'];
     Success := True;
   except
-    TigerLog.WriteLog(etDebug, 'showDocumentRequest: error parsing document id.');
+    Message := 'Scanning failed. No/invalid document ID.';
+    TigerLog.WriteLog(etDebug, 'showDocumentRequest: '+Message);
+    AResponse.Contents.Add('<p>' + Message + '</p>');
+    AResponse.Code:=500;
+    AResponse.CodeText:=Message;
   end;
 
   //todo implement language etc
@@ -168,18 +172,24 @@ begin
     try
       Success:=FTigerCore.ScanSinglePage(DocumentID);
     except
-      Message := 'Scanning failed; an exception occurred.';
-      AResponse.Contents.Add('<p>' + Message + '</p>');
-      AResponse.Code:=500;
-      TigerLog.WriteLog(etError, 'scanRequest ' + Message);
+      on E: Exception do
+      begin
+        Message := 'Scanning failed. Details: exception: '+E.Message;
+        AResponse.Contents.Add('<p>' + Message + '</p>');
+        AResponse.Code:=500;
+        AResponse.CodeText:=Message;
+        TigerLog.WriteLog(etError, 'scanRequest: ' + Message);
+      end;
     end;
   end;
 
   if Success=false then
   begin
-    AResponse.Contents.Add('<p>Error scanning document for document ID '+inttostr(DocumentID)+'</p>');
+    Message :='Error scanning document for document ID '+inttostr(DocumentID);
+    AResponse.Contents.Add('<p>'+Message+'</p>');
     AResponse.Code:=500;
     AResponse.CodeText:='Error scanning document for document ID '+inttostr(DocumentID);
+    TigerLog.WriteLog(etError, 'scanRequest: ' + Message);
   end
   else
   begin
