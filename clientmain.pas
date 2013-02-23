@@ -8,7 +8,8 @@ uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, Menus, Grids,
   StdCtrls, tigersettings, LJGridUtils, FPJSON, jsonparser, httpclient, imageformunit,
   fpreadtiff {adds TIFF format read support to TImage}, lclintf,
-  magick_wand, ImageMagick {for conversion from TIFF formats unsupported by FPC to regular bitmaps};
+  magick_wand, ImageMagick {for conversion from TIFF formats unsupported by FPC to regular bitmaps},
+  IntfGraphics, FPimage, LazUTF8;
 //todo: think about splitting up data access layer so you can e.g. build a CLI client
 
 type
@@ -52,6 +53,52 @@ implementation
 {$R *.lfm}
 {$i tigercommondefs.inc}
 
+procedure LoadMagickBitmap(ImageStream: TMemoryStream; Bmp: TBitmap);
+// Let imagemagick convert an image and return a bitmap.
+// Adapted from code from theo on the Lazarus forum.
+var
+  status: MagickBooleanType;
+  wand: PMagickWand;
+  img: Pimage;
+  pack: PPixelPacket;
+  limg: TLazIntfImage;
+  i, j, wi, he: integer;
+  colo: TFPColor;
+  description: PChar;
+  severity: ExceptionType;
+begin
+  wand := NewMagickWand;
+  try
+    status := MagickReadImageBlob(wand, @ImageStream,ImageStream.Size);
+    if (status = MagickFalse) then
+    begin
+      description := MagickGetException(wand, @severity);
+      raise Exception.Create(Format('LoadMagickBitmap: an error ocurred. Description: %s',
+        [description]));
+      description := MagickRelinquishMemory(description);
+    end;
+    img := GetImageFromMagickWand(wand);
+    he := MagickGetImageHeight(wand);
+    wi := MagickGetImageWidth(wand);
+    limg := TLazIntfImage.Create(0, 0);
+    limg.DataDescription := GetDescriptionFromDevice(0, wi, he);
+    pack := GetAuthenticPixels(img, 0, 0, wi, he, nil);
+    for j := 0 to he - 1 do
+      for i := 0 to wi - 1 do
+      begin
+        colo.red := pack^.red;
+        colo.green := pack^.green;
+        colo.blue := pack^.blue;
+        colo.alpha := pack^.opacity;
+        limg.Colors[i, j] := colo;
+        Inc(pack);
+      end;
+    Bmp.LoadFromIntfImage(limg);
+  finally
+    limg.Free;
+    wand := DestroyMagickWand(wand);
+  end;
+end;
 { TForm1 }
 
 procedure TForm1.mnuAboutClick(Sender: TObject);
@@ -196,9 +243,11 @@ begin
     end;
     imageform.Hide;
     TIFFStream.Position:=0;
-    //todo: fix tiff only supporting 8 and 16 bits samples=>imagemagick. What do we have? 1 bit?
+
     try
-      imageform.ScanImage.Picture.LoadFromStreamWithFileExt(TIFFStream,'.tiff');
+      // Use ImageMagick to convert to a viewable bitmap; FPC tiff routines don't support black & white tiff
+      LoadMagickBitmap(TIFFStream, imageform.ScanImage.Picture.Bitmap);
+      //imageform.ScanImage.Picture.LoadFromStreamWithFileExt(TIFFStream,'.tiff');
       ImageForm.Show;
     except
       on E: Exception do
@@ -207,7 +256,6 @@ begin
         'Technical details: '+E.Message);
       end;
     end;
-
   finally
     VData.Free;
     TIFFStream.Free;
