@@ -89,10 +89,6 @@ type
     // Specify 0 to leave alone and let hocr detect resolution or fallback to 300dpi
     // Returns resulting pdf file (including path)
     function ProcessImages(DocumentName: string; Resolution: integer): string;
-    // Scan a document (with one or more pages) and process it.
-    // Returns document ID if succesful; <=0 if not.
-    // Only useful for command-line use
-    function ScanAndProcess: integer;
     // Scans a single page and adds it to an existing document.
     // Returns success
     function ScanSinglePage(DocumentID: integer): boolean;
@@ -268,25 +264,15 @@ begin
         //todo: add metadata stuff to pdf unit
         //todo: add compression to pdf unit?
         Success := PDF.CreatePDF;
-        TigerLog.WriteLog(etDebug,'Got PDF:'+PDF.PDFFile);
+        TigerLog.WriteLog(etDebug,'ProcessImages: Got PDF: '+PDF.PDFFile);
         Result := PDF.PDFFile;
+        //todo: update pdf name based on OCR?!?
       finally
         PDF.Free;
       end;
-      //todo: concatenate pdfs; we just add the last one for now
-      //todo: update pdf name
-      // Insert result into database:
-      if Result <> '' then
-      begin
-        {todo: don't use now but get timestamp from oldest image and use that as scandate??? Or leave like this as
-         the scan command has actually been issued now}
-        FDocumentID := FTigerDB.InsertDocument(DocumentName, Result, '', LocalTimeToUniversal(Now));
-        // todo: next call db update or insert images here to make sure images assigned to proper document
-      end
-      else
-        FDocumentID := INVALIDID; //invalidate any previously valid document ID
     end;
-  end;
+  end; //all images added
+  //todo: concatenate pdfs; we just add the last one for now
 end;
 
 {
@@ -324,76 +310,6 @@ Can attach arbitrary files to PDF using PDF file attachment.
 We could save some data here? If so, what?
 }
 
-function TTigerServerCore.ScanAndProcess: integer;
-  // Performs the document scan, and process result
-var
-  i: integer;
-  Resolution: integer;
-  Scanner: TScanner;
-  StartDate: TDateTime;
-  StartDateString: string;
-begin
-  Result := INVALIDID; //fail by default
-  FDocumentID := INVALIDID; //Avoid processing old documents after failure
-
-  // Try a 300dpi scan, probably best for normal sized letters on paper
-  Resolution := 300;
-  if not (ForceDirectories(FSettings.ImageDirectory)) then
-    raise Exception.Create('Image directory ' + FSettings.ImageDirectory + ' does not exist and cannot be created.');
-  Scanner := TScanner.Create;
-
-  try
-    Scanner.Resolution := Resolution;
-    Scanner.ColorType := stLineArt;
-    StartDate := Now();
-    StartDateString := FormatDateTime('yyyymmddhhnnss', StartDate);
-
-    TigerLog.WriteLog(etInfo, 'Going to scan ' + IntToStr(FPages) + ' pages; start date: ' + StartDateString);
-    for i := 0 to FPages - 1 do
-    begin
-      if FPages = 1 then
-        Scanner.FileName := FSettings.ImageDirectory + StartDateString + TESSERACTTIFFEXTENSION
-      else
-        Scanner.FileName := FSettings.ImageDirectory + StartDateString + '_' + format('%.4d', [i]) + TESSERACTTIFFEXTENSION;
-      if not (Scanner.Scan) then
-        raise Exception.CreateFmt('TigerServerCore: an error occurred while scanning document %s', [Scanner.FileName]);
-      TigerLog.WriteLog(etDebug, 'Image file: ' + Scanner.FileName);
-      FImageFiles.Clear;
-      FImageFiles.Add(Scanner.FileName);
-      if (i < FPages - 1) then
-      begin
-        // todo: rebuild using event procedure so this can be plugged in (via web interface etc)
-        // Ask for page after current page:
-        //todo: do this with a callback!?!?!
-        {$IFNDEF CGI}
-        writeln('Once the scan is completed, please put in sheet ' + IntToStr(i + 2) + ' and press enter to continue.');
-        readln;
-        {$ELSE}
-        //to do: implement this!
-        TigerLog.WriteLog(etError, 'to do: please implement multipage scan support!');
-        {$ENDIF}
-      end;
-    end;
-
-    TigerLog.WriteLog(etDebug, 'going to process image(s): '+inttostr(FImageFiles.Count));
-    ProcessImages(StartDateString, Resolution);
-    if FDocumentID = INVALIDID then
-    begin
-      TigerLog.WriteLog(etError, 'ScanAndProcess: Error: could not insert document/scan into database. Please try again.');
-    end
-    else
-    begin
-      for i := 0 to FPages - 1 do
-      begin
-        // Add images to database
-        FTigerDB.InsertImage(FDocumentID, i+1, FImageFiles[i], '');
-      end;
-      Result := FDocumentID;
-    end;
-  finally
-    Scanner.Free;
-  end;
-end;
 
 function TTigerServerCore.ScanSinglePage(DocumentID: integer): boolean;
 var

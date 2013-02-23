@@ -211,9 +211,12 @@ type
 
     if HasOption('s', 'scan') then
     begin
+      // todo: rewrite akin to cgi approach: first add document, then scan pages etc; remove scanandprocess perhaps
+      writeln('todo rewrite me');
+      {
       DocumentID := INVALIDID;
       try
-        DocumentID := FTigerCore.ScanAndProcess;
+        //DocumentID := FTigerCore.ScanAndProcess;
       except
         on E: Exception do
         begin
@@ -224,6 +227,7 @@ type
         writeln('Error while scanning')
       else
         writeln('Scanning complete.');
+      }
     end;
 
     // stop program loop
