@@ -234,6 +234,7 @@ begin
         begin
           Screen.Cursor:=crDefault;
           showmessage('Error parsing scan response from server. Technical details: '+E.Message);
+          exit;
         end;
       end;
     finally
