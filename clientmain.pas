@@ -179,6 +179,7 @@ begin
       on E: Exception do
       begin
         showmessage('Error parsing addocument response from server. Technical details: '+E.Message);
+        exit;
       end;
     end;
   finally
@@ -191,6 +192,7 @@ begin
     begin
       ShowMessage('Please put page '+inttostr(CurrentPage)+' in the scanner.');
     end;
+
     CommunicationJSON:=TJSONObject.Create;
     try
       Screen.Cursor:=crHourglass;
@@ -222,8 +224,24 @@ begin
         CommunicationJSON.Free;
       }
     end;
-  end;
+  end; //all pages scanned now
 
+  CommunicationJSON:=TJSONObject.Create();
+  try
+    CommunicationJSON.Add('documentid',DocumentID);
+    RequestResult:=HTTPRequestWithData(CommunicationJSON,FCGIURL+'processdocument',rmPost);
+    if RequestResult.Code<>200 then
+    begin
+      showmessage('Error from server. HTTP result code: '+inttostr(RequestResult.Code)+'/'+RequestResult.Text);
+      exit;
+    end;
+  except
+    on E: Exception do
+    begin
+      showmessage('Error parsing processdocument response from server. Technical details: '+E.Message);
+      exit;
+    end;
+  end;
 
   //When succesful, add docs to list
   RefreshDocuments;
