@@ -56,7 +56,7 @@ type
     procedure showdocumentRequest(Sender: TObject; ARequest: TRequest;
       AResponse: TResponse; var Handled: boolean); //show PDF document identified by documentid
     procedure showimageRequest(Sender: TObject; ARequest: TRequest;
-      AResponse: TResponse; var Handled: boolean); //show image (TIFF) identified by documentid and sequence
+      AResponse: TResponse; var Handled: boolean); //show image (TIFF) identified by documentid and imageorder
     procedure unsupportedRequest(Sender: TObject; ARequest: TRequest;
       AResponse: TResponse; var Handled: boolean); //handler for invalid requests
     procedure uploadimageRequest(Sender: TObject; ARequest: TRequest;
@@ -176,7 +176,7 @@ begin
     //todo: adapt so InputJSON in URL is also accepted (for gets)
     InputJSON := TJSONParser.Create(ARequest.Content).Parse as TJSONObject;
     DocumentID := InputJSON.Integers['documentid'];
-    //todo: figure out how to get resolution
+    //todo: figure out how to get resolution: it is encoded in the TIFF file; see e.g. http://stackoverflow.com/questions/7861600/get-horizontal-resolution-from-tif-in-c/7862187#7862187
     if FTigerCore.ProcessImages(DocumentID, 0)='' then
       raise Exception.Create('Got empty PDF for document '+inttostr(DocumentID));
   except
@@ -322,7 +322,7 @@ procedure TFPWebModule1.showimageRequest(Sender: TObject; ARequest: TRequest;
   AResponse: TResponse; var Handled: boolean);
 // Show image given by post with json docid integer
 var
-  DocumentID, Sequence: integer;
+  DocumentID, ImageOrder: integer;
   Query: TJSONObject;
   Success: boolean;
 begin
@@ -332,7 +332,7 @@ begin
     //todo: adapt so query in URL is also accepted (for gets)
     Query := TJSONParser.Create(ARequest.Content).Parse as TJSONObject;
     DocumentID := Query.Integers['documentid'];
-    Sequence := Query.Integers['sequence']; //image order number
+    ImageOrder := Query.Integers['imageorder']; //image order number
     Success := True;
   except
     TigerLog.WriteLog(etDebug, 'showimageRequest: error parsing document id.');
@@ -344,7 +344,7 @@ begin
     AResponse.ContentStream := TMemoryStream.Create;
     try
       // Load tiff into content stream:
-      if FTigerCore.GetImage(DocumentID, Sequence, AResponse.ContentStream) then
+      if FTigerCore.GetImage(DocumentID, ImageOrder, AResponse.ContentStream) then
       begin
         // Indicate papertiger should be able to deal with this data:
         AResponse.ContentType := 'image/tiff; application=papertiger';
@@ -398,11 +398,11 @@ begin
     InputJSON := TJSONParser.Create(ARequest.Content).Parse as TJSONObject;
     DocumentID := InputJSON.Integers['documentid'];
     //todo: actually get document as well
-    jklasdf
     if DocumentID=INVALIDID then
       raise Exception.Create('Received invalid document ID.');
-    if FTigerCore.ProcessImages(DocumentID, 0)='' then
-      raise Exception.Create('Got empty PDF for document '+inttostr(DocumentID));
+    //todo: implement image upload
+    {if FTigerCore.UploadImage(DocumentID, )='' then
+      raise Exception.Create('Error uploading image ument '+inttostr(DocumentID));}
   except
     Message := 'Uploading image failed.';
     TigerLog.WriteLog(etDebug, 'uploadimageRequest: '+Message);
