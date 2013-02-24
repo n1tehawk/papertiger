@@ -79,8 +79,8 @@ type
     function CleanImage(const ImageFile: string): boolean;
     // Delete document and associated images from DB and filesystem
     function DeleteDocument(const DocumentID: integer): boolean;
-    // Get image identified by documentID and image number/sequence (starting with 1)
-    function GetImage(DocumentID, Sequence: integer; const ImageStream: TStream): boolean;
+    // Get image identified by documentID and image number/imageorder (starting with 1)
+    function GetImage(DocumentID, ImageOrder: integer; const ImageStream: TStream): boolean;
     // Get PDF identified by DocumentID
     function GetPDF(DocumentID: integer; const ImageStream: TStream): boolean;
     // Lists document specified by DocumentID or all documents (if DocumentID is INVALIDID)
@@ -124,6 +124,7 @@ begin
 end;
 
 function TTigerServerCore.CleanImage(const ImageFile: string): boolean;
+// Cleans up image before OCR (despeckle etc)
 var
   Cleaner: TImageCleaner;
 begin
@@ -145,7 +146,7 @@ begin
   //todo: delete document and images from db
 end;
 
-function TTigerServerCore.GetImage(DocumentID, Sequence: integer; const ImageStream: TStream): boolean;
+function TTigerServerCore.GetImage(DocumentID, ImageOrder: integer; const ImageStream: TStream): boolean;
 var
   ImageFile: string;
   MemStream: TMemoryStream;
@@ -153,7 +154,7 @@ begin
   result:=false;
   if DocumentID<>INVALIDID then
   begin
-    ImageFile:=FTigerDB.ImagePath(DocumentID,Sequence);
+    ImageFile:=FTigerDB.ImagePath(DocumentID,ImageOrder);
     if ImageFile<>'' then
     begin
       try
@@ -233,7 +234,7 @@ var
   PDF: TPDF;
   Success: boolean;
 begin
-  {todo: add preprocess unit??! despeckle, deskew etc? ScanTailor?
+  {todo: add preprocess code to cleanimage despeckle, deskew etc? ScanTailor?
   Scantailor: more for letters/documents; unpaper more for books
   scantailor new version: https://sourceforge.net/projects/scantailor/files/scantailor-devel/enhanced/
   unpaper input.ppm output.ppm => perhaps more formats than ppm? use eg. exactimage's econvert for format conversion}
@@ -330,7 +331,7 @@ var
   i: integer;
   Resolution: integer;
   Scanner: TScanner;
-  Sequence: integer;
+  ImageOrder: integer;
   StartDate: TDateTime;
   StartDateString: string;
 begin
@@ -351,8 +352,8 @@ begin
 
     TigerLog.WriteLog(etInfo, 'Going to scan single page; start date: ' + StartDateString);
 
-    Sequence:=FTigerDB.GetHighestSequence(DocumentID)+1; //insert image after existing images
-    Scanner.FileName := FSettings.ImageDirectory + StartDateString + '_' + format('%.4d', [Sequence]) + TESSERACTTIFFEXTENSION;
+    ImageOrder:=FTigerDB.GetHighestImageOrder(DocumentID)+1; //insert image after existing images
+    Scanner.FileName := FSettings.ImageDirectory + StartDateString + '_' + format('%.4d', [ImageOrder]) + TESSERACTTIFFEXTENSION;
     if not (Scanner.Scan) then
       raise Exception.CreateFmt('TigerServerCore: an error occurred while scanning document %s', [Scanner.FileName]);
     TigerLog.WriteLog(etDebug, 'Image file: ' + Scanner.FileName);
@@ -367,7 +368,7 @@ begin
     else
     begin
       // Add images to database
-      FTigerDB.InsertImage(FDocumentID, Sequence, FImageFiles[0], '');
+      FTigerDB.InsertImage(FDocumentID, ImageOrder, FImageFiles[0], '');
       Result := true;
     end;
   finally

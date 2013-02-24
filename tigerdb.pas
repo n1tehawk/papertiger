@@ -62,18 +62,18 @@ type
     FReadWriteTransaction: TSQLTransaction; //Transaction for read/write access
     FWriteQuery: TSQLQuery; //Query used for writing misc data.
   public
-    // Returns highest existing sequence for images or 0 if error
-    function GetHighestSequence(DocumentID: integer): integer;
-    // Returns path+filename for requested image - Sequence gives the order/image number
-    function ImagePath(DocumentID: integer; Sequence: integer=1): string;
+    // Returns highest existing imageorder for images or 0 if error
+    function GetHighestImageOrder(DocumentID: integer): integer;
+    // Returns path+filename for requested image - imageorder gives the sort order/image number
+    function ImagePath(DocumentID: integer; Imageorder: integer=1): string;
     // Inserts a new scan record in database; retruns scan ID.
     // Keep string values empty to insert NULLs;
     // TheScanDate: please pass UTC date/time, pass a pre 1900 date to specify unknown date
     function InsertDocument(const DocumentName, PDFPath, DocumentHash: string; TheScanDate: TDateTime): integer;
-    // Inserts a new image record in database (specify image number/sequence >1 to place image after existing images for a document)
+    // Inserts a new image record in database (specify image number/imageorder >1 to place image after existing images for a document)
     // Keep string values empty to insert NULLs; pass a pre 1900 date for TheScanDate to do the same.
     // Returns image ID.
-    function InsertImage(const DocumentID, Sequence: integer; const Path, ImageHash: string): integer;
+    function InsertImage(const DocumentID, Imageorder: integer; const Path, ImageHash: string): integer;
     // Lists document with DocumentID or all documents if DocumentID=DBINVALIDID
     procedure ListDocuments(const DocumentID: integer; var DocumentsArray: TJSONArray);
     // Returns path+filename for PDF associated with document
@@ -95,40 +95,39 @@ const
 
 { TTigerDB }
 
-function TTigerDB.GetHighestSequence(DocumentID: integer): integer;
+function TTigerDB.GetHighestImageOrder(DocumentID: integer): integer;
 begin
   result:=0;
   if DocumentID = INVALIDID then
   begin
-    TigerLog.WriteLog(etWarning, 'GetHighestSequence: invalid document ID requested.');
+    TigerLog.WriteLog(etWarning, 'GetHighestImageOrder: invalid document ID requested.');
     exit;
   end;
 
   if FReadTransaction.Active = false then
     FReadTransaction.StartTransaction;
   try
-    //todo: rename sequence field with imageorder, also in all parameters etc. Sequence is a reserved word
-    // Select top sequence number; I just don't want to understand GROUP BY and this works.
-    FReadQuery.SQL.Text := 'SELECT SEQUENCE FROM IMAGES WHERE DOCUMENTID=' + IntToStr(DocumentID) +' ORDER BY SEQUENCE DESC ROWS 1';
+    // Select top imageorder number; I just don't want to understand GROUP BY and this works.
+    FReadQuery.SQL.Text := 'SELECT IMAGEORDER FROM IMAGES WHERE DOCUMENTID=' + IntToStr(DocumentID) +' ORDER BY IMAGEORDER DESC ROWS 1';
     FReadQuery.Open;
     if not(FReadQuery.EOF) then
-      result:=FReadQuery.FieldByName('SEQUENCE').AsInteger;
+      result:=FReadQuery.FieldByName('IMAGEORDER').AsInteger;
     FReadQuery.Close;
     FReadTransaction.Commit;
   except
     on E: EDatabaseError do
     begin
-      TigerLog.WriteLog(etError, 'GetHighestSequence: db exception: ' + E.Message);
+      TigerLog.WriteLog(etError, 'GetHighestImageOrder: db exception: ' + E.Message);
       FReadTransaction.RollBack;
     end;
     on F: Exception do
     begin
-      TigerLog.WriteLog(etError, 'GetHighestSequence: exception: ' + F.Message);
+      TigerLog.WriteLog(etError, 'GetHighestImageOrder: exception: ' + F.Message);
     end;
   end;
 end;
 
-function TTigerDB.ImagePath(DocumentID: integer; Sequence: integer=1): string;
+function TTigerDB.ImagePath(DocumentID: integer; Imageorder: integer=1): string;
 begin
   result:='';
   if DocumentID = INVALIDID then
@@ -140,7 +139,7 @@ begin
   if FReadTransaction.Active = false then
     FReadTransaction.StartTransaction;
   try
-    FReadQuery.SQL.Text := 'SELECT PATH FROM IMAGES WHERE DOCUMENTID=' + IntToStr(DocumentID) +' AND SEQUENCE='+inttostr(Sequence);
+    FReadQuery.SQL.Text := 'SELECT PATH FROM IMAGES WHERE DOCUMENTID=' + IntToStr(DocumentID) +' AND IMAGEORDER='+inttostr(ImageOrder);
     FReadQuery.Open;
     if not(FReadQuery.EOF) then
       result:=FReadQuery.FieldByName('PATH').AsString;
@@ -159,7 +158,7 @@ begin
   end;
 end;
 
-function TTigerDB.InsertImage(const DocumentID, Sequence: integer; const Path, ImageHash: string): integer;
+function TTigerDB.InsertImage(const DocumentID, ImageOrder: integer; const Path, ImageHash: string): integer;
 begin
   //todo: make this function insert or update image so it can modify existing records
   Result := INVALIDID;
@@ -168,9 +167,9 @@ begin
       FReadWriteTransaction.StartTransaction;
     FInsertImage.Close;
     FInsertImage.ParamByName('DOCUMENTID').AsInteger := DocumentID;
-    if Sequence=0 then
-      raise Exception.Create('Sequence number 0 is not allowed. Please specify 1 or higher.');
-    FInsertImage.ParamByName('SEQUENCE').AsInteger := Sequence;
+    if ImageOrder=0 then
+      raise Exception.Create('ImageOrder number 0 is not allowed. Please specify 1 or higher.');
+    FInsertImage.ParamByName('ImageOrder').AsInteger := ImageOrder;
     if Path = '' then // NULL
       FInsertImage.ParamByName('PATH').Clear
     else
@@ -437,7 +436,7 @@ begin
   //Try to work around FPC 2.6.0 bug that doesn't do Open, but execute for INSERT statements
   FInsertImage.ParseSQL := false;
   //todo: replace with merge/insert replacing
-  SQL := 'INSERT INTO IMAGES (DOCUMENTID,SEQUENCE,PATH,IMAGEHASH) ' + 'VALUES (:DOCUMENTID,:SEQUENCE,:PATH,:IMAGEHASH) RETURNING ID';
+  SQL := 'INSERT INTO IMAGES (DOCUMENTID,IMAGEORDER,PATH,IMAGEHASH) ' + 'VALUES (:DOCUMENTID,:IMAGEORDER,:PATH,:IMAGEHASH) RETURNING ID';
   FInsertImage.SQL.Text := SQL;
   FInsertImage.Prepare;
 

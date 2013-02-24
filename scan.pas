@@ -86,8 +86,7 @@ const
 var
   Output: string = '';
 begin
-  //todo:
-  //scanimage --list-devices
+  //todo: scanimage --list-devices
   {
   --list-devices         show available scanner devices
   --formatted-device-list=FORMAT similar to -L, but the FORMAT of the output
