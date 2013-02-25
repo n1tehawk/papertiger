@@ -18,7 +18,8 @@ Further possible refinements:
 - support for other databases (sqlite, PostgreSQL, MS SQL Server)
 - using image cleanup tools such as unpaper
 - using WIA etc on Windows to support Windows scanners
-- write .deb for Debian servers
+- write .deb install pacakge for easy installation on Debian servers
+- batch import of images/pdfs
 
 Architecture and development principles
 - use other people's work if possible - the Unix way...
@@ -52,7 +53,7 @@ fpc tigerserver.lpr
 
 Installation instructions
 =========================
-- prerequisites: Linux machine. Windows support may come later.
+- prerequisites: Linux (virtual) machine. Windows support may come later.
 - prerequisites: have sane installed and configured for your scanner. E.g.:
   aptitude install sane-utils
 - prerequisites: have tesseract installed and configured. E.g.:

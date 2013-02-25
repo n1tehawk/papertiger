@@ -176,7 +176,8 @@ begin
     //todo: adapt so InputJSON in URL is also accepted (for gets)
     InputJSON := TJSONParser.Create(ARequest.Content).Parse as TJSONObject;
     DocumentID := InputJSON.Integers['documentid'];
-    //todo: figure out how to get resolution: it is encoded in the TIFF file; see e.g. http://stackoverflow.com/questions/7861600/get-horizontal-resolution-from-tif-in-c/7862187#7862187
+    //todo: figure out how to get resolution: it is encoded in the TIFF file; edentify bla.tif =>20130218144142.tif: TIFF 2472x3262 @ 300x300dpi (209x276mm) 1 bit, 1 channel
+    // see e.g. http://stackoverflow.com/questions/7861600/get-horizontal-resolution-from-tif-in-c/7862187#7862187
     if FTigerCore.ProcessImages(DocumentID, 0)='' then
       raise Exception.Create('Got empty PDF for document '+inttostr(DocumentID));
   except
@@ -379,9 +380,14 @@ end;
 procedure TFPWebModule1.unsupportedRequest(Sender: TObject; ARequest: TRequest;
   AResponse: TResponse; var Handled: boolean);
 begin
-  AResponse.Contents.Add('<p>Unsupported method.</p>');
+  //todo add hyperlinks to all supported docs etc
   AResponse.Code:=404;
   AResponse.CodeText:='Unsupported method';
+  AResponse.Contents.Add('<p>Unsupported method.</p>');
+  AResponse.Contents.Add('<p>Command was: '+ARequest.Command+'</p>');
+  AResponse.Contents.Add('<p>URI: '+ARequest.URI+'</p>');
+  AResponse.Contents.Add('<p>URL: '+ARequest.URL+'</p>');
+  AResponse.Contents.Add('<p>Pathinfo: '+ARequest.PathInfo+'</p>');
   Handled := True;
 end;
 
