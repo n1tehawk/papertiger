@@ -308,6 +308,7 @@ begin
       TIFFStream.Position:=0;
       try
         // Use ImageMagick to convert to a viewable bitmap; FPC tiff routines don't support black & white tiff
+        // todo: move this to the server (using exactimage?), just send a compressed base64 encoded bitmap via json?
         LoadMagickBitmap(TIFFStream.Memory, TIFFStream.Size, imageform.ScanImage.Picture.Bitmap);
         //imageform.ScanImage.Picture.LoadFromStreamWithFileExt(TIFFStream,'.tiff');
         ImageForm.Show;
