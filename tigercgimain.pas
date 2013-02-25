@@ -384,10 +384,11 @@ begin
   AResponse.Code:=404;
   AResponse.CodeText:='Unsupported method';
   AResponse.Contents.Add('<p>Unsupported method.</p>');
-  AResponse.Contents.Add('<p>Command was: '+ARequest.Command+'</p>');
-  AResponse.Contents.Add('<p>URI: '+ARequest.URI+'</p>');
-  AResponse.Contents.Add('<p>URL: '+ARequest.URL+'</p>');
-  AResponse.Contents.Add('<p>Pathinfo: '+ARequest.PathInfo+'</p>');
+  //Tried with http://<server>/cgi-bin/tigercgi/unsupported?q=5
+  AResponse.Contents.Add('<p>Command was: '+ARequest.Command+'</p>'); //gives nothing
+  AResponse.Contents.Add('<p>URI: '+ARequest.URI+'</p>'); //gives nothing
+  AResponse.Contents.Add('<p>URL: '+ARequest.URL+'</p>'); //gives eg /cgi-bin/tigercgi/unsupported?q=5
+  AResponse.Contents.Add('<p>Pathinfo: '+ARequest.PathInfo+'</p>'); //gives /unsupported
   Handled := True;
 end;
 
