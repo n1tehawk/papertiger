@@ -422,5 +422,6 @@ begin
 end;
 
 initialization
-  RegisterHTTPModule('TFPWebModule1', TFPWebModule1);
+  // This registration will handle http://server/cgi-bin/tigercgi/obsolete/*
+  RegisterHTTPModule('obsolete', TFPWebModule1);
 end.
