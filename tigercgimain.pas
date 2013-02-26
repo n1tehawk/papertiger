@@ -36,9 +36,9 @@ uses
 
 type
 
-  { TFPWebModule1 }
+  { TFPWebobsolete }
 
-  TFPWebModule1 = class(TFPWebModule)
+  TFPWebobsolete = class(TFPWebModule)
     procedure DataModuleCreate(Sender: TObject);
     procedure DataModuleDestroy(Sender: TObject);
     procedure adddocumentRequest(Sender: TObject; ARequest: TRequest;
@@ -69,17 +69,17 @@ type
   end;
 
 var
-  FPWebModule1: TFPWebModule1;
+  FPWebobsolete: TFPWebobsolete;
 
 implementation
 
 {$R *.lfm}
 
-{ TFPWebModule1 }
+{ TFPWebobsolete }
 
 //todo: use/add updatedocument that allows changing document name etc
 
-procedure TFPWebModule1.adddocumentRequest(Sender: TObject; ARequest: TRequest;
+procedure TFPWebobsolete.adddocumentRequest(Sender: TObject; ARequest: TRequest;
   AResponse: TResponse; var Handled: Boolean);
 var
   DocumentID: integer;
@@ -107,17 +107,17 @@ begin
   Handled := True;
 end;
 
-procedure TFPWebModule1.DataModuleCreate(Sender: TObject);
+procedure TFPWebobsolete.DataModuleCreate(Sender: TObject);
 begin
   FTigerCore := TTigerServerCore.Create;
 end;
 
-procedure TFPWebModule1.DataModuleDestroy(Sender: TObject);
+procedure TFPWebobsolete.DataModuleDestroy(Sender: TObject);
 begin
   FTigerCore.Free;
 end;
 
-procedure TFPWebModule1.deletedocumentRequest(Sender: TObject;
+procedure TFPWebobsolete.deletedocumentRequest(Sender: TObject;
   ARequest: TRequest; AResponse: TResponse; var Handled: boolean);
 var
   DocumentID: integer;
@@ -143,7 +143,7 @@ begin
   Handled := True;
 end;
 
-procedure TFPWebModule1.listRequest(Sender: TObject; ARequest: TRequest;
+procedure TFPWebobsolete.listRequest(Sender: TObject; ARequest: TRequest;
   AResponse: TResponse; var Handled: boolean);
 var
   DocumentArray: TJSONArray;
@@ -164,7 +164,7 @@ begin
   Handled := True;
 end;
 
-procedure TFPWebModule1.processdocumentRequest(Sender: TObject;
+procedure TFPWebobsolete.processdocumentRequest(Sender: TObject;
   ARequest: TRequest; AResponse: TResponse; var Handled: Boolean);
 var
   DocumentID: integer;
@@ -190,7 +190,7 @@ begin
   Handled := True;
 end;
 
-procedure TFPWebModule1.scanRequest(Sender: TObject; ARequest: TRequest;
+procedure TFPWebobsolete.scanRequest(Sender: TObject; ARequest: TRequest;
   AResponse: TResponse; var Handled: boolean);
 // Scans page and adds it to existing document
 var
@@ -246,7 +246,7 @@ begin
   Handled := True;
 end;
 
-procedure TFPWebModule1.serverinfoRequest(Sender: TObject; ARequest: TRequest;
+procedure TFPWebobsolete.serverinfoRequest(Sender: TObject; ARequest: TRequest;
   AResponse: TResponse; var Handled: boolean);
 var
   OutputJSON: TJSONObject;
@@ -262,7 +262,7 @@ begin
   Handled := True;
 end;
 
-procedure TFPWebModule1.showdocumentRequest(Sender: TObject;
+procedure TFPWebobsolete.showdocumentRequest(Sender: TObject;
   ARequest: TRequest; AResponse: TResponse; var Handled: boolean);
 // Show pdf given by post with json docid integer
 var
@@ -319,7 +319,7 @@ begin
   Handled := True;
 end;
 
-procedure TFPWebModule1.showimageRequest(Sender: TObject; ARequest: TRequest;
+procedure TFPWebobsolete.showimageRequest(Sender: TObject; ARequest: TRequest;
   AResponse: TResponse; var Handled: boolean);
 // Show image given by post with json docid integer
 var
@@ -377,7 +377,7 @@ begin
   Handled := True;
 end;
 
-procedure TFPWebModule1.unsupportedRequest(Sender: TObject; ARequest: TRequest;
+procedure TFPWebobsolete.unsupportedRequest(Sender: TObject; ARequest: TRequest;
   AResponse: TResponse; var Handled: boolean);
 begin
   //todo add hyperlinks to all supported docs etc
@@ -393,7 +393,7 @@ begin
   Handled := True;
 end;
 
-procedure TFPWebModule1.uploadimageRequest(Sender: TObject; ARequest: TRequest;
+procedure TFPWebobsolete.uploadimageRequest(Sender: TObject; ARequest: TRequest;
   AResponse: TResponse; var Handled: boolean);
 var
   DocumentID: integer;
@@ -423,5 +423,5 @@ end;
 
 initialization
   // This registration will handle http://server/cgi-bin/tigercgi/obsolete/*
-  RegisterHTTPModule('obsolete', TFPWebModule1);
+  RegisterHTTPModule('obsolete', TFPWebobsolete);
 end.
