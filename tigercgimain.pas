@@ -389,6 +389,7 @@ begin
   AResponse.Contents.Add('<p>URI: '+ARequest.URI+'</p>'); //gives nothing
   AResponse.Contents.Add('<p>URL: '+ARequest.URL+'</p>'); //gives eg /cgi-bin/tigercgi/unsupported?q=5
   AResponse.Contents.Add('<p>Pathinfo: '+ARequest.PathInfo+'</p>'); //gives /unsupported
+  AResponse.Contents.Add('<p>GetNextPathinfo: '+ARequest.GetNextPathInfo+'</p>'); //gives /unsupported
   Handled := True;
 end;
 
