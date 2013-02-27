@@ -34,7 +34,7 @@ unit tigerutil;
 interface
 
 uses
-  Classes, SysUtils, eventlog;
+  Classes, SysUtils, eventlog, strutils;
 
 type
   { TLogger }
@@ -56,8 +56,23 @@ var
 //Shows non-debug messages on screen; also shows debug messages if DEBUG defined
 procedure infoln(Message: string; Level: TEventType);
 
+// Counts number of substrings occurring in string. Todo: check if there is a built-in function that does this.
+function CountSubString(const aString, aSubstring: string): integer;
 
 implementation
+
+function CountSubstring(const aString, aSubstring: string): Integer;
+var
+  lPosition: Integer;
+begin
+  Result := 0;
+  lPosition := PosEx(aSubstring, aString);
+  while lPosition <> 0 do
+  begin
+    Inc(Result);
+    lPosition := PosEx(aSubstring, aString, lPosition + Length(aSubstring));
+  end;
+end;
 
 procedure infoln(Message: string; Level: TEventType);
 var

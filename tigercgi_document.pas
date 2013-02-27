@@ -5,7 +5,7 @@ unit tigercgi_document;
 interface
 
 uses
-  SysUtils, Classes, httpdefs, fpHTTP, fpWeb;
+  SysUtils, Classes, httpdefs, fpHTTP, fpWeb, tigerutil, tigerservercore, strutils;
 
 type
 
@@ -13,10 +13,6 @@ type
 
   TFPWebdocument = class(TFPWebModule)
     procedure DataModuleRequest(Sender: TObject; ARequest: TRequest;
-      AResponse: TResponse; var Handled: Boolean);
-    procedure everythingAfterResponse(Sender: TObject; AResponse: TResponse);
-    procedure everythingBeforeRequest(Sender: TObject; ARequest: TRequest);
-    procedure everythingRequest(Sender: TObject; ARequest: TRequest;
       AResponse: TResponse; var Handled: Boolean);
   private
     { private declarations }
@@ -45,17 +41,40 @@ DELETE http://server/cgi-bin/tigercgi/document/304 //remove document with id 304
 GET    http://server/cgi-bin/tigercgi/document/304 //get document with id 304
 PUT    http://server/cgi-bin/tigercgi/document/304 //edit doc with id 304
 }
+var
+  DocumentID: integer;
+  IsValidRequest: boolean;
+  StrippedPath: string;
 begin
+  IsValidRequest:=false;
+  {
+  pathinfo apparently returns something like
+  /document/304
+  StrippedPath will remove trailing and leading /
+  }
+  StrippedPath:=copy(ARequest.PathInfo,2,Length(ARequest.PathInfo));
+  if StrippedPath[Length(StrippedPath)]='/' then StrippedPath:=Copy(StrippedPath,1,Length(StrippedPath)-1);
   writeln('<p>document module</p>');
+  writeln('<p>sender classname '+Sender.Classname+'</p>');
   // Make sure the user didn't specify levels in the URI we don't support:
   case ARequest.Method of
     'DELETE':
     begin
-      {
-      pathinfo apparently returns something like
-      /document/304
-      }
-
+      case CountSubString(StrippedPath,'/') of
+        0:
+        begin
+          IsValidRequest:=true;
+          //todo: delete every document
+          AResponse.Contents.Add('<p>todo delete all documents</p>');
+        end;
+        1:
+        begin
+          DocumentID:=StrToIntDef(Copy(StrippedPath,RPos('/',StrippedPath),Length(StrippedPath)),INVALIDiD);
+          if DocumentID<>INVALIDID then IsValidRequest:=true;
+          //todo: delete given document
+          AResponse.Contents.Add('<p>todo delete document '+inttostr(documentid)+'</p>');
+        end;
+      end;
     end;
     'GET':
     begin
@@ -70,25 +89,12 @@ begin
 
     end;
   end;
-  Handled:=true;
-end;
-
-procedure TFPWebdocument.everythingAfterResponse(Sender: TObject;
-  AResponse: TResponse);
-begin
-
-end;
-
-procedure TFPWebdocument.everythingBeforeRequest(Sender: TObject;
-  ARequest: TRequest);
-begin
-
-end;
-
-procedure TFPWebdocument.everythingRequest(Sender: TObject; ARequest: TRequest;
-  AResponse: TResponse; var Handled: Boolean);
-begin
-  writeln('Sender classname: '+Sender.ClassName);
+  if not(IsValidRequest) then
+  begin
+    AResponse.Code:=404;
+    AResponse.CodeText:='Document not found.';
+    AResponse.Contents.Add('<p>Document not found/invalid request</p>');
+  end;
   Handled:=true;
 end;
 
