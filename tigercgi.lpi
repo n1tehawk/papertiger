@@ -104,6 +104,7 @@
         <Filename Value="tigercgi_document.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="FPWebdocument"/>
+        <HasResources Value="True"/>
         <ResourceBaseClass Value="DataModule"/>
         <UnitName Value="tigercgi_document"/>
       </Unit6>
