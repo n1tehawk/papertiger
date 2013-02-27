@@ -42,6 +42,7 @@ type
   private
     FLog: TEventLog; //Logging/debug output to file
   public
+    property EventLog: TEventLog read FLog;
     // Write to log and optionally console with seriousness etInfo
     procedure WriteLog(Message: string; ToConsole: boolean = false);
     // Write to log and optionally console with specified seriousness
