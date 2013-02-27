@@ -53,22 +53,22 @@ begin
   StrippedPath will remove trailing and leading /
   }
   StrippedPath:=copy(ARequest.PathInfo,2,Length(ARequest.PathInfo));
-  if StrippedPath[Length(StrippedPath)]='/' then StrippedPath:=Copy(StrippedPath,1,Length(StrippedPath)-1);
+  if RightStr(StrippedPath,1)='/' then StrippedPath:=Copy(StrippedPath,1,Length(StrippedPath)-1);
   AResponse.Contents.Add('<p>todo: debug; document module</p>');
   // Make sure the user didn't specify levels in the URI we don't support:
   case ARequest.Method of
     'DELETE':
     begin
-      case CountSubString(StrippedPath,'/') of
-        0:
+      case WordCount(StrippedPath,['/']) of
+        1: //http://server/cgi-bin/tigercgi/document/
         begin
           IsValidRequest:=true;
           //todo: delete every document
           AResponse.Contents.Add('<p>todo delete all documents</p>');
         end;
-        1:
+        2: //http://server/cgi-bin/tigercgi/document/304
         begin
-          DocumentID:=StrToIntDef(Copy(StrippedPath,RPos('/',StrippedPath),Length(StrippedPath)),INVALIDiD);
+          DocumentID:=StrToIntDef(ExtractWord(2,StrippedPath,['/']), INVALIDID);
           if DocumentID<>INVALIDID then IsValidRequest:=true;
           //todo: delete given document
           AResponse.Contents.Add('<p>todo delete document '+inttostr(documentid)+'</p>');
@@ -77,7 +77,21 @@ begin
     end;
     'GET':
     begin
-
+      case WordCount(StrippedPath,['/']) of
+        1: //http://server/cgi-bin/tigercgi/document/
+        begin
+          IsValidRequest:=true;
+          //todo: get every document
+          AResponse.Contents.Add('<p>todo get all documents</p>');
+        end;
+        2: //http://server/cgi-bin/tigercgi/document/304
+        begin
+          DocumentID:=StrToIntDef(ExtractWord(2,StrippedPath,['/']), INVALIDID);
+          if DocumentID<>INVALIDID then IsValidRequest:=true;
+          //todo: delete given document
+          AResponse.Contents.Add('<p>todo get document '+inttostr(documentid)+'</p>');
+        end;
+      end;
     end;
     'POST':
     begin
