@@ -54,8 +54,7 @@ begin
   }
   StrippedPath:=copy(ARequest.PathInfo,2,Length(ARequest.PathInfo));
   if StrippedPath[Length(StrippedPath)]='/' then StrippedPath:=Copy(StrippedPath,1,Length(StrippedPath)-1);
-  writeln('<p>document module</p>');
-  writeln('<p>sender classname '+Sender.Classname+'</p>');
+  AResponse.Contents.Add('<p>todo: debug; document module</p>');
   // Make sure the user didn't specify levels in the URI we don't support:
   case ARequest.Method of
     'DELETE':

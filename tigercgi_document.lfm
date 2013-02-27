@@ -2,6 +2,7 @@ object FPWebdocument: TFPWebdocument
   OldCreateOrder = False
   Actions = <>
   OnRequest = DataModuleRequest
+  DefActionWhenUnknown = False
   CreateSession = False
   Height = 150
   HorizontalOffset = 300
