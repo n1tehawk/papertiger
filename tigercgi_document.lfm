@@ -1,12 +1,6 @@
 object FPWebdocument: TFPWebdocument
   OldCreateOrder = False
-  Actions = <  
-    item
-      Name = 'everything'
-      Default = True
-      OnRequest = everythingRequest
-      Template.AllowTagParams = False
-    end>
+  Actions = <>
   OnRequest = DataModuleRequest
   CreateSession = False
   Height = 150
