@@ -101,12 +101,12 @@
         <UnitName Value="ocr"/>
       </Unit5>
       <Unit6>
-        <Filename Value="tigercgi_document.pas"/>
+        <Filename Value="tigercgi_image.pas"/>
         <IsPartOfProject Value="True"/>
-        <ComponentName Value="FPWebdocument"/>
+        <ComponentName Value="FPWebimage"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="DataModule"/>
-        <UnitName Value="tigercgi_document"/>
+        <UnitName Value="tigercgi_image"/>
       </Unit6>
     </Units>
   </ProjectOptions>

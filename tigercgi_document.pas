@@ -96,11 +96,24 @@ begin
     end;
     'POST':
     begin
-
+      //http://server/cgi-bin/tigercgi/document/
+      if WordCount(StrippedPath,['/'])=1 then
+      begin
+        IsValidRequest:=true;
+        //todo: create new document, return id
+        AResponse.Contents.Add('<p>todo post/create new document, return id</p>');
+      end;
     end;
     'PUT':
     begin
-
+      //http://server/cgi-bin/tigercgi/document/304
+      if WordCount(StrippedPath,['/'])=2 then
+      begin
+        DocumentID:=StrToIntDef(ExtractWord(2,StrippedPath,['/']), INVALIDID);
+        if DocumentID<>INVALIDID then IsValidRequest:=true;
+        //todo: modify given document
+        AResponse.Contents.Add('<p>todo put/modify document '+inttostr(documentid)+'</p>');
+      end;
     end;
   end;
   if not(IsValidRequest) then
