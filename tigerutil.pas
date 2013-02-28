@@ -34,7 +34,7 @@ unit tigerutil;
 interface
 
 uses
-  Classes, SysUtils, eventlog, strutils;
+  Classes, SysUtils, eventlog;
 
 type
   { TLogger }
@@ -82,7 +82,7 @@ begin
   else
   begin
       {$IFDEF DEBUG}
-      {DEBUG conditional symbol is defined using
+      {DEBUG conditional symbol is defined using e.g.
       Project Options/Other/Custom Options using -dDEBUG}
     if AnsiPos(LineEnding, Message) > 0 then
       writeln(''); //Write an empty line before multiline messagse
@@ -107,8 +107,9 @@ begin
   case EventType of
     etDebug:
 {$IFDEF DEBUG}
-      FLog.Log(EventType, Message);
+      FLog.Log(EventType, Message)
 {$ENDIF}
+     ;
     else
     begin
       FLog.Log(EventType, Message);
