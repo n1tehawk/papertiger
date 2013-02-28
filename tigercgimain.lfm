@@ -63,6 +63,7 @@ object FPWebobsolete: TFPWebobsolete
       OnRequest = processdocumentRequest
       Template.AllowTagParams = False
     end>
+  DefActionWhenUnknown = False
   CreateSession = False
   Height = 108
   HorizontalOffset = 517
