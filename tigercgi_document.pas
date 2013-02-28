@@ -55,6 +55,7 @@ begin
   StrippedPath:=copy(ARequest.PathInfo,2,Length(ARequest.PathInfo));
   if RightStr(StrippedPath,1)='/' then StrippedPath:=Copy(StrippedPath,1,Length(StrippedPath)-1);
   AResponse.Contents.Add('<p>todo: debug; document module</p>');
+  AResponse.Contents.Add('<p>Got request method: '+ARequest.Method+'</p>');
   // Make sure the user didn't specify levels in the URI we don't support:
   case ARequest.Method of
     'DELETE':
