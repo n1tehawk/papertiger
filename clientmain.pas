@@ -7,7 +7,7 @@ interface
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, Menus, Grids,
   StdCtrls, tigersettings, LJGridUtils, FPJSON, jsonparser, httpclient, imageformunit,
-  fpreadtiff {adds TIFF format read support to TImage}, lclintf,
+  fpreadtiff_custom1bit {custom 1bit TIFF format read support, useful when using FPC 2.6.x}, lclintf,
   magick_wand, ImageMagick {for conversion from TIFF formats unsupported by FPC to regular bitmaps},
   IntfGraphics, FPimage, LazUTF8;
 //todo: think about splitting up data access layer so you can e.g. build a CLI client

@@ -41,12 +41,6 @@ type
   TFPWebobsolete = class(TFPWebModule)
     procedure DataModuleCreate(Sender: TObject);
     procedure DataModuleDestroy(Sender: TObject);
-    procedure adddocumentRequest(Sender: TObject; ARequest: TRequest;
-      AResponse: TResponse; var Handled: Boolean); //adds new empty document, returns documentid
-    procedure deletedocumentRequest(Sender: TObject; ARequest: TRequest;
-      AResponse: TResponse; var Handled: boolean); //delete document identified by documentid
-    procedure listRequest(Sender: TObject; ARequest: TRequest;
-      AResponse: TResponse; var Handled: boolean); //list all documents
     procedure processdocumentRequest(Sender: TObject; ARequest: TRequest; //process document identified by documentid: OCR images, create PDF
       AResponse: TResponse; var Handled: Boolean);
     procedure scanRequest(Sender: TObject; ARequest: TRequest;
@@ -77,35 +71,8 @@ implementation
 
 { TFPWebobsolete }
 
-//todo: use/add updatedocument that allows changing document name etc
 
-procedure TFPWebobsolete.adddocumentRequest(Sender: TObject; ARequest: TRequest;
-  AResponse: TResponse; var Handled: Boolean);
-var
-  DocumentID: integer;
-  OutputJSON: TJSONObject;
-begin
-  DocumentID:=FTigerCore.AddDocument('Document ' +
-    FormatDateTime('yyyymmddhhnnss', Now));
-  if DocumentID=INVALIDID then
-  begin
-    AResponse.Code:=404;
-    AResponse.CodeText:='Error inserting new document.';
-    AResponse.Contents.Add('<p>Error inserting new document.</p>');
-  end
-  else
-  begin
-    AResponse.ContentType := 'application/json';
-    OutputJSON := TJSONObject.Create();
-    try
-      OutputJSON.Add('documentid',DocumentID);
-      AResponse.Contents.Add(OutputJSON.AsJSON);
-    finally
-      OutputJSON.Free;
-    end;
-  end;
-  Handled := True;
-end;
+
 
 procedure TFPWebobsolete.DataModuleCreate(Sender: TObject);
 begin
@@ -117,52 +84,7 @@ begin
   FTigerCore.Free;
 end;
 
-procedure TFPWebobsolete.deletedocumentRequest(Sender: TObject;
-  ARequest: TRequest; AResponse: TResponse; var Handled: boolean);
-var
-  DocumentID: integer;
-  InputJSON: TJSONObject;
-  Message: string;
-begin
-  try
-    // for uniformity, we expect a POST+a generic json tag, though we could have used e.g. docid directly
-    //todo: adapt so InputJSON in URL is also accepted (for gets)
-    InputJSON := TJSONParser.Create(ARequest.Content).Parse as TJSONObject;
-    DocumentID := InputJSON.Integers['documentid'];
-    if DocumentID=INVALIDID then
-      raise Exception.Create('Received invalid document ID.');
-    if FTigerCore.DeleteDocument(DocumentID)=false then
-      raise Exception.CreateFmt('FTigerCore.DeleteDocument failed to delete document ID %i',[DocumentID]);
-  except
-    Message := 'Deleting document failed.';
-    TigerLog.WriteLog(etDebug, 'deletedocumentRequest: '+Message);
-    AResponse.Contents.Add('<p>' + Message + '</p>');
-    AResponse.Code:=500;
-    AResponse.CodeText:=Message;
-  end;
-  Handled := True;
-end;
 
-procedure TFPWebobsolete.listRequest(Sender: TObject; ARequest: TRequest;
-  AResponse: TResponse; var Handled: boolean);
-var
-  DocumentArray: TJSONArray;
-begin
-  AResponse.ContentType := 'application/json';
-  DocumentArray := TJSONArray.Create();
-  try
-    FTigerCore.ListDocuments(INVALIDID, DocumentArray);
-    AResponse.Contents.Add(DocumentArray.AsJSON);
-  except
-    on E: Exception do
-    begin
-      DocumentArray.Clear;
-      DocumentArray.Add(TJSONSTring.Create('listRequest: exception ' + E.Message));
-      AResponse.Contents.Insert(0, DocumentArray.AsJSON);
-    end;
-  end;
-  Handled := True;
-end;
 
 procedure TFPWebobsolete.processdocumentRequest(Sender: TObject;
   ARequest: TRequest; AResponse: TResponse; var Handled: Boolean);
@@ -218,7 +140,7 @@ begin
   if Success then
   begin
     try
-      Success:=FTigerCore.ScanSinglePage(DocumentID);
+      Success:=(FTigerCore.ScanSinglePage(DocumentID)<>INVALIDID);
     except
       on E: Exception do
       begin

@@ -13,7 +13,7 @@
 
  **********************************************************************
 }
-unit FPTiffCmn;
+unit fptiffcmn_custom1bit;
 
 {$mode objfpc}{$H+}
 
@@ -28,7 +28,7 @@ type
   end;
 
 const
-  TiffHandlerName = 'Tagged Image File Format';
+  TiffHandlerName = 'Tagged Image File Format custom';
 
   TiffRational0: TTiffRational = (Numerator: 0; Denominator: 0);
   TiffRational72: TTiffRational = (Numerator: 72; Denominator: 1);

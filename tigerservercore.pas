@@ -92,8 +92,8 @@ type
     // Returns resulting pdf file (including path)
     function ProcessImages(DocumentID: integer; Resolution: integer): string;
     // Scans a single page and adds it to an existing document.
-    // Returns result status
-    function ScanSinglePage(DocumentID: integer): boolean;
+    // Returns image ID or INVALIDID if failure
+    function ScanSinglePage(DocumentID: integer): integer;
     // Returns server version, compile date, etc in one big string
     function ServerInfo: String;
     // Tries to parse full ISO8601 UTC datetime; returns datetime (1,1,0,0,0) if invalid
@@ -326,7 +326,7 @@ We could save some data here? If so, what?
 }
 
 
-function TTigerServerCore.ScanSinglePage(DocumentID: integer): boolean;
+function TTigerServerCore.ScanSinglePage(DocumentID: integer): integer;
 var
   i: integer;
   Resolution: integer;
@@ -335,7 +335,7 @@ var
   StartDate: TDateTime;
   StartDateString: string;
 begin
-  Result := false; //fail by default
+  Result := INVALIDID; //fail by default
   FDocumentID := DocumentID; //Avoid processing old documents after failure
 
   // Try a 300dpi scan, probably best for normal sized letters on paper
@@ -368,8 +368,7 @@ begin
     else
     begin
       // Add images to database
-      FTigerDB.InsertImage(FDocumentID, ImageOrder, FImageFiles[0], '');
-      Result := true;
+      result:=FTigerDB.InsertImage(FDocumentID, ImageOrder, FImageFiles[0], '');
     end;
   finally
     Scanner.Free;
