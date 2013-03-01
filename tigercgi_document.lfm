@@ -1,4 +1,6 @@
 object FPWebdocument: TFPWebdocument
+  OnCreate = DataModuleCreate
+  OnDestroy = DataModuleDestroy
   OldCreateOrder = False
   Actions = <>
   OnRequest = DataModuleRequest

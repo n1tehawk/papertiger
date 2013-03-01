@@ -5,17 +5,20 @@ unit tigercgi_image;
 interface
 
 uses
-  SysUtils, Classes, httpdefs, fpHTTP, fpWeb, tigerutil, tigerservercore, strutils;
+  SysUtils, Classes, httpdefs, fpHTTP, fpWeb, tigerutil, tigerservercore, strutils, fpjson;
 
 type
 
   { TFPWebimage }
 
   TFPWebimage = class(TFPWebModule)
+    procedure DataModuleCreate(Sender: TObject);
+    procedure DataModuleDestroy(Sender: TObject);
     procedure DataModuleRequest(Sender: TObject; ARequest: TRequest;
       AResponse: TResponse; var Handled: Boolean);
   private
     { private declarations }
+    FTigerCore: TTigerServerCore;
   public
     { public declarations }
   end;
@@ -29,6 +32,16 @@ implementation
 
 { TFPWebimage }
 
+procedure TFPWebimage.DataModuleCreate(Sender: TObject);
+begin
+  FTigerCore:=TTigerServerCore.Create;
+end;
+
+procedure TFPWebimage.DataModuleDestroy(Sender: TObject);
+begin
+  FTigerCore.Free;
+end;
+
 procedure TFPWebimage.DataModuleRequest(Sender: TObject; ARequest: TRequest;
   AResponse: TResponse; var Handled: Boolean);
 // We don't define any actions but handle the request at the module level before any actions would be evaluated.
@@ -36,7 +49,7 @@ procedure TFPWebimage.DataModuleRequest(Sender: TObject; ARequest: TRequest;
 Handled URLs/methods:
 DELETE http://server/cgi-bin/tigercgi/image/    //delete all images?!?!
 GET    http://server/cgi-bin/tigercgi/image/    //list of images
-POST   http://server/cgi-bin/tigercgi/image/    //let server create new image, return imageid
+POST   http://server/cgi-bin/tigercgi/image/    //let server create new image (scan or empty image), return imageid
 DELETE http://server/cgi-bin/tigercgi/image/304 //remove image with id 304
 GET    http://server/cgi-bin/tigercgi/image/304 //get image with id 304
 PUT    http://server/cgi-bin/tigercgi/image/304 //edit image with id 304
@@ -44,6 +57,7 @@ PUT    http://server/cgi-bin/tigercgi/image/304 //edit image with id 304
 var
   ImageID: integer;
   IsValidRequest: boolean;
+  OutputJSON: TJSONObject;
   StrippedPath: string;
 begin
   IsValidRequest:=false;
@@ -97,10 +111,33 @@ begin
     'POST':
     begin
       //http://server/cgi-bin/tigercgi/image/
+      // Scan new image(s), return id
+      // todo: add support for uploading image (e.g. encoded); if so, don't scan
+      //todo: add code for getting documentid (?documentid= or form encoded); require this
       if WordCount(StrippedPath,['/'])=1 then
       begin
         IsValidRequest:=true;
-        //todo: create new image, return id
+        //todo: figure out how to get resolution: it is encoded in the TIFF file; edentify bla.tif =>20130218144142.tif: TIFF 2472x3262 @ 300x300dpi (209x276mm) 1 bit, 1 channel
+        // see e.g. http://stackoverflow.com/questions/7861600/get-horizontal-resolution-from-tif-in-c/7862187#7862187
+        ImageID:=FTigerCore.ScanSinglePage(invalidid); //todo fix this with proper document id
+        if ImageID=INVALIDID then
+        begin
+          AResponse.Code:=404;
+          AResponse.CodeText:='Error scanning iamge.';
+          AResponse.Contents.Add('<p>Error scanning image.</p>');
+        end
+        else
+        begin
+          AResponse.ContentType := 'application/json';
+          OutputJSON := TJSONObject.Create();
+          try
+            OutputJSON.Add('imageid',ImageID);
+            AResponse.Contents.Add(OutputJSON.AsJSON);
+          finally
+            OutputJSON.Free;
+          end;
+        end;
+        //todo: call servercore processdocument after done to update OCR etc => or have the client do that?!?
         AResponse.Contents.Add('<p>todo post/create new image, return id</p>');
       end;
     end;

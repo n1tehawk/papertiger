@@ -1,3 +1,4 @@
+// Copied from FPC trunk fpreadtiff as it supports 1-bit images. Useful when compiling with FPC 2.6.2
 {
     This file is part of the Free Pascal run time library.
     Copyright (c) 2012-2013 by the Free Pascal development team
@@ -35,7 +36,7 @@
    ICC profile tag 34675
    orientation with rotation
 }
-unit FPReadTiff;
+unit fpreadtiff_custom1bit;
 
 {$mode objfpc}{$H+}
 
@@ -44,12 +45,12 @@ unit FPReadTiff;
 interface
 
 uses
-  Math, Classes, SysUtils, ctypes, zinflate, zbase, FPimage, FPTiffCmn;
+  Math, Classes, SysUtils, ctypes, zinflate, zbase, FPimage, fptiffcmn_custom1bit;
 
 type
-  TFPReaderTiff = class;
+  TFPReaderTiffCustom1Bit = class;
 
-  TTiffCreateCompatibleImgEvent = procedure(Sender: TFPReaderTiff;
+  TTiffCreateCompatibleImgEvent = procedure(Sender: TFPReaderTiffCustom1Bit;
                                             ImgFileDir: TTiffIFD) of object;
 
   TTiffCheckIFDOrder = (
@@ -58,9 +59,9 @@ type
     tcioNever
     );
 
-  { TFPReaderTiff }
+  { TFPReaderTiffCustom1Bit }
 
-  TFPReaderTiff = class(TFPCustomImageReader)
+  TFPReaderTiffCustom1Bit = class(TFPCustomImageReader)
   private
     FCheckIFDOrder: TTiffCheckIFDOrder;
     FFirstIFDStart: DWord;
@@ -154,7 +155,7 @@ begin
    Result := FPColor(R and $ffff,G and $ffff,B and $ffff);
 end ;
 
-procedure TFPReaderTiff.TiffError(Msg: string);
+procedure TFPReaderTiffCustom1Bit.TiffError(Msg: string);
 begin
   Msg:=Msg+' at position '+IntToStr(s.Position);
   if fStartPos>0 then
@@ -162,12 +163,12 @@ begin
   raise Exception.Create(Msg);
 end;
 
-function TFPReaderTiff.GetImages(Index: integer): TTiffIFD;
+function TFPReaderTiffCustom1Bit.GetImages(Index: integer): TTiffIFD;
 begin
   Result:=TTiffIFD(ImageList[Index]);
 end;
 
-procedure TFPReaderTiff.ReadImageProperties(out RedBits, GreenBits, BlueBits,
+procedure TFPReaderTiffCustom1Bit.ReadImageProperties(out RedBits, GreenBits, BlueBits,
   GrayBits, AlphaBits: Word; out ExtraSamples: PWord; out
   ExtraSampleCnt: DWord; out SampleBits: PWord; out SampleBitsPerPixel: DWord);
 var
@@ -300,7 +301,7 @@ begin
     TiffError('FillOrder unsupported: '+IntToStr(IFD.FillOrder));
 end;
 
-procedure TFPReaderTiff.SetFPImgExtras(CurImg: TFPCustomImage);
+procedure TFPReaderTiffCustom1Bit.SetFPImgExtras(CurImg: TFPCustomImage);
 begin
   ClearTiffExtras(CurImg);
   // set Tiff extra attributes
@@ -357,7 +358,7 @@ begin
   {$endif}
 end;
 
-procedure TFPReaderTiff.ReadImgValue(BitCount: Word; var Run: Pointer; x: dword;
+procedure TFPReaderTiffCustom1Bit.ReadImgValue(BitCount: Word; var Run: Pointer; x: dword;
   Predictor: word; var LastValue: word; out Value: Word); inline;
 var
   BitNumber: byte;
@@ -400,7 +401,7 @@ begin
   end;
 end;
 
-procedure TFPReaderTiff.SetStreamPos(p: DWord);
+procedure TFPReaderTiffCustom1Bit.SetStreamPos(p: DWord);
 var
   NewPosition: int64;
 begin
@@ -410,7 +411,7 @@ begin
   s.Position:=NewPosition;
 end;
 
-procedure TFPReaderTiff.LoadFromStream(aStream: TStream; AutoClear: boolean);
+procedure TFPReaderTiffCustom1Bit.LoadFromStream(aStream: TStream; AutoClear: boolean);
 var
   IFDStart: DWord;
   i: Integer;
@@ -439,7 +440,7 @@ begin
   Progress(psEnding, 100, False, Rect(0,0,0,0), '', aContinue);
 end;
 
-procedure TFPReaderTiff.LoadHeaderFromStream(aStream: TStream);
+procedure TFPReaderTiffCustom1Bit.LoadHeaderFromStream(aStream: TStream);
 begin
   FFirstIFDStart:=0;
   s:=aStream;
@@ -447,7 +448,7 @@ begin
   ReadTiffHeader(false,FFirstIFDStart);
 end;
 
-procedure TFPReaderTiff.LoadIFDsFromStream;
+procedure TFPReaderTiffCustom1Bit.LoadIFDsFromStream;
 var
   i: Integer;
   IFDStart: DWord;
@@ -467,14 +468,14 @@ begin
   end;
 end;
 
-function TFPReaderTiff.FirstImg: TTiffIFD;
+function TFPReaderTiffCustom1Bit.FirstImg: TTiffIFD;
 begin
   Result:=nil;
   if (ImageList=nil) or (ImageList.Count=0) then exit;
   Result:=TTiffIFD(ImageList[0]);
 end;
 
-function TFPReaderTiff.GetBiggestImage: TTiffIFD;
+function TFPReaderTiffCustom1Bit.GetBiggestImage: TTiffIFD;
 var
   Size: Int64;
   Img: TTiffIFD;
@@ -492,12 +493,12 @@ begin
   end;
 end;
 
-function TFPReaderTiff.ImageCount: integer;
+function TFPReaderTiffCustom1Bit.ImageCount: integer;
 begin
   Result:=ImageList.Count;
 end;
 
-function TFPReaderTiff.ReadTiffHeader(QuickTest: boolean; out IFDStart: DWord): boolean;
+function TFPReaderTiffCustom1Bit.ReadTiffHeader(QuickTest: boolean; out IFDStart: DWord): boolean;
 var
   ByteOrder: String;
   BigEndian: Boolean;
@@ -535,7 +536,7 @@ begin
   Result:=true;
 end;
 
-function TFPReaderTiff.ReadIFD(Start: DWord): DWord;
+function TFPReaderTiffCustom1Bit.ReadIFD(Start: DWord): DWord;
 var
   Count: Word;
   i: Integer;
@@ -570,7 +571,7 @@ begin
   end;
 end;
 
-procedure TFPReaderTiff.ReadDirectoryEntry(var EntryTag: Word);
+procedure TFPReaderTiffCustom1Bit.ReadDirectoryEntry(var EntryTag: Word);
 var
   EntryType: Word;
   EntryCount: DWord;
@@ -1346,7 +1347,7 @@ begin
   end;
 end;
 
-function TFPReaderTiff.ReadEntryUnsigned: DWord;
+function TFPReaderTiffCustom1Bit.ReadEntryUnsigned: DWord;
 var
   EntryCount: LongWord;
   EntryType: Word;
@@ -1375,7 +1376,7 @@ begin
   end;
 end;
 
-function TFPReaderTiff.ReadEntrySigned: Cint32;
+function TFPReaderTiffCustom1Bit.ReadEntrySigned: Cint32;
 var
   EntryCount: LongWord;
   EntryType: Word;
@@ -1416,7 +1417,7 @@ begin
   end;
 end;
 
-function TFPReaderTiff.ReadEntryRational: TTiffRational;
+function TFPReaderTiffCustom1Bit.ReadEntryRational: TTiffRational;
 var
   EntryCount: LongWord;
   EntryStart: LongWord;
@@ -1454,7 +1455,7 @@ begin
   end;
 end;
 
-function TFPReaderTiff.ReadEntryString: string;
+function TFPReaderTiffCustom1Bit.ReadEntryString: string;
 var
   EntryType: Word;
   EntryCount: LongWord;
@@ -1472,22 +1473,22 @@ begin
     s.Read(Result[1],EntryCount-1);
 end;
 
-function TFPReaderTiff.ReadByte: Byte;
+function TFPReaderTiffCustom1Bit.ReadByte: Byte;
 begin
   Result:=s.ReadByte;
 end;
 
-function TFPReaderTiff.ReadWord: Word;
+function TFPReaderTiffCustom1Bit.ReadWord: Word;
 begin
   Result:=FixEndian(s.ReadWord);
 end;
 
-function TFPReaderTiff.ReadDWord: DWord;
+function TFPReaderTiffCustom1Bit.ReadDWord: DWord;
 begin
   Result:=FixEndian(s.ReadDWord);
 end;
 
-procedure TFPReaderTiff.ReadValues(StreamPos: DWord;
+procedure TFPReaderTiffCustom1Bit.ReadValues(StreamPos: DWord;
   out EntryType: word; out EntryCount: DWord;
   out Buffer: Pointer; out ByteCount: PtrUint);
 var
@@ -1521,7 +1522,7 @@ begin
   s.Read(Buffer^,ByteCount);
 end;
 
-procedure TFPReaderTiff.ReadShortOrLongValues(StreamPos: DWord; out
+procedure TFPReaderTiffCustom1Bit.ReadShortOrLongValues(StreamPos: DWord; out
   Buffer: PDWord; out Count: DWord);
 var
   p: Pointer;
@@ -1554,7 +1555,7 @@ begin
   end;
 end;
 
-procedure TFPReaderTiff.ReadShortValues(StreamPos: DWord; out Buffer: PWord;
+procedure TFPReaderTiffCustom1Bit.ReadShortValues(StreamPos: DWord; out Buffer: PWord;
   out Count: DWord);
 var
   p: Pointer;
@@ -1584,7 +1585,7 @@ begin
   end;
 end;
 
-procedure TFPReaderTiff.LoadImageFromStream(Index: integer);
+procedure TFPReaderTiffCustom1Bit.LoadImageFromStream(Index: integer);
 var
   ChunkOffsets: PDWord;
   ChunkByteCounts: PDWord;
@@ -1874,14 +1875,14 @@ begin
   end;
 end;
 
-function TFPReaderTiff.FixEndian(w: Word): Word; inline;
+function TFPReaderTiffCustom1Bit.FixEndian(w: Word): Word; inline;
 begin
   Result:=w;
   if FReverseEndian then
     Result:=((Result and $ff) shl 8) or (Result shr 8);
 end;
 
-function TFPReaderTiff.FixEndian(d: DWord): DWord; inline;
+function TFPReaderTiffCustom1Bit.FixEndian(d: DWord): DWord; inline;
 begin
   Result:=d;
   if FReverseEndian then
@@ -1891,7 +1892,7 @@ begin
           or (Result shr 24);
 end;
 
-procedure TFPReaderTiff.DecodePackBits(var Buffer: Pointer; var Count: PtrInt);
+procedure TFPReaderTiffCustom1Bit.DecodePackBits(var Buffer: Pointer; var Count: PtrInt);
 var
   NewBuffer: Pointer;
   NewCount: PtrInt;
@@ -1902,7 +1903,7 @@ begin
   Count:=NewCount;
 end;
 
-procedure TFPReaderTiff.DecodeLZW(var Buffer: Pointer; var Count: PtrInt);
+procedure TFPReaderTiffCustom1Bit.DecodeLZW(var Buffer: Pointer; var Count: PtrInt);
 var
   NewBuffer: Pointer;
   NewCount: PtrInt;
@@ -1913,7 +1914,7 @@ begin
   Count:=NewCount;
 end;
 
-procedure TFPReaderTiff.DecodeDeflate(var Buffer: Pointer; var Count: PtrInt;
+procedure TFPReaderTiffCustom1Bit.DecodeDeflate(var Buffer: Pointer; var Count: PtrInt;
   ExpectedCount: PtrInt);
 var
   NewBuffer: PByte;
@@ -1935,7 +1936,7 @@ begin
   end;
 end;
 
-procedure TFPReaderTiff.InternalRead(Str: TStream; AnImage: TFPCustomImage);
+procedure TFPReaderTiffCustom1Bit.InternalRead(Str: TStream; AnImage: TFPCustomImage);
 // read the biggest image
 var
   Img: TTiffIFD;
@@ -1974,7 +1975,7 @@ begin
   Progress(psEnding, 100, False, Rect(0,0,0,0), '', aContinue);
 end;
 
-function TFPReaderTiff.InternalCheck(Str: TStream): boolean;
+function TFPReaderTiffCustom1Bit.InternalCheck(Str: TStream): boolean;
 var
   IFDStart: DWord;
 begin
@@ -1988,25 +1989,25 @@ begin
   end;
 end;
 
-procedure TFPReaderTiff.DoCreateImage(ImgFileDir: TTiffIFD);
+procedure TFPReaderTiffCustom1Bit.DoCreateImage(ImgFileDir: TTiffIFD);
 begin
   if Assigned(OnCreateImage) then
     OnCreateImage(Self,ImgFileDir);
 end;
 
-constructor TFPReaderTiff.Create;
+constructor TFPReaderTiffCustom1Bit.Create;
 begin
   ImageList:=TFPList.Create;
 end;
 
-destructor TFPReaderTiff.Destroy;
+destructor TFPReaderTiffCustom1Bit.Destroy;
 begin
   Clear;
   FreeAndNil(ImageList);
   inherited Destroy;
 end;
 
-procedure TFPReaderTiff.Clear;
+procedure TFPReaderTiffCustom1Bit.Clear;
 var
   i: Integer;
   Img: TTiffIFD;
@@ -2383,6 +2384,6 @@ end;
 
 initialization
   if ImageHandlers.ImageReader[TiffHandlerName]=nil then
-    ImageHandlers.RegisterImageReader (TiffHandlerName, 'tif;tiff', TFPReaderTiff);
+    ImageHandlers.RegisterImageReader (TiffHandlerName, 'tif;tiff', TFPReaderTiffCustom1Bit);
 end.
 

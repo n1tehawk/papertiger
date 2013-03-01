@@ -5,17 +5,20 @@ unit tigercgi_document;
 interface
 
 uses
-  SysUtils, Classes, httpdefs, fpHTTP, fpWeb, tigerutil, tigerservercore, strutils;
+  SysUtils, Classes, httpdefs, fpHTTP, fpWeb, tigerutil, tigerservercore, strutils, fpjson;
 
 type
 
   { TFPWebdocument }
 
   TFPWebdocument = class(TFPWebModule)
+    procedure DataModuleCreate(Sender: TObject);
+    procedure DataModuleDestroy(Sender: TObject);
     procedure DataModuleRequest(Sender: TObject; ARequest: TRequest;
       AResponse: TResponse; var Handled: Boolean);
   private
     { private declarations }
+    FTigerCore: TTigerServerCore;
   public
     { public declarations }
   end;
@@ -28,6 +31,16 @@ implementation
 {$R *.lfm}
 
 { TFPWebdocument }
+
+procedure TFPWebdocument.DataModuleCreate(Sender: TObject);
+begin
+  FTigerCore:=TTigerServerCore.Create;
+end;
+
+procedure TFPWebdocument.DataModuleDestroy(Sender: TObject);
+begin
+  FTigerCore.Free;
+end;
 
 procedure TFPWebdocument.DataModuleRequest(Sender: TObject; ARequest: TRequest;
   AResponse: TResponse; var Handled: Boolean);
@@ -42,8 +55,10 @@ GET    http://server/cgi-bin/tigercgi/document/304 //get document with id 304
 PUT    http://server/cgi-bin/tigercgi/document/304 //edit doc with id 304
 }
 var
+  DocumentArray: TJSONArray;
   DocumentID: integer;
   IsValidRequest: boolean;
+  OutputJSON: TJSONObject;
   StrippedPath: string;
 begin
   IsValidRequest:=false;
@@ -70,9 +85,20 @@ begin
         2: //http://server/cgi-bin/tigercgi/document/304
         begin
           DocumentID:=StrToIntDef(ExtractWord(2,StrippedPath,['/']), INVALIDID);
-          if DocumentID<>INVALIDID then IsValidRequest:=true;
-          //todo: delete given document
-          AResponse.Contents.Add('<p>todo delete document '+inttostr(documentid)+'</p>');
+          if DocumentID<>INVALIDID then
+          begin
+            IsValidRequest:=true;
+            if FTigerCore.DeleteDocument(DocumentID)=false then
+            begin
+              AResponse.Code:=404;
+              AResponse.CodeText:='Error deleting document.';
+              AResponse.Contents.Add('<p>Error deleting document.</p>');
+            end
+            else
+            begin
+              //Success; 200 OK
+            end;
+          end;
         end;
       end;
     end;
@@ -82,8 +108,19 @@ begin
         1: //http://server/cgi-bin/tigercgi/document/
         begin
           IsValidRequest:=true;
-          //todo: get every document
-          AResponse.Contents.Add('<p>todo get all documents</p>');
+          DocumentArray := TJSONArray.Create();
+          try
+            FTigerCore.ListDocuments(INVALIDID, DocumentArray);
+            AResponse.ContentType := 'application/json';
+            AResponse.Contents.Add(DocumentArray.AsJSON);
+          except
+            on E: Exception do
+            begin
+              DocumentArray.Clear;
+              DocumentArray.Add(TJSONSTring.Create('listRequest: exception ' + E.Message));
+              AResponse.Contents.Insert(0, DocumentArray.AsJSON);
+            end;
+          end;
         end;
         2: //http://server/cgi-bin/tigercgi/document/304
         begin
@@ -110,7 +147,29 @@ begin
       if WordCount(StrippedPath,['/'])=2 then
       begin
         DocumentID:=StrToIntDef(ExtractWord(2,StrippedPath,['/']), INVALIDID);
-        if DocumentID<>INVALIDID then IsValidRequest:=true;
+        if DocumentID<>INVALIDID then
+        begin
+          IsValidRequest:=true;
+          DocumentID:=FTigerCore.AddDocument('Document ' +
+            FormatDateTime('yyyymmddhhnnss', Now));
+          if DocumentID=INVALIDID then
+          begin
+            AResponse.Code:=404;
+            AResponse.CodeText:='Error inserting new document.';
+            AResponse.Contents.Add('<p>Error inserting new document.</p>');
+          end
+          else
+          begin
+            AResponse.ContentType := 'application/json';
+            OutputJSON := TJSONObject.Create();
+            try
+              OutputJSON.Add('documentid',DocumentID);
+              AResponse.Contents.Add(OutputJSON.AsJSON);
+            finally
+              OutputJSON.Free;
+            end;
+          end;
+        end;
         //todo: modify given document
         AResponse.Contents.Add('<p>todo put/modify document '+inttostr(documentid)+'</p>');
       end;
