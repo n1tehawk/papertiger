@@ -33,8 +33,8 @@ Architecture and development principles
 
 Compilation instructions
 ========================
-Only standard FPC 2.6.0+ is required for the server/CGI programs.
-For the client program, Lazarus 1.0.6 has been used for development.
+FPC 2.7.1/trunk is required for the server/CGI programs because 2.6.2 fpweb does not accept the DELETE method.
+For the client program, Lazarus trunk has been used for development.
 
 1. Compile hgversion.pas, e.g.:
 fpc hgversion.pas
