@@ -114,7 +114,7 @@ function TTigerServerCore.AddDocument(DocumentName: string=''): integer;
 begin
   result:=INVALIDID;
   try
-    {$IF FPC_FULLVERSION>=20701}
+    {$IF FPC_FULLVERSION>=20602}
     result:=FTigerDB.InsertDocument(DocumentName,'','',LocalTimeToUniversal(Now));
     {$ELSE}
     {$WARNING This FPC version does not support UTC time conversion - times will be off!}
@@ -409,7 +409,7 @@ begin
       (copy(DateString, 17, 1) = ':') and (copy(DateString, 20, 1) = '.') and
       (copy(DateString, 24, 1) = 'Z') then
     begin
-      {$IF FPC_FULLVERSION>=20701}
+      {$IF FPC_FULLVERSION>=20602}
       ParseDate := UniversalTimeToLocal(EncodeDateTime(
         StrToInt(copy(DateString, 1, 4)), StrToInt(copy(DateString, 6, 2)),
         StrToInt(copy(DateString, 9, 2)), StrToInt(copy(DateString, 12, 2)),
