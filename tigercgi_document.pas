@@ -137,8 +137,25 @@ begin
       if WordCount(StrippedPath,['/'])=1 then
       begin
         IsValidRequest:=true;
-        //todo: create new document, return id
-        AResponse.Contents.Add('<p>todo post/create new document, return id</p>');
+        DocumentID:=FTigerCore.AddDocument('Document ' +
+          FormatDateTime('yyyymmddhhnnss', Now));
+        if DocumentID=INVALIDID then
+        begin
+          AResponse.Code:=404;
+          AResponse.CodeText:='Error inserting new document.';
+          AResponse.Contents.Add('<p>Error inserting new document.</p>');
+        end
+        else
+        begin
+          AResponse.ContentType := 'application/json';
+          OutputJSON := TJSONObject.Create();
+          try
+            OutputJSON.Add('documentid',DocumentID);
+            AResponse.Contents.Add(OutputJSON.AsJSON);
+          finally
+            OutputJSON.Free;
+          end;
+        end;
       end;
     end;
     'PUT':
@@ -150,8 +167,9 @@ begin
         if DocumentID<>INVALIDID then
         begin
           IsValidRequest:=true;
-          DocumentID:=FTigerCore.AddDocument('Document ' +
-            FormatDateTime('yyyymmddhhnnss', Now));
+          //todo: modify given document, not add it
+          //FTigerCore.UpdateDocument(....)
+          DocumentID:=INVALIDID; //replace with actual code
           if DocumentID=INVALIDID then
           begin
             AResponse.Code:=404;
@@ -170,8 +188,6 @@ begin
             end;
           end;
         end;
-        //todo: modify given document
-        AResponse.Contents.Add('<p>todo put/modify document '+inttostr(documentid)+'</p>');
       end;
     end;
   end;
