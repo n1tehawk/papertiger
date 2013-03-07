@@ -5,7 +5,7 @@ unit tigercgi_document;
 interface
 
 uses
-  SysUtils, Classes, httpdefs, fpHTTP, fpWeb, tigerutil, tigerservercore, strutils, fpjson;
+  SysUtils, Classes, httpdefs, fpHTTP, fpWeb, tigerutil, tigerservercore, strutils, fpjson, jsonparser;
 
 type
 
@@ -105,7 +105,7 @@ begin
     'GET':
     begin
       case WordCount(StrippedPath,['/']) of
-        1: //http://server/cgi-bin/tigercgi/document/
+        1: //http://server/cgi-bin/tigercgi/document/ get list of documents
         begin
           IsValidRequest:=true;
           DocumentArray := TJSONArray.Create();
@@ -122,12 +122,31 @@ begin
             end;
           end;
         end;
-        2: //http://server/cgi-bin/tigercgi/document/304
+        2: //http://server/cgi-bin/tigercgi/document/304 get document as PDF
         begin
           DocumentID:=StrToIntDef(ExtractWord(2,StrippedPath,['/']), INVALIDID);
-          if DocumentID<>INVALIDID then IsValidRequest:=true;
-          //todo: delete given document
-          AResponse.Contents.Add('<p>todo get document '+inttostr(documentid)+'</p>');
+          if DocumentID<>INVALIDID then
+          begin
+            IsValidRequest:=true;
+            //retrieve pdf and put in output stream
+            AResponse.ContentStream := TMemoryStream.Create;
+            try
+              // Load PDF into content stream:
+              if FTigerCore.GetPDF(DocumentID, AResponse.ContentStream) then
+              begin
+                // Indicate papertiger should be able to deal with this data:
+                AResponse.ContentType := 'application/pdf';
+                AResponse.ContentLength:=AResponse.ContentStream.Size; //apparently doesn't happen automatically?
+                AResponse.SendContent;
+              end
+              else
+              begin
+                IsValidRequest:=false; //follow up code will return 404 error
+              end;
+            finally
+              AResponse.ContentStream.Free;
+            end;
+          end;
         end;
       end;
     end;

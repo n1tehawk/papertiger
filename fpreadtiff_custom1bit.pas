@@ -2383,7 +2383,8 @@ begin
 end;
 
 initialization
+  //Reinier: make sure we can select our custom module over the regular tiff code by specifying tiffcustom1bit
   if ImageHandlers.ImageReader[TiffHandlerName]=nil then
-    ImageHandlers.RegisterImageReader (TiffHandlerName, 'tif;tiff', TFPReaderTiffCustom1Bit);
+    ImageHandlers.RegisterImageReader (TiffHandlerName, 'tif;tiff;tiffcustom1bit', TFPReaderTiffCustom1Bit);
 end.
 
