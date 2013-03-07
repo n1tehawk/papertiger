@@ -47,14 +47,8 @@ type
       AResponse: TResponse; var Handled: boolean); //scans single image and adds it to document identified by documentid
     procedure serverinfoRequest(Sender: TObject; ARequest: TRequest;
       AResponse: TResponse; var Handled: boolean); //lists server info (version etc)
-    procedure showdocumentRequest(Sender: TObject; ARequest: TRequest;
-      AResponse: TResponse; var Handled: boolean); //show PDF document identified by documentid
-    procedure showimageRequest(Sender: TObject; ARequest: TRequest;
-      AResponse: TResponse; var Handled: boolean); //show image (TIFF) identified by documentid and imageorder
     procedure unsupportedRequest(Sender: TObject; ARequest: TRequest;
       AResponse: TResponse; var Handled: boolean); //handler for invalid requests
-    procedure uploadimageRequest(Sender: TObject; ARequest: TRequest;
-      AResponse: TResponse; var Handled: boolean); //upload image and process in order (after any existing images), adding it to document identified by documentid
   private
     { private declarations }
     FTigerCore: TTigerServerCore;
@@ -184,121 +178,6 @@ begin
   Handled := True;
 end;
 
-procedure TFPWebobsolete.showdocumentRequest(Sender: TObject;
-  ARequest: TRequest; AResponse: TResponse; var Handled: boolean);
-// Show pdf given by post with json docid integer
-var
-  DocumentID: integer;
-  InputJSON: TJSONObject;
-  Success: boolean;
-begin
-  Success := False;
-  try
-    // for uniformity, we expect a POST+a generic json tag, though we could have used e.g. docid directly
-    //todo: adapt so InputJSON in URL is also accepted (for gets)
-    InputJSON := TJSONParser.Create(ARequest.Content).Parse as TJSONObject;
-    DocumentID := InputJSON.Integers['documentid'];
-    Success := True;
-  except
-    TigerLog.WriteLog(etDebug, 'showDocumentRequest: error parsing document id.');
-  end;
-
-  if Success then
-  begin
-    //retrieve pdf and put in output stream
-    AResponse.ContentStream := TMemoryStream.Create;
-    try
-      // Load tiff into content stream:
-      if FTigerCore.GetPDF(DocumentID, AResponse.ContentStream) then
-      begin
-        // Indicate papertiger should be able to deal with this data:
-        AResponse.ContentType := 'application/pdf';
-        AResponse.ContentLength:=AResponse.ContentStream.Size; //apparently doesn't happen automatically?
-        AResponse.SendContent;
-      end
-      else
-      begin
-        // Not found? error message
-        AResponse.Code:=404;
-        AResponse.CodeText:='Error getting PDF file for document ID ' +
-          IntToStr(DocumentID);
-        AResponse.Contents.Add('<p>Error getting PDF file for document ID ' +
-          IntToStr(DocumentID) + '</p>');
-      end;
-    finally
-      AResponse.ContentStream.Free;
-    end;
-  end
-  else
-  begin
-    // error message
-    AResponse.Code:=404;
-    AResponse.CodeText:='Error retrieving PDF for document ID ' +
-      IntToStr(DocumentID);
-    AResponse.Contents.Add('<p>Error retrieving PDF for document ID ' +
-      IntToStr(DocumentID) + '</p>');
-  end;
-  Handled := True;
-end;
-
-procedure TFPWebobsolete.showimageRequest(Sender: TObject; ARequest: TRequest;
-  AResponse: TResponse; var Handled: boolean);
-// Show image given by post with json docid integer
-var
-  DocumentID, ImageOrder: integer;
-  Query: TJSONObject;
-  Success: boolean;
-begin
-  Success := False;
-  try
-    // for uniformity, we expect a POST+a generic json tag, though we could have used e.g. docid directly
-    //todo: adapt so query in URL is also accepted (for gets)
-    Query := TJSONParser.Create(ARequest.Content).Parse as TJSONObject;
-    DocumentID := Query.Integers['documentid'];
-    ImageOrder := Query.Integers['imageorder']; //image order number
-    Success := True;
-  except
-    TigerLog.WriteLog(etDebug, 'showimageRequest: error parsing document id.');
-  end;
-
-  if Success then
-  begin
-    //retrieve tiff and put in output stream
-    AResponse.ContentStream := TMemoryStream.Create;
-    try
-      // Load tiff into content stream:
-      if FTigerCore.GetImage(DocumentID, ImageOrder, AResponse.ContentStream) then
-      begin
-        // Indicate papertiger should be able to deal with this data:
-        AResponse.ContentType := 'image/tiff; application=papertiger';
-        AResponse.ContentLength:=AResponse.ContentStream.Size; //apparently doesn't happen automatically?
-        AResponse.SendContent;
-      end
-      else
-      begin
-        // Not found? error message
-        AResponse.Code:=404;
-        AResponse.CodeText:='Error getting image file for document ID ' +
-          IntToStr(DocumentID);
-        AResponse.Contents.Add('<p>Error getting image file for document ID ' +
-          IntToStr(DocumentID) + '</p>');
-      end;
-    finally
-      AResponse.ContentStream.Free;
-    end;
-  end
-  else
-  begin
-    // error message
-    AResponse.Code:=404;
-    AResponse.CodeText:='Error retrieving image for document ID ' +
-      IntToStr(DocumentID);
-    AResponse.Contents.Add('<p>Error retrieving image for document ID ' +
-      IntToStr(DocumentID) + '</p>');
-  end;
-  Handled := True;
-end;
-
 procedure TFPWebobsolete.unsupportedRequest(Sender: TObject; ARequest: TRequest;
   AResponse: TResponse; var Handled: boolean);
 begin
@@ -315,34 +194,6 @@ begin
   AResponse.Contents.Add('<p>ReturnedPathInfo: '+ARequest.ReturnedPathInfo+'</p>');
   AResponse.Contents.Add('<p>URI: '+ARequest.URI+'</p>'); //gives nothing
   AResponse.Contents.Add('<p>URL: '+ARequest.URL+'</p>'); //gives eg /cgi-bin/tigercgi/unsupported?q=5
-  Handled := True;
-end;
-
-procedure TFPWebobsolete.uploadimageRequest(Sender: TObject; ARequest: TRequest;
-  AResponse: TResponse; var Handled: boolean);
-var
-  DocumentID: integer;
-  InputJSON: TJSONObject;
-  Message: string;
-begin
-  try
-    // for uniformity, we expect a POST+a generic json tag, though we could have used e.g. docid directly
-    //todo: adapt so InputJSON in URL is also accepted (for gets)
-    InputJSON := TJSONParser.Create(ARequest.Content).Parse as TJSONObject;
-    DocumentID := InputJSON.Integers['documentid'];
-    //todo: actually get document as well
-    if DocumentID=INVALIDID then
-      raise Exception.Create('Received invalid document ID.');
-    //todo: implement image upload
-    {if FTigerCore.UploadImage(DocumentID, )='' then
-      raise Exception.Create('Error uploading image ument '+inttostr(DocumentID));}
-  except
-    Message := 'Uploading image failed.';
-    TigerLog.WriteLog(etDebug, 'uploadimageRequest: '+Message);
-    AResponse.Contents.Add('<p>' + Message + '</p>');
-    AResponse.Code:=500;
-    AResponse.CodeText:=Message;
-  end;
   Handled := True;
 end;
 
