@@ -291,7 +291,7 @@ begin
     VData.Add('documentid',DocumentID);
     VData.Add('imageorder',ImageOrder); //sort order number
     //post a request to show the image
-    RequestResult:=HttpRequestWithData(VData,FCGIURL+'showimage',TIFFStream,rmPost);
+    RequestResult:=HttpRequestWithData(VData,FCGIURL+'image',TIFFStream,rmPost);
     if RequestResult.Code<>200 then
     begin
       showmessage('Error getting image from server. HTTP result code: '+inttostr(RequestResult.Code)+'/'+RequestResult.Text);
@@ -393,12 +393,11 @@ var
   PDFStream: TMemoryStream;
   VData: TJSONObject;
 begin
-  VData:=TJSONObject.Create;
   PDFStream:=TMemoryStream.Create;
+  VData:=TJSONObject.Create;
   try
-    VData.Add('documentid',DocumentID);
-    //post a request to get the PDF
-    RequestResult:=HttpRequestWithData(VData,FCGIURL+'showdocument',PDFStream,rmPost);
+    // post a request to get the PDF
+    HttpRequest(FCGIURL+'document/'+inttostr(DocumentID)+'/pdf',VData,rmGet);
     if RequestResult.Code<>200 then
     begin
       showmessage('Error getting PDF from server. HTTP result code: '+inttostr(RequestResult.Code)+'/'+RequestResult.Text);
@@ -418,8 +417,8 @@ begin
       end;
     end;
   finally
-    VData.Free;
     PDFStream.Free;
+    VData.Free;
   end;
 end;
 

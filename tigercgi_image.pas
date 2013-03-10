@@ -49,8 +49,7 @@ procedure TFPWebimage.DataModuleRequest(Sender: TObject; ARequest: TRequest;
 Handled URLs/methods:
 DELETE http://server/cgi-bin/tigercgi/image/    //delete all images?!?!
 GET    http://server/cgi-bin/tigercgi/image/    //list of images
-GET    http://server/cgi-bin/tigercgi/image/304 get specific image (image order 1/first image)
-GET    http://server/cgi-bin/tigercgi/image/304?imageorder=4 get specific image (image order 4)
+GET    http://server/cgi-bin/tigercgi/image/304 get specific image
 POST   http://server/cgi-bin/tigercgi/image/    //let server create new image (scan or empty image), return imageid
 DELETE http://server/cgi-bin/tigercgi/image/304 //remove image with id 304
 GET    http://server/cgi-bin/tigercgi/image/304 //get image with id 304
@@ -59,7 +58,6 @@ PUT    http://server/cgi-bin/tigercgi/image/304 //edit image with id 304
 var
   DocumentID: integer;
   ImageID: integer;
-  ImageOrder: integer;
   InputJSON: TJSONObject;
   IsValidRequest: boolean;
   OutputJSON: TJSONObject;
@@ -104,28 +102,18 @@ begin
           //todo: get every image
           AResponse.Contents.Add('<p>todo get all images</p>');
         end;
-        2: //http://server/cgi-bin/tigercgi/image/304 get specific image (image order 1/first image)
-        //http://server/cgi-bin/tigercgi/image/304?imageorder=4 get specific image (image order 4)
+        2: //http://server/cgi-bin/tigercgi/image/304 get specific image
         begin
           ImageID:=StrToIntDef(ExtractWord(2,StrippedPath,['/']), INVALIDID);
           if ImageID<>INVALIDID then
           begin
             IsValidRequest:=true;
-            // Check if user requested a specific image order/sequence number
-            if strtointdef(ARequest.QueryFields.Values['imageorder'],InvalidID)<>INVALIDID then
-            begin
-              ImageOrder:=strtointdef(ARequest.QueryFields.Values['imageorder'],InvalidID);
-            end
-            else
-            begin
-              ImageOrder:=1; //none specified, choose first image
-            end;
             //retrieve tiff and put in output stream
             AResponse.ContentStream := TMemoryStream.Create;
             try
               // Load tiff into content stream:
               //todo: replace this with image id => then add a call getimageid from document input documentid, order output imageid
-              if FTigerCore.GetImage(DocumentID, ImageOrder, AResponse.ContentStream) then
+              if FTigerCore.GetImage(DocumentID, 1, AResponse.ContentStream) then
               begin
                 // Indicate papertiger should be able to deal with this data:
                 AResponse.ContentType := 'image/tiff; application=papertiger';
