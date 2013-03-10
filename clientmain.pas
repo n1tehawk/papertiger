@@ -43,7 +43,7 @@ type
     procedure UploadImageButtonClick(Sender: TObject);
   private
     { private declarations }
-    FCGIURL: string; //Base cgi URL used for connecting
+    FCGIURL: string; //Base cgi URL used for connecting, normally with trailing /
     // Asks the server to add a new document and returns the document ID
     function AddDocument: integer;
     // Refresh list of documents in grid
@@ -282,7 +282,6 @@ begin
     ShowMessage('No document selected. Please select a document in the grid first.');
     exit;
   end;
-  DocumentID:=StrToInt(DocumentsGrid.Cells[0,DocumentsGrid.Row]);
 
   VData:=TJSONObject.Create;
   TIFFStream:=TMemoryStream.Create;
@@ -374,13 +373,16 @@ begin
   VData:=TJSONArray.Create; //needs to be assigned for HTTPRequest
   try
     ClearGrid(DocumentsGrid);
-    RequestResult:=HttpRequest(FCGIURL+'list',VData,rmGet);
+    RequestResult:=HttpRequest(FCGIURL+'document/',VData,rmGet);
     if RequestResult.Code<>200 then
     begin
       showmessage('Error getting document list from server. HTTP result code: '+inttostr(RequestResult.Code)+'/'+RequestResult.Text);
       exit;
+    end
+    else
+    begin
+      LoadJSON(DocumentsGrid,VData,false,false,true);
     end;
-    LoadJSON(DocumentsGrid,VData,false,false,false);
   finally
     VData.Free;
   end;

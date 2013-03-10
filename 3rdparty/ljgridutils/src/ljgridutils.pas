@@ -41,7 +41,7 @@ function FindItem(AGrid: TCustomStringGrid; const AText: string;
   const AFindNext: Boolean = True): Boolean;
 { Clear grid. }
 procedure ClearGrid(AGrid: TCustomStringGrid;
-  const AIndicatorWidth: Integer = 12);
+  const AIndicatorWidth: Integer = 12; const AddEmptyRow: boolean=true);
 { Get selected row as JSONObject. }
 procedure GetSelectedRow(AGrid: TCustomStringGrid; ARow: TJSONObject);
 function GetSelectedRow(AGrid: TCustomStringGrid): TJSONObject;
@@ -81,6 +81,11 @@ begin
     else
       Exit;
   end;
+  {
+  {$IFDEF DEBUG}
+  showmessage('Received JSON: '+VData.AsJSON);
+  {$ENDIF}
+  }
   if AJSON.JSONType <> jtArray then
   begin
     if AShowErrorMsg then
@@ -386,7 +391,7 @@ begin
   end;
 end;
 
-procedure ClearGrid(AGrid: TCustomStringGrid; const AIndicatorWidth: Integer);
+procedure ClearGrid(AGrid: TCustomStringGrid; const AIndicatorWidth: Integer; const AddEmptyRow: boolean=true);
 var
   I: Integer;
 begin
@@ -400,7 +405,11 @@ begin
       for I := 1 to Pred(ColCount) do
         ColWidths[I] := DefaultColWidth;
     end;
-    RowCount := 1 + FixedRows;
+    // If the user wants a new empty row, do it:
+    if AddEmptyRow then
+      RowCount := FixedRows+1
+    else
+      RowCount := FixedRows;
     Clean;
   finally
     EndUpdate;

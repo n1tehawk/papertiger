@@ -28,7 +28,7 @@
           </Target>
           <SearchPaths>
             <IncludeFiles Value="$(ProjOutDir)"/>
-            <OtherUnitFiles Value="3rdparty"/>
+            <OtherUnitFiles Value="3rdparty;3rdparty\ljgridutils\src"/>
             <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
           </SearchPaths>
           <CodeGeneration>
@@ -70,15 +70,12 @@
         <FormatVersion Value="1"/>
       </local>
     </RunParams>
-    <RequiredPackages Count="2">
+    <RequiredPackages Count="1">
       <Item1>
-        <PackageName Value="LJGridUtilsPkg"/>
-      </Item1>
-      <Item2>
         <PackageName Value="LCL"/>
-      </Item2>
+      </Item1>
     </RequiredPackages>
-    <Units Count="4">
+    <Units Count="5">
       <Unit0>
         <Filename Value="tigerclient.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -105,6 +102,11 @@
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="imageformunit"/>
       </Unit3>
+      <Unit4>
+        <Filename Value="3rdparty\ljgridutils\src\ljgridutils.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="LJGridUtils"/>
+      </Unit4>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
