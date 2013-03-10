@@ -181,9 +181,7 @@ begin
           FormatDateTime('yyyymmddhhnnss', Now));
         if DocumentID=INVALIDID then
         begin
-          AResponse.Code:=404;
-          AResponse.CodeText:='Error inserting new document.';
-          AResponse.Contents.Add('<p>Error inserting new document.</p>');
+          IsValidRequest:=false;
         end
         else
         begin
