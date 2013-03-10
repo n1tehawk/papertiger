@@ -79,12 +79,16 @@ type
     function CleanImage(const ImageFile: string): boolean;
     // Delete document and associated images from DB and filesystem
     function DeleteDocument(const DocumentID: integer): boolean;
+    // Delete all document and associated images from DB and filesystem
+    function DeleteDocuments: boolean;
     // Get image identified by documentID and image number/imageorder (starting with 1)
     function GetImage(DocumentID, ImageOrder: integer; const ImageStream: TStream): boolean;
     // Get PDF identified by DocumentID
     function GetPDF(DocumentID: integer; const ImageStream: TStream): boolean;
     // Lists document specified by DocumentID or all documents (if DocumentID is INVALIDID)
     procedure ListDocuments(DocumentID: integer; var DocumentsArray: TJSONArray);
+    // List images specified DocumentID or all images (if DocumentID is INVALIDID)
+    procedure ListImages(DocumentID: integer; var DocumentsArray: TJSONArray);
     // Process (set of) existing (TIFF) image(s); should be named <image>.tif
     // Images are specified using the Images property
     // Specify resolution override to indicate image resolution to hocr2pdf
@@ -146,6 +150,14 @@ end;
 
 function TTigerServerCore.DeleteDocument(const DocumentID: integer): boolean;
 begin
+  //todo: get all images, delete from fs
+  //todo: get pdf, delete from fs
+  //todo: delete document and images from db
+end;
+
+function TTigerServerCore.DeleteDocuments: boolean;
+begin
+  //todo: for all docs,
   //todo: get all images, delete from fs
   //todo: get pdf, delete from fs
   //todo: delete document and images from db
@@ -229,6 +241,12 @@ end;
 procedure TTigerServerCore.ListDocuments(DocumentID: integer; var DocumentsArray: TJSONArray);
 begin
   FTigerDB.ListDocuments(DocumentID,DocumentsArray);
+end;
+
+procedure TTigerServerCore.ListImages(DocumentID: integer;
+  var DocumentsArray: TJSONArray);
+begin
+  FTigerDB.ListImages(DocumentID,DocumentsArray);
 end;
 
 function TTigerServerCore.ProcessImages(DocumentID: integer; Resolution: integer): string;

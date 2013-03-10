@@ -74,8 +74,10 @@ type
     // Keep string values empty to insert NULLs; pass a pre 1900 date for TheScanDate to do the same.
     // Returns image ID.
     function InsertImage(const DocumentID, Imageorder: integer; const Path, ImageHash: string): integer;
-    // Lists document with DocumentID or all documents if DocumentID=DBINVALIDID
+    // Lists document with DocumentID or all documents if DocumentID=INVALIDID
     procedure ListDocuments(const DocumentID: integer; var DocumentsArray: TJSONArray);
+    // List images with DocumentID or all images if DocumentID=INVALIDID
+    procedure ListImages(const DocumentID: integer; var DocumentsArray: TJSONArray);
     // Returns path+filename for PDF associated with document
     function GetPDFPath(DocumentID: integer): string;
     // Sets path+filename for PDF associated with document. Returns result.
@@ -158,7 +160,8 @@ begin
   end;
 end;
 
-function TTigerDB.InsertImage(const DocumentID, ImageOrder: integer; const Path, ImageHash: string): integer;
+function TTigerDB.InsertImage(const DocumentID, Imageorder: integer;
+  const Path, ImageHash: string): integer;
 begin
   //todo: make this function insert or update image so it can modify existing records
   Result := INVALIDID;
@@ -257,7 +260,7 @@ begin
   try
     if DocumentID = INVALIDID then
       // All documents
-      FReadQuery.SQL.Text := 'SELECT ID,DOCUMENTNAME,PDFPATH,SCANDATE,DOCUMENTHASH FROM DOCUMENTS'
+      FReadQuery.SQL.Text := 'SELECT ID,DOCUMENTNAME,PDFPATH,SCANDATE,DOCUMENTHASH FROM DOCUMENTS ORDER BY ID'
     else
       // Specified document; no need for parametrized queries: one time only, integer
       FReadQuery.SQL.Text := 'SELECT ID,DOCUMENTNAME,PDFPATH,SCANDATE,DOCUMENTHASH FROM DOCUMENTS WHERE ID=' + IntToStr(DocumentID);
@@ -290,6 +293,54 @@ begin
     begin
       DocumentsArray.Clear;
       DocumentsArray.Add(TJSONString.Create('ListDocuments: exception: message ' + F.Message));
+      TigerLog.WriteLog(etError, 'ListDocuments: exception: ' + F.Message);
+    end;
+  end;
+end;
+
+procedure TTigerDB.ListImages(const DocumentID: integer;
+  var DocumentsArray: TJSONArray);
+// Will return an array containing objects/records for each image
+var
+  RecordObject: TJSONObject;
+begin
+  //todo: convert to generic db query => json array function
+  DocumentsArray:=TJSONArray.Create; //clears any existing data at the same time
+  if FReadTransaction.Active = false then
+    FReadTransaction.StartTransaction;
+  try
+    if DocumentID = INVALIDID then
+      // Images for all documents
+      FReadQuery.SQL.Text := 'SELECT ID,IMAGEORDER,DOCUMENTID,PATH,IMAGEHASH FROM IMAGES ORDER BY DOCUMENTID,IMAGEORDER '
+    else
+      // Specified document; no need for parametrized queries: one time only, integer
+      FReadQuery.SQL.Text := 'SELECT ID,IMAGEORDER,DOCUMENTID,PATH,IMAGEHASH FROM IMAGES WHERE DOCUMENTID=' + IntToStr(DocumentID)+' ORDER BY IMAGEORDER ';
+    FReadQuery.Open;
+    while not FReadQuery.EOF do
+    begin
+      RecordObject := TJSONObject.Create();
+      RecordObject.Add('id', FReadQuery.FieldByName('ID').AsInteger);
+      RecordObject.Add('imageorder', FReadQuery.FieldByName('IMAGEORDER').AsInteger);
+      RecordObject.Add('documentid', FReadQuery.FieldByName('DOCUMENTID').AsInteger);
+      RecordObject.Add('path', FReadQuery.FieldByName('PATH').AsString);
+      RecordObject.Add('imagehash', FReadQuery.FieldByName('IMAGEHASH').AsString);
+      DocumentsArray.Add(RecordObject);
+      FReadQuery.Next;
+    end;
+    FReadQuery.Close;
+    FReadTransaction.Commit;
+  except
+    on E: EDatabaseError do
+    begin
+      DocumentsArray.Clear;
+      DocumentsArray.Add(TJSONString.Create('ListImages: db exception: ' + E.Message));
+      TigerLog.WriteLog(etError, 'ListDocuments: db exception: ' + E.Message);
+      FReadTransaction.RollBack;
+    end;
+    on F: Exception do
+    begin
+      DocumentsArray.Clear;
+      DocumentsArray.Add(TJSONString.Create('ListImages: exception: message ' + F.Message));
       TigerLog.WriteLog(etError, 'ListDocuments: exception: ' + F.Message);
     end;
   end;

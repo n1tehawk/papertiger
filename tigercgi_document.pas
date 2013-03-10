@@ -47,12 +47,13 @@ procedure TFPWebdocument.DataModuleRequest(Sender: TObject; ARequest: TRequest;
 // We don't define any actions but handle the request at the module level before any actions would be evaluated.
 {
 Handled URLs/methods:
-DELETE http://server/cgi-bin/tigercgi/document/    //delete all docs?!?!
-GET    http://server/cgi-bin/tigercgi/document/    //list of docs
-POST   http://server/cgi-bin/tigercgi/document/    //let server create new doc, return documentid
-DELETE http://server/cgi-bin/tigercgi/document/304 //remove document with id 304
-GET    http://server/cgi-bin/tigercgi/document/304 //get document with id 304
-PUT    http://server/cgi-bin/tigercgi/document/304 //edit doc with id 304
+DELETE http://server/cgi-bin/tigercgi/document/        //delete all docs?!?!
+GET    http://server/cgi-bin/tigercgi/document/        //list of docs
+POST   http://server/cgi-bin/tigercgi/document/        //let server create new doc, return documentid
+DELETE http://server/cgi-bin/tigercgi/document/304     //remove document with id 304
+GET    http://server/cgi-bin/tigercgi/document/304     //get details about document with id 304
+GET    http://server/cgi-bin/tigercgi/document/304/pdf //get pdf of document 304
+PUT    http://server/cgi-bin/tigercgi/document/304     //edit doc with id 304
 }
 var
   DocumentArray: TJSONArray;
@@ -69,8 +70,6 @@ begin
   }
   StrippedPath:=copy(ARequest.PathInfo,2,Length(ARequest.PathInfo));
   if RightStr(StrippedPath,1)='/' then StrippedPath:=Copy(StrippedPath,1,Length(StrippedPath)-1);
-  AResponse.Contents.Add('<p>todo: debug; document module</p>');
-  AResponse.Contents.Add('<p>Got request method: '+ARequest.Method+'</p>');
   // Make sure the user didn't specify levels in the URI we don't support:
   case ARequest.Method of
     'DELETE':
@@ -80,7 +79,8 @@ begin
         begin
           IsValidRequest:=true;
           //todo: delete every document
-          AResponse.Contents.Add('<p>todo delete all documents</p>');
+          FTigerCore.DeleteDocuments;
+          if FTigerCore.DeleteDocuments=false then IsValidRequest:=false; //generate 404
         end;
         2: //http://server/cgi-bin/tigercgi/document/304
         begin
@@ -88,16 +88,7 @@ begin
           if DocumentID<>INVALIDID then
           begin
             IsValidRequest:=true;
-            if FTigerCore.DeleteDocument(DocumentID)=false then
-            begin
-              AResponse.Code:=404;
-              AResponse.CodeText:='Error deleting document.';
-              AResponse.Contents.Add('<p>Error deleting document.</p>');
-            end
-            else
-            begin
-              //Success; 200 OK
-            end;
+            if FTigerCore.DeleteDocument(DocumentID)=false then IsValidRequest:=false; //generate 404
           end;
         end;
       end;
@@ -122,29 +113,59 @@ begin
             end;
           end;
         end;
-        2: //http://server/cgi-bin/tigercgi/document/304 get document as PDF
+        2: //http://server/cgi-bin/tigercgi/document/304 get document details
         begin
-          DocumentID:=StrToIntDef(ExtractWord(2,StrippedPath,['/']), INVALIDID);
-          if DocumentID<>INVALIDID then
-          begin
-            IsValidRequest:=true;
-            //retrieve pdf and put in output stream
-            AResponse.ContentStream := TMemoryStream.Create;
+          IsValidRequest:=true;
+          DocumentArray := TJSONArray.Create();
+          OutputJSON := TJSONObject.Create();
+          try
             try
-              // Load PDF into content stream:
-              if FTigerCore.GetPDF(DocumentID, AResponse.ContentStream) then
+              // document name, pdf path, scandate, document hash
+              OutputJSON.Add('documentid',DocumentID);
+              //todo: add doc details
+              // list of images: image order, path, imagehash
+              FTigerCore.ListImages(DocumentID, DocumentArray);
+              OutputJSON.Add('imagedetails',DocumentArray);
+              AResponse.ContentType := 'application/json';
+              AResponse.Contents.Add(OutputJSON.AsJSON);
+            except
+              on E: Exception do
               begin
-                // Indicate papertiger should be able to deal with this data:
-                AResponse.ContentType := 'application/pdf';
-                AResponse.ContentLength:=AResponse.ContentStream.Size; //apparently doesn't happen automatically?
-                AResponse.SendContent;
-              end
-              else
-              begin
-                IsValidRequest:=false; //follow up code will return 404 error
+                OutputJSON.Add('error','documentDetails request: exception '+E.Message);
+                AResponse.Contents.Insert(0, OutputJSON.AsJSON);
               end;
-            finally
-              AResponse.ContentStream.Free;
+            end;
+          finally
+            DocumentArray.Free;
+            OutputJSON.Free;
+          end;
+        end;
+        3: //http://server/cgi-bin/tigercgi/document/304/pdf get document as PDF
+        begin
+          if lowercase(ExtractWord(3,StrippedPath,['/']))='pdf' then
+          begin
+            DocumentID:=StrToIntDef(ExtractWord(2,StrippedPath,['/']), INVALIDID);
+            if DocumentID<>INVALIDID then
+            begin
+              IsValidRequest:=true;
+              //retrieve pdf and put in output stream
+              AResponse.ContentStream := TMemoryStream.Create;
+              try
+                // Load PDF into content stream:
+                if FTigerCore.GetPDF(DocumentID, AResponse.ContentStream) then
+                begin
+                  // Indicate papertiger should be able to deal with this data:
+                  AResponse.ContentType := 'application/pdf';
+                  AResponse.ContentLength:=AResponse.ContentStream.Size; //apparently doesn't happen automatically?
+                  AResponse.SendContent;
+                end
+                else
+                begin
+                  IsValidRequest:=false; //follow up code will return 404 error
+                end;
+              finally
+                AResponse.ContentStream.Free;
+              end;
             end;
           end;
         end;
