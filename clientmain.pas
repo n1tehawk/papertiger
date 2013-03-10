@@ -44,7 +44,7 @@ type
   private
     { private declarations }
     FCGIURL: string; //Base cgi URL used for connecting, normally with trailing /
-    // Asks the server to add a new document and returns the document ID
+    // Asks the server to add a new document and returns the document ID. Returns INVALIDID on error.
     function AddDocument: integer;
     // Refresh list of documents in grid
     procedure RefreshDocuments;
@@ -174,7 +174,7 @@ begin
   CommunicationJSON:=TJSONObject.Create;
   try
     try
-      RequestResult:=HttpRequest(FCGIURL+'adddocument',CommunicationJSON,rmGet);
+      RequestResult:=HttpRequestWithData(CommunicationJSON,FCGIURL+'document/',rmPost);
       if RequestResult.Code<>200 then
       begin
         showmessage('Error from server. HTTP result code: '+inttostr(RequestResult.Code)+'/'+RequestResult.Text);
@@ -361,6 +361,7 @@ begin
   ImageFile:=OpenDialog1.FileName;
   if ImageFile<>'' then
   begin
+    //post or put? how to specify documentid
     //todo: upload the image file along with the document ID
   end;
 end;

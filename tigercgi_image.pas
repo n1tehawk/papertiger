@@ -47,13 +47,13 @@ procedure TFPWebimage.DataModuleRequest(Sender: TObject; ARequest: TRequest;
 // We don't define any actions but handle the request at the module level before any actions would be evaluated.
 {
 Handled URLs/methods:
-DELETE http://server/cgi-bin/tigercgi/image/    //delete all images?!?!
-GET    http://server/cgi-bin/tigercgi/image/    //list of images
-GET    http://server/cgi-bin/tigercgi/image/304 get specific image
-POST   http://server/cgi-bin/tigercgi/image/    //let server create new image (scan or empty image), return imageid
-DELETE http://server/cgi-bin/tigercgi/image/304 //remove image with id 304
-GET    http://server/cgi-bin/tigercgi/image/304 //get image with id 304
-PUT    http://server/cgi-bin/tigercgi/image/304 //edit image with id 304
+DELETE http://server/cgi-bin/tigercgi/image/               //delete all images?!?!
+GET    http://server/cgi-bin/tigercgi/image/               //list of images
+GET    http://server/cgi-bin/tigercgi/image/304            // get specific image
+POST   http://server/cgi-bin/tigercgi/image/?documentid=55 // let server create new image (scan or empty image), return imageid
+DELETE http://server/cgi-bin/tigercgi/image/304            //remove image with id 304
+GET    http://server/cgi-bin/tigercgi/image/304            //get image with id 304
+PUT    http://server/cgi-bin/tigercgi/image/304            //edit image with id 304
 }
 var
   DocumentID: integer;
