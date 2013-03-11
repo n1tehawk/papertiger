@@ -71,7 +71,6 @@ type
     // TheScanDate: please pass UTC date/time, pass a pre 1900 date to specify unknown date
     function InsertDocument(const DocumentName, PDFPath, DocumentHash: string; TheScanDate: TDateTime): integer;
     // Inserts a new image record in database (specify image number/imageorder >1 to place image after existing images for a document)
-    // Keep string values empty to insert NULLs; pass a pre 1900 date for TheScanDate to do the same.
     // Returns image ID.
     function InsertImage(const DocumentID, Imageorder: integer; const Path, ImageHash: string): integer;
     // Lists document with DocumentID or all documents if DocumentID=INVALIDID
@@ -162,17 +161,32 @@ end;
 
 function TTigerDB.InsertImage(const DocumentID, Imageorder: integer;
   const Path, ImageHash: string): integer;
+var
+  NewImageOrder: integer;
 begin
   //todo: make this function insert or update image so it can modify existing records
   Result := INVALIDID;
   try
+    if ImageOrder<=0 then
+    begin
+      // get next image order number
+      NewImageOrder:=GetHighestImageOrder(DocumentID);
+      if NewImageOrder=INVALIDID then
+      begin
+        TigerLog.WriteLog(etError, 'InsertImage: could not get new image order for document: ' + inttostr(DocumentID), true);
+        exit;
+      end;
+      NewImageOrder:=NewImageOrder+1;
+    end
+    else
+    begin
+      NewImageOrder:=ImageOrder;
+    end;
     if FReadWriteTransaction.Active = false then
       FReadWriteTransaction.StartTransaction;
     FInsertImage.Close;
     FInsertImage.ParamByName('DOCUMENTID').AsInteger := DocumentID;
-    if ImageOrder=0 then
-      raise Exception.Create('ImageOrder number 0 is not allowed. Please specify 1 or higher.');
-    FInsertImage.ParamByName('ImageOrder').AsInteger := ImageOrder;
+    FInsertImage.ParamByName('ImageOrder').AsInteger := NewImageOrder;
     if Path = '' then // NULL
       FInsertImage.ParamByName('PATH').Clear
     else
