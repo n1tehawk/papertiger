@@ -42,7 +42,8 @@ uses
   {$ENDIF}
   tigerutil {put this first for logging support},
   tigerdb, tigersettings,
-  scan, imagecleaner, ocr, pdf, fpjson, dateutils;
+  scan, imagecleaner, ocr, pdf,
+  fpjson, dateutils, md5;
 
 // Common constants etc:
 {$i tigercommondefs.inc}
@@ -69,6 +70,8 @@ type
   public
     // Adds new, empty document (with name if specified), returns document ID
     function AddDocument(DocumentName: string=''): integer;
+    // Adds the tiff image to given documentID. Add at end of any existing images, unless ImageOrder>0.
+    function AddImage(ImageData: TStream; ImageName: string; DocumentID: integer; ImageOrder: integer): integer;
     // Language to be used for OCR. Will not be saved in settings
     property CurrentOCRLanguage: string read FCurrentOCRLanguage write FCurrentOCRLanguage;
     // Image files to be OCRed or files that result from scanning
@@ -76,7 +79,7 @@ type
     // Number of pages to scan in one scan run.
     property Pages: integer read FPages write FPages;
     // Cleans up image (postprocessing): straightens them up, despeckles etc. Returns true if succesful
-    function CleanImage(const ImageFile: string): boolean;
+    function CleanUpImage(const ImageFile: string): boolean;
     // Delete document and associated images from DB and filesystem
     function DeleteDocument(const DocumentID: integer): boolean;
     // Delete all document and associated images from DB and filesystem
@@ -132,7 +135,44 @@ begin
   end;
 end;
 
-function TTigerServerCore.CleanImage(const ImageFile: string): boolean;
+function TTigerServerCore.AddImage(ImageData: TStream; ImageName: string; DocumentID: integer;
+  ImageOrder: integer): integer;
+var
+  MemStream: TMemoryStream;
+  ImagePath, ImageHash: string;
+begin
+  result:=INVALIDID;
+  try
+    // First get image into file system
+    if not(assigned(ImageData)) then
+    begin
+      TigerLog.WriteLog('AddImage: no valid stream with image data.');
+      exit;
+    end;
+    // Extract only filename part from image name and add to storage path
+    ImagePath:=FSettings.ImageDirectory+ExtractFileName(ImageName);
+    MemStream:=TMemoryStream.Create;
+    try
+      ImageData.Position:=0;
+      MemStream.CopyFrom(ImageData,ImageData.Size);
+      MemStream.SaveToFile(ImagePath);
+      MemStream.Position:=0;
+      ImageHash:=MD5Print(MD5Buffer(MemStream.Memory^,MemStream.Size));
+    finally
+      MemStream.Free;
+    end;
+
+    // Insert image reference into database
+    result:=FTigerDB.InsertImage(DocumentID,ImageOrder,ImagePath,ImageHash);
+  except
+    on E: Exception do
+    begin
+      TigerLog.WriteLog('AddImage: error adding new document. '+E.Message);
+    end;
+  end;
+end;
+
+function TTigerServerCore.CleanUpImage(const ImageFile: string): boolean;
 // Cleans up image before OCR (despeckle etc)
 var
   Cleaner: TImageCleaner;
@@ -257,7 +297,7 @@ var
   PDF: TPDF;
   Success: boolean;
 begin
-  {todo: add preprocess code to cleanimage despeckle, deskew etc? ScanTailor?
+  {todo: add preprocess code to CleanUpImage despeckle, deskew etc? ScanTailor?
   Scantailor: more for letters/documents; unpaper more for books
   scantailor new version: https://sourceforge.net/projects/scantailor/files/scantailor-devel/enhanced/
   unpaper input.ppm output.ppm => perhaps more formats than ppm? use eg. exactimage's econvert for format conversion}
@@ -269,7 +309,7 @@ begin
   //todo: add image if not already in db?
   for i := 0 to FImageFiles.Count - 1 do
   begin
-    Success := CleanImage(FImageFiles[i]);
+    Success := CleanUpImage(FImageFiles[i]);
     if Success then
     begin
       OCR := TOCR.Create;
