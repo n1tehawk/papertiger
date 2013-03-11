@@ -342,6 +342,8 @@ procedure TForm1.UploadImageButtonClick(Sender: TObject);
 var
   DocumentID: integer;
   ImageFile: string;
+  RequestResult: THTTPResult;
+  CommunicationJSON: TJSONObject;
 begin
   if DocumentsGrid.Row<1 then
   begin
@@ -361,8 +363,26 @@ begin
   ImageFile:=OpenDialog1.FileName;
   if ImageFile<>'' then
   begin
-    //post or put? how to specify documentid
-    //todo: upload the image file along with the document ID
+    CommunicationJSON:=TJSONObject.Create;
+    try
+      RequestResult:=HttpRequestWithData(CommunicationJSON,FCGIURL+'image/',rmPost);
+      if RequestResult.Code<>200 then
+      begin
+        showmessage('Error getting document list from server. HTTP result code: '+inttostr(RequestResult.Code)+'/'+RequestResult.Text);
+        exit;
+      end
+      else
+      begin
+        //do something
+      end;
+    finally
+      CommunicationJSON.Free;
+    end;
+  end
+  else
+  begin
+    ShowMessage('No valid image selected. Aborting.');
+    exit;
   end;
 end;
 
