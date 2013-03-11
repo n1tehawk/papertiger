@@ -179,8 +179,11 @@ begin
       begin
         showmessage('Error from server. HTTP result code: '+inttostr(RequestResult.Code)+'/'+RequestResult.Text);
         exit;
+      end
+      else
+      begin
+        result:=CommunicationJSON.Integers['documentid'];
       end;
-      result:=CommunicationJSON.Integers['documentid'];
     except
       on E: Exception do
       begin
