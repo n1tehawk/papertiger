@@ -16,7 +16,7 @@ type
   TRequestMethod = (rmGet, rmHead, rmOptions, rmPost, rmPut, rmDelete);
 
 // Perform a get etc and return JSON result data in AResponse
-function HttpRequest(const AUrl: string; AResponse: TJSONData;
+function HttpRequest(const AUrl: string; out AResponse: TJSONData;
   const AMethod: TRequestMethod = rmGet): THttpResult;
 // Perform a post etc with JSON data in the request body and return JSON result data in AData
 function HttpRequestWithData(var AData: TJSONData; const AUrl: string;
@@ -32,7 +32,7 @@ function HttpRequestWithDataStream(var AData: TJSONData; const AUrl: string;
 
 implementation
 
-function HttpRequest(const AUrl: string; AResponse: TJSONData;
+function HttpRequest(const AUrl: string; out AResponse: TJSONData;
   const AMethod: TRequestMethod): THttpResult;
 var
   VMethod: string;
