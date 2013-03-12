@@ -96,6 +96,9 @@ procedure TFPWebobsolete.unsupportedRequest(Sender: TObject; ARequest: TRequest;
   AResponse: TResponse; var Handled: boolean);
 begin
   //todo add hyperlinks to all supported docs etc
+  TigerLog.WriteLog(etDebug,'unsupportedRequest: got request: '+ARequest.PathInfo+' with method '+ARequest.Method);
+  TigerLog.WriteLog(etDebug,'unsupportedRequest: got query: '+ARequest.QueryString);
+
   AResponse.Code:=404;
   AResponse.CodeText:='Unsupported method';
   AResponse.Contents.Add('<p>Unsupported method.</p>');
