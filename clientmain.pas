@@ -247,6 +247,11 @@ begin
   NumberPages:=StrToIntDef(NumberPagesControl.Text,1);
 
   DocumentID:=AddDocument;
+  if DocumentID=INVALIDID then
+  begin
+    ShowMessage('Error trying create a new document on server. Aborting.');
+    exit;
+  end;
 
   for CurrentPage:=1 to NumberPages do
   begin
