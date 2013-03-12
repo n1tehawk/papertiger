@@ -212,7 +212,14 @@ begin
       end
       else
       begin
-        result:=CommunicationJSON.Integers['documentid'];
+        {$IFDEF DEBUG}
+        if Assigned(CommunicationJSON) then
+          ShowMessage('Got this JSON: '+CommunicationJSON.AsJSON);
+        {$ENDIF DEBUG}
+        // We have to first check for existence of documentid to avoid an access violation/
+        // SIGSEGV
+        if (Assigned(CommunicationJSON)) and (CommunicationJSON.IndexOfName('documentid',false)>-1) then
+          result:=CommunicationJSON.Integers['documentid'];
       end;
     except
       on E: Exception do
