@@ -94,6 +94,9 @@ begin
   }
   StrippedPath:=copy(ARequest.PathInfo,2,Length(ARequest.PathInfo));
   if RightStr(StrippedPath,1)='/' then StrippedPath:=Copy(StrippedPath,1,Length(StrippedPath)-1);
+  TigerLog.WriteLog(etDebug,'Document module: got stripped path: '+StrippedPath+' with method '+ARequest.Method);
+  TigerLog.WriteLog(etDebug,'Document module: got query: '+ARequest.QueryString);
+
   // Make sure the user didn't specify levels in the URI we don't support:
   case ARequest.Method of
     'DELETE':
