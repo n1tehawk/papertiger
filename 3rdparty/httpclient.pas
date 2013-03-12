@@ -47,6 +47,7 @@ begin
       rmGet: VMethod := 'GET';
       rmHead: VMethod := 'HEAD';
       rmOptions: VMethod := 'OPTIONS';
+      rmPost: VMethod := 'POST';
     else
       raise Exception.Create('HttpRequest: Invalid request method.');
     end;
