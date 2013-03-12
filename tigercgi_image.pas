@@ -94,8 +94,6 @@ begin
   }
   StrippedPath:=copy(ARequest.PathInfo,2,Length(ARequest.PathInfo));
   if RightStr(StrippedPath,1)='/' then StrippedPath:=Copy(StrippedPath,1,Length(StrippedPath)-1);
-  AResponse.Contents.Add('<p>todo: debug; image module</p>');
-  AResponse.Contents.Add('<p>Got request method: '+ARequest.Method+'</p>');
   // Make sure the user didn't specify levels in the URI we don't support:
   case ARequest.Method of
     'DELETE':
@@ -171,9 +169,24 @@ begin
           if DocumentID<>INVALIDID then
           begin
             // Scan
-            ImageID:=FTigerCore.ScanSinglePage(invalidid); //todo fix this with proper document id
+            ImageID:=FTigerCore.ScanSinglePage(DocumentID);
             if ImageID<>INVALIDID then
+            begin
               IsValidRequest:=true;
+              AResponse.ContentType := 'application/json';
+              OutputJSON := TJSONObject.Create();
+              try
+                OutputJSON.Add('imageid',ImageID);
+                AResponse.Contents.Add(OutputJSON.AsJSON);
+              finally
+                OutputJSON.Free;
+              end;
+            end
+            else
+            begin
+              IsValidRequest:=false;
+              DocumentID:=INVALIDID; //don't process the upload new image part
+            end;
           end;
         end;
         if DocumentID<>INVALIDID then

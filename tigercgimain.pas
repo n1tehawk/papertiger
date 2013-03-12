@@ -41,10 +41,6 @@ type
   TFPWebobsolete = class(TFPWebModule)
     procedure DataModuleCreate(Sender: TObject);
     procedure DataModuleDestroy(Sender: TObject);
-    procedure processdocumentRequest(Sender: TObject; ARequest: TRequest; //process document identified by documentid: OCR images, create PDF
-      AResponse: TResponse; var Handled: Boolean);
-    procedure scanRequest(Sender: TObject; ARequest: TRequest;
-      AResponse: TResponse; var Handled: boolean); //scans single image and adds it to document identified by documentid
     procedure serverinfoRequest(Sender: TObject; ARequest: TRequest;
       AResponse: TResponse; var Handled: boolean); //lists server info (version etc)
     procedure unsupportedRequest(Sender: TObject; ARequest: TRequest;
@@ -79,88 +75,6 @@ begin
 end;
 
 
-
-procedure TFPWebobsolete.processdocumentRequest(Sender: TObject;
-  ARequest: TRequest; AResponse: TResponse; var Handled: Boolean);
-var
-  DocumentID: integer;
-  InputJSON: TJSONObject;
-  Message: string;
-begin
-  try
-    // for uniformity, we expect a POST+a generic json tag, though we could have used e.g. docid directly
-    //todo: adapt so InputJSON in URL is also accepted (for gets)
-    InputJSON := TJSONParser.Create(ARequest.Content).Parse as TJSONObject;
-    DocumentID := InputJSON.Integers['documentid'];
-    //todo: figure out how to get resolution: it is encoded in the TIFF file; edentify bla.tif =>20130218144142.tif: TIFF 2472x3262 @ 300x300dpi (209x276mm) 1 bit, 1 channel
-    // see e.g. http://stackoverflow.com/questions/7861600/get-horizontal-resolution-from-tif-in-c/7862187#7862187
-    if FTigerCore.ProcessImages(DocumentID, 0)='' then
-      raise Exception.Create('Got empty PDF for document '+inttostr(DocumentID));
-  except
-    Message := 'Processing images failed.';
-    TigerLog.WriteLog(etDebug, 'processdocumentRequest: '+Message);
-    AResponse.Contents.Add('<p>' + Message + '</p>');
-    AResponse.Code:=500;
-    AResponse.CodeText:=Message;
-  end;
-  Handled := True;
-end;
-
-procedure TFPWebobsolete.scanRequest(Sender: TObject; ARequest: TRequest;
-  AResponse: TResponse; var Handled: boolean);
-// Scans page and adds it to existing document
-var
-  DocumentID: integer;
-  InputJSON: TJSONObject;
-  Message: string;
-  Success: boolean;
-begin
-  Success:=false;
-  try
-    // for uniformity, we expect a POST+a generic json tag, though we could have used e.g. docid directly
-    //todo: adapt so InputJSON in URL is also accepted (for gets)
-    InputJSON := TJSONParser.Create(ARequest.Content).Parse as TJSONObject;
-    DocumentID := InputJSON.Integers['documentid'];
-    Success := True;
-  except
-    Message := 'Scanning failed. No/invalid document ID.';
-    TigerLog.WriteLog(etDebug, 'showDocumentRequest: '+Message);
-    AResponse.Contents.Add('<p>' + Message + '</p>');
-    AResponse.Code:=500;
-    AResponse.CodeText:=Message;
-  end;
-
-  //todo implement resolution, language etc
-  if Success then
-  begin
-    try
-      Success:=(FTigerCore.ScanSinglePage(DocumentID)<>INVALIDID);
-    except
-      on E: Exception do
-      begin
-        Message := 'Scanning failed. Details: exception: '+E.Message;
-        AResponse.Contents.Add('<p>' + Message + '</p>');
-        AResponse.Code:=500;
-        AResponse.CodeText:=Message;
-        TigerLog.WriteLog(etError, 'scanRequest: ' + Message);
-      end;
-    end;
-  end;
-
-  if Success=false then
-  begin
-    Message :='Error scanning document for document ID '+inttostr(DocumentID);
-    AResponse.Contents.Add('<p>'+Message+'</p>');
-    AResponse.Code:=500;
-    AResponse.CodeText:='Error scanning document for document ID '+inttostr(DocumentID);
-    TigerLog.WriteLog(etError, 'scanRequest: ' + Message);
-  end
-  else
-  begin
-    AResponse.Contents.Add('<p>Scanning succeeded.</p>')
-  end;
-  Handled := True;
-end;
 
 procedure TFPWebobsolete.serverinfoRequest(Sender: TObject; ARequest: TRequest;
   AResponse: TResponse; var Handled: boolean);

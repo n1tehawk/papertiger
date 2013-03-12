@@ -260,12 +260,11 @@ begin
       ShowMessage('Please put page '+inttostr(CurrentPage)+' in the scanner.');
     end;
 
-    CommJSON:=TJSONObject.Create;
+    CommJSON:=TJSONData.Create;
     try
       Screen.Cursor:=crHourglass;
-      (CommJSON as TJSONObject).Add('documentid',DocumentID); //pass newly created document
       try
-        RequestResult:=HTTPRequestWithData(CommJSON,FCGIURL+'scan',rmPost);
+        RequestResult:=HTTPRequest(FCGIURL+'image?documentid='+inttostr(DocumentID),CommJSON,rmGet);
         if RequestResult.Code<>200 then
         begin
           Screen.Cursor:=crDefault;
@@ -282,21 +281,13 @@ begin
       end;
     finally
       Screen.Cursor:=crDefault;
-      {
-      rather mem leaks than this getting runtime error 210 etc.
-      FreeAndNil(CommJSON);
-      or
-      // The JSON could have been changed by the httprequest code, so
-      if assigned(CommJSON) and (CommJSON.JSONType=jtObject) then
-        CommJSON.Free;
-      }
+      CommJSON.Free;
     end;
   end; //all pages scanned now
 
   CommJSON:=TJSONObject.Create();
   try
-    (CommJSON as TJSONObject).Add('documentid',DocumentID);
-    RequestResult:=HTTPRequestWithData(CommJSON,FCGIURL+'processdocument',rmPost);
+    RequestResult:=HttpRequest(FCGIURL+'document/'+inttostr(DocumentID)+'?processdocument=true',CommJSON,rmGet);
     if RequestResult.Code<>200 then
     begin
       showmessage('Error from server. HTTP result code: '+inttostr(RequestResult.Code)+'/'+RequestResult.Text);
@@ -309,7 +300,6 @@ begin
       exit;
     end;
   end;
-  //todo: investigate leak
 
   //When succesful, add docs to list
   RefreshDocuments;

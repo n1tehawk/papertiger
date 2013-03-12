@@ -76,6 +76,7 @@ POST   http://server/cgi-bin/tigercgi/document/        //let server create new d
 DELETE http://server/cgi-bin/tigercgi/document/304     //remove document with id 304
 GET    http://server/cgi-bin/tigercgi/document/304     //get details about document with id 304
 GET    http://server/cgi-bin/tigercgi/document/304/pdf //get pdf of document 304
+POST   http://server/cgi-bin/tigercgi/document/304?processdocument=true  //do OCR for all images etc
 PUT    http://server/cgi-bin/tigercgi/document/304     //edit doc with id 304
 }
 var
@@ -215,6 +216,20 @@ begin
             AResponse.Contents.Add(OutputJSON.AsJSON);
           finally
             OutputJSON.Free;
+          end;
+        end;
+      end;
+      //POST   http://server/cgi-bin/tigercgi/document/304?processdocument=true  //do OCR for all images etc
+      if (WordCount(StrippedPath,['/'])=2) and
+        (ARequest.QueryFields.Values['processdocument']='true') then
+      begin
+        DocumentID:=StrToIntDef(ExtractWord(2,StrippedPath,['/']), INVALIDID);
+        if DocumentID<>INVALIDID then
+        begin
+          if FTigerCore.ProcessImages(DocumentID, 0)<>'' then
+          begin
+            IsValidRequest:=true;
+            // we could return the pdf name etc but it doesn't make much sense
           end;
         end;
       end;
