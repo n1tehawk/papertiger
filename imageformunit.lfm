@@ -1,0 +1,16 @@
+object ImageForm: TImageForm
+  Left = 300
+  Height = 588
+  Top = 145
+  Width = 614
+  Caption = 'Scanned image'
+  ClientHeight = 588
+  ClientWidth = 614
+  LCLVersion = '1.1'
+  object ScanImage: TImage
+    Left = 8
+    Height = 544
+    Top = 8
+    Width = 594
+  end
+end
