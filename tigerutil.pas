@@ -114,6 +114,10 @@ begin
     if ToConsole then
       infoln(Message, etinfo);
   end;
+  {$IFDEF DEBUG}
+  // By setting active to false, we try to force a log write. Next log attempt will set active to true again
+  FLog.Active:=false;
+  {$ENDIF}
 end;
 
 constructor TLogger.Create;
