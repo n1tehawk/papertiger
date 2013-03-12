@@ -58,8 +58,12 @@ begin
       VData.Position := 0;
       VParser := TJSONParser.Create(VData);
       try
-        FreeAndNil(AResponse);
-        AResponse := VParser.Parse;
+        try
+          AResponse := VParser.Parse;
+        except
+          //error occurred, e.g. we have regular HTML instead of JSON
+          AResponse := nil; //caller has to check for nil
+        end;
       finally
         VParser.Free;
       end;

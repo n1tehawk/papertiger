@@ -260,11 +260,11 @@ begin
       ShowMessage('Please put page '+inttostr(CurrentPage)+' in the scanner.');
     end;
 
-    //CommJSON:=TJSONData.Create;
     try
       Screen.Cursor:=crHourglass;
       try
         RequestResult:=HTTPRequest(FCGIURL+'image?documentid='+inttostr(DocumentID),CommJSON,rmGet);
+        //todo: if wanted, do postprocessing on image, and send back using PUT
         if RequestResult.Code<>200 then
         begin
           Screen.Cursor:=crDefault;
@@ -287,7 +287,7 @@ begin
 
   //CommJSON:=TJSONObject.Create();
   try
-    RequestResult:=HttpRequest(FCGIURL+'document/'+inttostr(DocumentID)+'?processdocument=true',CommJSON,rmGet);
+    RequestResult:=HttpRequest(FCGIURL+'document/'+inttostr(DocumentID)+'?processdocument=true',CommJSON,rmPost);
     if RequestResult.Code<>200 then
     begin
       showmessage('Error from server. HTTP result code: '+inttostr(RequestResult.Code)+'/'+RequestResult.Text);
