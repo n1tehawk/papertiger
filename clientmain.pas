@@ -249,7 +249,7 @@ begin
   DocumentID:=AddDocument;
   if DocumentID=INVALIDID then
   begin
-    ShowMessage('Error trying create a new document on server. Aborting.');
+    ShowMessage('Error trying to create a new document on server. Aborting.');
     exit;
   end;
 
@@ -260,7 +260,7 @@ begin
       ShowMessage('Please put page '+inttostr(CurrentPage)+' in the scanner.');
     end;
 
-    CommJSON:=TJSONData.Create;
+    //CommJSON:=TJSONData.Create;
     try
       Screen.Cursor:=crHourglass;
       try
@@ -281,11 +281,11 @@ begin
       end;
     finally
       Screen.Cursor:=crDefault;
-      CommJSON.Free;
+      //CommJSON.Free;
     end;
   end; //all pages scanned now
 
-  CommJSON:=TJSONObject.Create();
+  //CommJSON:=TJSONObject.Create();
   try
     RequestResult:=HttpRequest(FCGIURL+'document/'+inttostr(DocumentID)+'?processdocument=true',CommJSON,rmGet);
     if RequestResult.Code<>200 then
@@ -427,9 +427,8 @@ end;
 procedure TForm1.RefreshDocuments;
 var
   RequestResult: THTTPResult;
-  VData: TJSONArray;
+  VData: TJSONData;
 begin
-  VData:=TJSONArray.Create; //needs to be assigned for HTTPRequest
   try
     ClearGrid(DocumentsGrid);
     RequestResult:=HttpRequest(FCGIURL+'document/',VData,rmGet);
@@ -440,7 +439,7 @@ begin
     end
     else
     begin
-      LoadJSON(DocumentsGrid,VData,false,false,true);
+      LoadJSON(DocumentsGrid,(VData as TJSONArray),false,false,true);
     end;
   finally
     VData.Free;
@@ -452,10 +451,9 @@ var
   RequestResult: THTTPResult;
   PDFFile: string;
   PDFStream: TMemoryStream;
-  VData: TJSONObject;
+  VData: TJSONData;
 begin
   PDFStream:=TMemoryStream.Create;
-  VData:=TJSONObject.Create;
   try
     // post a request to get the PDF
     HttpRequest(FCGIURL+'document/'+inttostr(DocumentID)+'/pdf',VData,rmGet);
@@ -497,7 +495,7 @@ end;
 
 procedure TForm1.DeleteButtonClick(Sender: TObject);
 var
-  CommunicationJSON: TJSONObject;
+  CommJSON: TJSONData;
   DocumentID: integer;
   DocumentPrompt: string;
   ImageFile: string;
@@ -522,12 +520,10 @@ begin
     'Are you sure you want to delete document '+DocumentPrompt,
     mtConfirmation,[mbOK,mbCancel],0,mbCancel)=mrCancel) then exit;
 
-  CommunicationJSON:=TJSONObject.Create;
   try
     Screen.Cursor:=crHourglass;
-    CommunicationJSON.Add('documentid',DocumentID); //indicate what document we want to delete
     try
-      RequestResult:=HTTPRequest(FCGIURL+'deletedocument',CommunicationJSON,rmGet);
+      RequestResult:=HTTPRequest(FCGIURL+'document/'+inttostr(DocumentID),CommJSON,rmDelete);
       if RequestResult.Code<>200 then
       begin
         Screen.Cursor:=crDefault;
@@ -544,7 +540,7 @@ begin
     end;
   finally
     Screen.Cursor:=crDefault;
-    CommunicationJSON.Free;
+    CommJSON.Free;
   end;
 end;
 
