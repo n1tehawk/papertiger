@@ -392,6 +392,7 @@ We could save some data here? If so, what?
 function TTigerServerCore.ScanSinglePage(DocumentID: integer): integer;
 var
   i: integer;
+  Message: string;
   Resolution: integer;
   Scanner: TScanner;
   ImageOrder: integer;
@@ -404,7 +405,11 @@ begin
   // Try a 300dpi scan, probably best for normal sized letters on paper
   Resolution := 300;
   if not (ForceDirectories(FSettings.ImageDirectory)) then
-    raise Exception.Create('Image directory ' + FSettings.ImageDirectory + ' does not exist and cannot be created.');
+  begin
+    Message:='Image directory %s does not exist and cannot be created.';
+    TigerLog.WriteLog(etError,StringReplace(Message,'%s',FSettings.ImageDirectory,[rfReplaceAll]));
+    raise Exception.CreateFmt('Image directory %s does not exist and cannot be created.', [FSettings.ImageDirectory]);
+  end;
   Scanner := TScanner.Create;
 
   try
@@ -418,7 +423,11 @@ begin
     ImageOrder:=FTigerDB.GetHighestImageOrder(DocumentID)+1; //insert image after existing images
     Scanner.FileName := FSettings.ImageDirectory + StartDateString + '_' + format('%.4d', [ImageOrder]) + TESSERACTTIFFEXTENSION;
     if not (Scanner.Scan) then
-      raise Exception.CreateFmt('TigerServerCore: an error occurred while scanning document %s', [Scanner.FileName]);
+    begin
+      message:='TigerServerCore: an error occurred while scanning document %s';
+      TigerLog.WriteLog(etError,StringReplace(Message,'%s',Scanner.FileName,[rfReplaceAll]));
+      raise Exception.CreateFmt(Message, [Scanner.FileName]);
+    end;
     TigerLog.WriteLog(etDebug, 'Image file: ' + Scanner.FileName);
     FImageFiles.Clear;
     FImageFiles.Add(Scanner.FileName); //We need to fill this for processimages
