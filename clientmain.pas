@@ -149,16 +149,17 @@ end;
 procedure TForm1.mnuAboutClick(Sender: TObject);
 var
   Message: string;
+  CommJSON: TJSONData;
   ReturnJSON: TJSONObject;
   Success:boolean;
 begin
   Success:=false;
   ReturnJSON:=TJSONObject.Create;
   try
-    Success:=(HttpRequestWithData(ReturnJSON,FCGIURL+'serverinfo',rmPost).Code=200);
+    Success:=(HttpRequestWithData(CommJSON,FCGIURL+'serverinfo',rmPost).Code=200);
     if Success then
     try
-      Message:=ReturnJSON.Strings['serverinfo'];
+      Message:=(CommJSON as TJSONObject).Strings['serverinfo'];
     except
       on E: Exception do
       begin
@@ -198,13 +199,13 @@ function TForm1.AddDocument: integer;
 var
   CurrentPage: integer;
   RequestResult: THttpResult;
-  CommunicationJSON: TJSONObject;
+  CommJSON: TJSONData;
 begin
   result:=INVALIDID;
-  CommunicationJSON:=TJSONObject.Create;
+  CommJSON:=TJSONObject.Create;
   try
     try
-      RequestResult:=HttpRequestWithData(CommunicationJSON,FCGIURL+'document/',rmPost);
+      RequestResult:=HttpRequestWithData(CommJSON,FCGIURL+'document/',rmPost);
       if RequestResult.Code<>200 then
       begin
         showmessage('Error from server. HTTP result code: '+inttostr(RequestResult.Code)+'/'+RequestResult.Text);
@@ -212,14 +213,16 @@ begin
       end
       else
       begin
-        {$IFDEF DEBUG}
-        if Assigned(CommunicationJSON) then
-          ShowMessage('Got this JSON: '+CommunicationJSON.AsJSON);
-        {$ENDIF DEBUG}
-        // We have to first check for existence of documentid to avoid an access violation/
-        // SIGSEGV
-        if (Assigned(CommunicationJSON)) and (CommunicationJSON.IndexOfName('documentid',false)>-1) then
-          result:=CommunicationJSON.Integers['documentid'];
+        if Assigned(CommJSON) then
+        begin
+          // We have to first check for existence of documentid to avoid an access violation/
+          // SIGSEGV
+          if (CommJSON.JSONType=jtObject) then
+          begin
+            if ((CommJSON as TJSONObject).IndexOfName('documentid',false)>-1) then
+              result:=(CommJSON as TJSONObject).Integers['documentid'];
+          end;
+        end;
       end;
     except
       on E: Exception do
@@ -229,7 +232,7 @@ begin
       end;
     end;
   finally
-    CommunicationJSON.Free;
+    CommJSON.Free;
   end;
 end;
 
@@ -239,7 +242,7 @@ var
   DocumentID: integer; //New document ID returned by the server
   NumberPages: integer; //Number of pages user requested for sca
   RequestResult: THttpResult;
-  CommunicationJSON: TJSONObject;
+  CommJSON: TJSONData;
 begin
   NumberPages:=StrToIntDef(NumberPagesControl.Text,1);
 
@@ -252,12 +255,12 @@ begin
       ShowMessage('Please put page '+inttostr(CurrentPage)+' in the scanner.');
     end;
 
-    CommunicationJSON:=TJSONObject.Create;
+    CommJSON:=TJSONObject.Create;
     try
       Screen.Cursor:=crHourglass;
-      CommunicationJSON.Add('documentid',DocumentID); //pass newly created document
+      (CommJSON as TJSONObject).Add('documentid',DocumentID); //pass newly created document
       try
-        RequestResult:=HTTPRequestWithData(CommunicationJSON,FCGIURL+'scan',rmPost);
+        RequestResult:=HTTPRequestWithData(CommJSON,FCGIURL+'scan',rmPost);
         if RequestResult.Code<>200 then
         begin
           Screen.Cursor:=crDefault;
@@ -276,19 +279,19 @@ begin
       Screen.Cursor:=crDefault;
       {
       rather mem leaks than this getting runtime error 210 etc.
-      FreeAndNil(CommunicationJSON);
+      FreeAndNil(CommJSON);
       or
       // The JSON could have been changed by the httprequest code, so
-      if assigned(CommunicationJSON) and (CommunicationJSON.JSONType=jtObject) then
-        CommunicationJSON.Free;
+      if assigned(CommJSON) and (CommJSON.JSONType=jtObject) then
+        CommJSON.Free;
       }
     end;
   end; //all pages scanned now
 
-  CommunicationJSON:=TJSONObject.Create();
+  CommJSON:=TJSONObject.Create();
   try
-    CommunicationJSON.Add('documentid',DocumentID);
-    RequestResult:=HTTPRequestWithData(CommunicationJSON,FCGIURL+'processdocument',rmPost);
+    (CommJSON as TJSONObject).Add('documentid',DocumentID);
+    RequestResult:=HTTPRequestWithData(CommJSON,FCGIURL+'processdocument',rmPost);
     if RequestResult.Code<>200 then
     begin
       showmessage('Error from server. HTTP result code: '+inttostr(RequestResult.Code)+'/'+RequestResult.Text);
@@ -314,7 +317,7 @@ var
   DocumentID, ImageOrder: integer;
   RequestResult: THTTPResult;
   TIFFStream: TMemoryStream;
-  VData: TJSONObject;
+  VData: TJSONData;
 begin
   // Check for selected document
   if DocumentsGrid.Row<1 then
@@ -327,10 +330,10 @@ begin
   TIFFStream:=TMemoryStream.Create;
   try
     ImageOrder:=1; //todo: add support for multi tiff images, e.g. using next/previous button & capturing errors
-    VData.Add('documentid',DocumentID);
-    VData.Add('imageorder',ImageOrder); //sort order number
+    (VData as TJSONObject).Add('documentid',DocumentID);
+    (VData as TJSONObject).Add('imageorder',ImageOrder); //sort order number
     //post a request to show the image
-    RequestResult:=HttpRequestWithData(VData,FCGIURL+'image',TIFFStream,rmPost);
+    RequestResult:=HttpRequestWithDataStream(VData,FCGIURL+'image',TIFFStream,rmPost);
     if RequestResult.Code<>200 then
     begin
       showmessage('Error getting image from server. HTTP result code: '+inttostr(RequestResult.Code)+'/'+RequestResult.Text);
@@ -383,7 +386,7 @@ var
   DocumentID: integer;
   ImageFile: string;
   RequestResult: THTTPResult;
-  CommunicationJSON: TJSONObject;
+  CommJSON: TJSONData;
 begin
   if DocumentsGrid.Row<1 then
   begin
@@ -403,9 +406,9 @@ begin
   ImageFile:=OpenDialog1.FileName;
   if ImageFile<>'' then
   begin
-    CommunicationJSON:=TJSONObject.Create;
+    CommJSON:=TJSONObject.Create;
     try
-      RequestResult:=HttpRequestWithData(CommunicationJSON,FCGIURL+'image/',rmPost);
+      RequestResult:=HttpRequestWithData(CommJSON,FCGIURL+'image/',rmPost);
       if RequestResult.Code<>200 then
       begin
         showmessage('Error getting document list from server. HTTP result code: '+inttostr(RequestResult.Code)+'/'+RequestResult.Text);
@@ -416,7 +419,7 @@ begin
         //do something
       end;
     finally
-      CommunicationJSON.Free;
+      CommJSON.Free;
     end;
   end
   else
