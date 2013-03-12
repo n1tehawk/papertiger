@@ -518,7 +518,7 @@ begin
   FImageFiles.Free;
   FTigerDB.Free;
   FSettings.Free;
-  TigerLog.WriteLog(etDebug, 'Stopping TTigerServerCore');
+  TigerLog.WriteLog(etDebug, 'TTigerServerCore stopped');
   inherited Destroy;
 end;
 
