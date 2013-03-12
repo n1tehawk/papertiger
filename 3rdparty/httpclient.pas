@@ -19,11 +19,11 @@ type
 function HttpRequest(const AUrl: string; AResponse: TJSONData;
   const AMethod: TRequestMethod = rmGet): THttpResult;
 // Perform a post etc with JSON data in the request body and return JSON result data in AData
-function HttpRequestWithData(AData: TJSONData; const AUrl: string;
+function HttpRequestWithData(var AData: TJSONData; const AUrl: string;
   const AMethod: TRequestMethod = rmPost;
   const AContentType: string = 'application/json'): THttpResult;
 // Perform a post etc with JSON data in the request body and return the result body as a memory stream
-function HttpRequestWithData(AData: TJSONData; const AUrl: string;
+function HttpRequestWithDataStream(var AData: TJSONData; const AUrl: string;
   const ReturnStream: TMemoryStream;
   const AMethod: TRequestMethod = rmPost;
   const AContentType: string = 'application/json'
@@ -70,7 +70,7 @@ begin
   end;
 end;
 
-function HttpRequestWithData(AData: TJSONData; const AUrl: string;
+function HttpRequestWithData(var AData: TJSONData; const AUrl: string;
   const AMethod: TRequestMethod; const AContentType: string): THttpResult;
 var
   VMethod: string;
@@ -112,13 +112,17 @@ begin
           //error occurred, e.g. we have regular HTML instead of JSON
           on E: Exception do
           begin
-            FreeAndNil(AData); //more for luck, really
-            AData := (TJSONString.Create('Error while parsing JSON data: exception: '+E.Message)) as TJSONData;
+            FreeAndNil(AData); //caller has to check for Assigned(AData)
           end;
         end;
       finally
         VParser.Free;
       end;
+    end
+    else
+    begin
+      // No valid JSON data
+      FreeAndNil(AData); //caller has to check for Assigned(AData)
     end;
   finally
     VHttp.RequestBody.Free;
@@ -128,7 +132,7 @@ begin
   end;
 end;
 
-function HttpRequestWithData(AData: TJSONData; const AUrl: string;
+function HttpRequestWithDataStream(var AData: TJSONData; const AUrl: string;
   const ReturnStream: TMemoryStream;
   const AMethod: TRequestMethod;
   const AContentType: string): THttpResult;
