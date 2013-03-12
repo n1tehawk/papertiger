@@ -40,7 +40,7 @@ type
   { TLogger }
   TLogger = class(TObject)
   private
-    FLog: TEventLog; //Logging/debug output to file
+    FLog: TEventLog; //Logging/debug output to syslog/eventlog
   public
     property EventLog: TEventLog read FLog;
     // Write to log and optionally console with seriousness etInfo
@@ -119,9 +119,10 @@ end;
 constructor TLogger.Create;
 begin
   FLog := TEventLog.Create(nil);
-  FLog.LogType := ltSystem;
+  FLog.LogType := ltSystem; //eventlog/syslog, not log to file
   FLog.RegisterMessageFile(''); //specify Windows should use the binary to look up formatting strings
   FLog.RaiseExceptionOnError := false; //Don't throw exceptions on log errors.
+  FLog.Active:=true;
 end;
 
 destructor TLogger.Destroy;
@@ -140,5 +141,4 @@ finalization
   begin
     TigerLog.Free;
   end;
-
 end.
