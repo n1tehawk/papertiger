@@ -44,15 +44,17 @@ type
   public
     property EventLog: TEventLog read FLog;
     // Write to log and optionally console with seriousness etInfo
-    procedure WriteLog(Message: string; ToConsole: boolean = false);
+    procedure WriteLog(Message: string; ToConsole: boolean = False);
     // Write to log and optionally console with specified seriousness
-    procedure WriteLog(EventType: TEventType; Message: string; ToConsole: boolean = false);
+    procedure WriteLog(EventType: TEventType; Message: string;
+      ToConsole: boolean = False);
     constructor Create;
     destructor Destroy; override;
   end;
 
 var
-  TigerLog: TLogger; //Created by unit initialization so available for every referencing unit
+  TigerLog: TLogger;
+//Created by unit initialization so available for every referencing unit
 
 //Shows non-debug messages on screen; also shows debug messages if DEBUG defined
 procedure infoln(Message: string; Level: TEventType);
@@ -94,29 +96,30 @@ end;
 
 { TLogger }
 
-procedure TLogger.WriteLog(Message: string; ToConsole: boolean = false);
+procedure TLogger.WriteLog(Message: string; ToConsole: boolean = False);
 begin
   FLog.Log(etInfo, Message);
   if ToConsole then
     infoln(Message, etinfo);
 end;
 
-procedure TLogger.WriteLog(EventType: TEventType; Message: string; ToConsole: boolean = false);
+procedure TLogger.WriteLog(EventType: TEventType; Message: string;
+  ToConsole: boolean = False);
 begin
   // Only log debug level if compiled as a debug build in order to cut down on logging
   {$IFDEF DEBUG}
-  if 1=1 then
+  if 1 = 1 then
   {$ELSE}
-  if EventType<>etDebug then
+    if EventType <> etDebug then
   {$ENDIF}
-  begin
-    FLog.Log(EventType, Message);
-    if ToConsole then
-      infoln(Message, etinfo);
-  end;
+    begin
+      FLog.Log(EventType, Message);
+      if ToConsole then
+        infoln(Message, etinfo);
+    end;
   {$IFDEF DEBUG}
   // By setting active to false, we try to force a log write. Next log attempt will set active to true again
-  FLog.Active:=false;
+  FLog.Active := False;
   {$ENDIF}
 end;
 
@@ -124,14 +127,15 @@ constructor TLogger.Create;
 begin
   FLog := TEventLog.Create(nil);
   FLog.LogType := ltSystem; //eventlog/syslog, not log to file
-  FLog.RegisterMessageFile(''); //specify Windows should use the binary to look up formatting strings
-  FLog.RaiseExceptionOnError := false; //Don't throw exceptions on log errors.
-  FLog.Active:=true;
+  FLog.RegisterMessageFile('');
+  //specify Windows should use the binary to look up formatting strings
+  FLog.RaiseExceptionOnError := False; //Don't throw exceptions on log errors.
+  FLog.Active := True;
 end;
 
 destructor TLogger.Destroy;
 begin
-  FLog.Active := false; //save WriteLog text
+  FLog.Active := False; //save WriteLog text
   FLog.Free;
   inherited Destroy;
 end;

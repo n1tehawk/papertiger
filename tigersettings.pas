@@ -50,9 +50,12 @@ type
     FSettingsFileName: string; //name part only of the required settings file
   public
     property CGIURL: string read FCGIURL write FCGIURL; //Client config: the URL that points to the tiger server
-    property ImageDirectory: string read FImageDirectory write FImageDirectory; // Directory where scanned images must be/are stored; Has trailing path delimiter.
-    property Language: string read FLanguage write FLanguage; //Language used for text recognition. Use Tesseract notation. Default English.
-    property PDFDirectory: string read FPDFDirectory write FPDFDirectory; // Directory where resulting PDFs must be stored; Has trailing path delimiter.
+    property ImageDirectory: string read FImageDirectory write FImageDirectory;
+    // Directory where scanned images must be/are stored; Has trailing path delimiter.
+    property Language: string read FLanguage write FLanguage;
+    //Language used for text recognition. Use Tesseract notation. Default English.
+    property PDFDirectory: string read FPDFDirectory write FPDFDirectory;
+    // Directory where resulting PDFs must be stored; Has trailing path delimiter.
     property ScanDevice: string read FScanDevice write FScanDevice; //Device to be used for scanning (in SANE notation)
     constructor Create;
     constructor Create(SettingsFileName: string);
@@ -67,16 +70,17 @@ constructor TTigerSettings.Create;
 begin
   //todo: handle config storage directory /etc on linux etc
   // default settings file unless called with overridden constructor
-  if FSettingsFileName='' then FSettingsFileName:=SettingsFile;
+  if FSettingsFileName = '' then
+    FSettingsFileName := SettingsFile;
   FSettings := TINIFile.Create(FSettingsFileName);
   // Default for Apache localhost:
-  FCGIURL:='http://127.0.0.1/cgi-bin/tigercgi/';
+  FCGIURL := 'http://127.0.0.1/cgi-bin/tigercgi/';
   FImageDirectory := '';
   FLanguage := 'eng'; //Default to English
   FPDFDirectory := '';
   FScanDevice := ''; //todo: find if there is some SANE default device name
   try
-    FCGIURL := FSettings.ReadString('General','CGIURL',FCGIURL);
+    FCGIURL := FSettings.ReadString('General', 'CGIURL', FCGIURL);
 
     // When reading the settings, expand ~ to home directory etc
     FImageDirectory := IncludeTrailingPathDelimiter(ExpandFileName(FSettings.ReadString('General', 'ImageDirectory', '~/scans')));
@@ -99,7 +103,7 @@ end;
 
 constructor TTigerSettings.Create(SettingsFileName: string);
 begin
-  FSettingsFileName:=SettingsFileName;
+  FSettingsFileName := SettingsFileName;
   Create;
 end;
 

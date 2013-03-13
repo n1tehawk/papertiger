@@ -84,7 +84,7 @@ begin
   AResponse.ContentType := 'application/json';
   OutputJSON := TJSONObject.Create();
   try
-    OutputJSON.Add('serverinfo',FTigerCore.ServerInfo);
+    OutputJSON.Add('serverinfo', FTigerCore.ServerInfo);
     AResponse.Contents.Add(OutputJSON.AsJSON);
   finally
     OutputJSON.Free;
@@ -92,25 +92,27 @@ begin
   Handled := True;
 end;
 
-procedure TFPWebobsolete.unsupportedRequest(Sender: TObject; ARequest: TRequest;
-  AResponse: TResponse; var Handled: boolean);
+procedure TFPWebobsolete.unsupportedRequest(Sender: TObject;
+  ARequest: TRequest; AResponse: TResponse; var Handled: boolean);
 begin
   //todo add hyperlinks to all supported docs etc
-  TigerLog.WriteLog(etDebug,'unsupportedRequest: got request: '+ARequest.PathInfo+' with method '+ARequest.Method);
-  TigerLog.WriteLog(etDebug,'unsupportedRequest: got query: '+ARequest.QueryString);
+  TigerLog.WriteLog(etDebug, 'unsupportedRequest: got request: ' +
+    ARequest.PathInfo + ' with method ' + ARequest.Method);
+  TigerLog.WriteLog(etDebug, 'unsupportedRequest: got query: ' + ARequest.QueryString);
 
-  AResponse.Code:=404;
-  AResponse.CodeText:='Unsupported method';
+  AResponse.Code := 404;
+  AResponse.CodeText := 'Unsupported method';
   AResponse.Contents.Add('<p>Unsupported method.</p>');
   //Tried with http://<server>/cgi-bin/tigercgi/unsupported?q=5
-  AResponse.Contents.Add('<p>Command was: '+ARequest.Command+'</p>'); //gives nothing
-  AResponse.Contents.Add('<p>Commandline was: '+ARequest.CommandLine+'</p>');
-  AResponse.Contents.Add('<p>GetNextPathinfo: '+ARequest.GetNextPathInfo+'</p>'); //gives
-  AResponse.Contents.Add('<p>Pathinfo: '+ARequest.PathInfo+'</p>'); //gives /unsupported
-  AResponse.Contents.Add('<p>LocalPathPrefix: '+ARequest.LocalPathPrefix+'</p>');
-  AResponse.Contents.Add('<p>ReturnedPathInfo: '+ARequest.ReturnedPathInfo+'</p>');
-  AResponse.Contents.Add('<p>URI: '+ARequest.URI+'</p>'); //gives nothing
-  AResponse.Contents.Add('<p>URL: '+ARequest.URL+'</p>'); //gives eg /cgi-bin/tigercgi/unsupported?q=5
+  AResponse.Contents.Add('<p>Command was: ' + ARequest.Command + '</p>'); //gives nothing
+  AResponse.Contents.Add('<p>Commandline was: ' + ARequest.CommandLine + '</p>');
+  AResponse.Contents.Add('<p>GetNextPathinfo: ' + ARequest.GetNextPathInfo + '</p>'); //gives
+  AResponse.Contents.Add('<p>Pathinfo: ' + ARequest.PathInfo + '</p>'); //gives /unsupported
+  AResponse.Contents.Add('<p>LocalPathPrefix: ' + ARequest.LocalPathPrefix + '</p>');
+  AResponse.Contents.Add('<p>ReturnedPathInfo: ' + ARequest.ReturnedPathInfo + '</p>');
+  AResponse.Contents.Add('<p>URI: ' + ARequest.URI + '</p>'); //gives nothing
+  AResponse.Contents.Add('<p>URL: ' + ARequest.URL + '</p>');
+  //gives eg /cgi-bin/tigercgi/unsupported?q=5
   Handled := True;
 end;
 

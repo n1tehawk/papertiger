@@ -1,4 +1,5 @@
 unit imagecleaner;
+
 { Image cleaning unit; to be used to straighten up/deskew, despeckle etc images
   so OCR is more accurate.
 
@@ -59,4 +60,3 @@ begin
 end;
 
 end.
-

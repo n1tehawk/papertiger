@@ -58,41 +58,42 @@ type
   end;
 
 implementation
+
 uses processutils;
 
 { TPDF }
 
 function TPDF.CreatePDF: boolean;
-// Create searchable PDF using exactimage (using -s for aligning text better)
+  // Create searchable PDF using exactimage (using -s for aligning text better)
 const
-  Command='hocrwrap.sh';
+  Command = 'hocrwrap.sh';
 var
-  Options:string;
+  Options: string;
   ResolutionOption: string;
 begin
-  Result:=false;
-  if FPDFFile='' then
-    FPDFFile:=ChangeFileExt(FImageFile,'.pdf');
+  Result := false;
+  if FPDFFile = '' then
+    FPDFFile := ChangeFileExt(FImageFile, '.pdf');
 
   // hocrwrap.sh expects hocr file as 1st parameter
   // Specifying --sloppy-text or not doesn't really seem to help; we get a lot of extraneous characters
   // todo: check doing the text output with
-  if FImageResolution>0 then
-    ResolutionOption:=' --resolution '+inttostr(FImageResolution);
-  Options:=' "'+FHOCRFile+'" -i "'+FImageFile+'" -o "'+FPDFFile+'"'+ResolutionOption+' --sloppy-text';
+  if FImageResolution > 0 then
+    ResolutionOption := ' --resolution ' + IntToStr(FImageResolution);
+  Options := ' "' + FHOCRFile + '" -i "' + FImageFile + '" -o "' + FPDFFile + '"' + ResolutionOption + ' --sloppy-text';
   {$IFDEF DEBUG}
-  TigerLog.WriteLog(etDebug,'CreatePDF: PDF generation: running '+Command+Options,true);
+  TigerLog.WriteLog(etDebug, 'CreatePDF: PDF generation: running ' + Command + Options, true);
   {$ENDIF}
-  if ExecuteCommand(Command+Options,false)=0 then
+  if ExecuteCommand(Command + Options, false) = 0 then
   begin
     {$IFDEF DEBUG}
-    TigerLog.WriteLog(etDebug,'CreatePDF: PDF succeeded.',true);
+    TigerLog.WriteLog(etDebug, 'CreatePDF: PDF succeeded.', true);
     {$ENDIF}
-    result:=true;
+    Result := true;
   end
   else
   begin
-    TigerLog.WriteLog(etError,'CreatePDF: Error running command.');
+    TigerLog.WriteLog(etError, 'CreatePDF: Error running command.');
   end;
   //todo: deal with temp files somewhere. complicated because some are needed by other processes. Best to add them to an overarchiing object with list?
 end;
@@ -100,9 +101,9 @@ end;
 constructor TPDF.Create;
 begin
   inherited Create;
-  FImageFile:='';
-  FHOCRFile:='';
-  FPDFFile:='';
+  FImageFile := '';
+  FHOCRFile := '';
+  FPDFFile := '';
 end;
 
 destructor TPDF.Destroy;
@@ -111,4 +112,3 @@ begin
 end;
 
 end.
-
