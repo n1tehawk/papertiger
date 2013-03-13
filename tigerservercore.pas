@@ -318,7 +318,7 @@ function TTigerServerCore.ProcessImages(DocumentID: integer;
 var
   HOCRFile: string;
   i: integer;
-  DocumentsArray: TJSONArray;
+  ImagesArray: TJSONArray;
   ImageFile: string;
   Message: string;
   OCR: TOCR;
@@ -348,13 +348,13 @@ begin
   end;
 
   // Get images belonging to document
-  FTigerDB.ListImages(DocumentID, DocumentsArray);
-  for i := 0 to DocumentsArray.Count - 1 do
+  FTigerDB.ListImages(DocumentID, ImagesArray);
+  for i := 0 to ImagesArray.Count - 1 do
   begin
-    if (DocumentsArray.Items[i].JSONType = jtObject) then
+    if (ImagesArray.Items[i].JSONType = jtObject) then
     begin
       // path contain full image path, no need to add FSettings.ImageDirectory
-      ImageFile := (DocumentsArray.Items[i] as TJSONObject).Elements['path'].AsString;
+      ImageFile := (ImagesArray.Items[i] as TJSONObject).Elements['path'].AsString;
       Success := CleanUpImage(ImageFile);
       if Success then
       begin
@@ -397,9 +397,15 @@ begin
           PDF.Free;
         end;
       end;
+    end
+    else
+    begin
+      TigerLog.WriteLog(etDebug, 'ProcessImages: got invalid json array item from ListImages; item number '+inttostr(i));
     end;
   end; //all images added
   //todo: concatenate pdfs; we just add the last one for now
+  if success=false then
+    TigerLog.WriteLog(etDebug, 'ProcessImages failed.');
 end;
 
 {
@@ -546,7 +552,6 @@ begin
         StrToInt(copy(DateString, 18, 2)), StrToInt(copy(DateString, 21, 3)));
       {$ENDIF}
       Result := True;
-
     end;
   except
     //ignore
