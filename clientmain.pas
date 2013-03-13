@@ -265,14 +265,14 @@ begin
         if RequestResult.Code <> 200 then
         begin
           Screen.Cursor := crDefault;
-          ShowMessage('Error from server. HTTP result code: ' + IntToStr(RequestResult.Code) + '/' + RequestResult.Text);
+          ShowMessage('Error from server after scan request; HTTP result code: ' + IntToStr(RequestResult.Code) + '/' + RequestResult.Text);
           exit;
         end;
       except
         on E: Exception do
         begin
           Screen.Cursor := crDefault;
-          ShowMessage('Error interpreting response from server. Technical details: ' + E.Message);
+          ShowMessage('Error interpreting response from server after scan request. Technical details: ' + E.Message);
           exit;
         end;
       end;
@@ -285,13 +285,13 @@ begin
     RequestResult := HttpRequest(FCGIURL + 'document/' + IntToStr(DocumentID) + '?processdocument=true', CommJSON, rmPost);
     if RequestResult.Code <> 200 then
     begin
-      ShowMessage('Error from server. HTTP result code: ' + IntToStr(RequestResult.Code) + '/' + RequestResult.Text);
+      ShowMessage('Error from server after OCR request. HTTP result code: ' + IntToStr(RequestResult.Code) + '/' + RequestResult.Text);
       exit;
     end;
   except
     on E: Exception do
     begin
-      ShowMessage('Error interpreting response from server. Technical details: ' + E.Message);
+      ShowMessage('Error interpreting response from server after OCR request. Technical details: ' + E.Message);
       exit;
     end;
   end;
