@@ -59,7 +59,6 @@ type
   private
     FCurrentOCRLanguage: string; //effective language (from settings file, possibly overridden by e.g. command-line options)
     FDocumentID: integer; //database ID for currently handled scanned document
-    FImageFiles: TStringList; //current image(s) being processed: result of scan or input for OCR
     FPages: integer;
     // Number of pages to scan/process at once
     // Use >1 for batch (e.g. multipage documents)
@@ -76,8 +75,6 @@ type
     function AddImage(ImageFile: string; DocumentID: integer; ImageOrder: integer): integer;
     // Language to be used for OCR. Will not be saved in settings
     property CurrentOCRLanguage: string read FCurrentOCRLanguage write FCurrentOCRLanguage;
-    // Image files to be OCRed or files that result from scanning
-    property Images: TStringList read FImageFiles;
     // Number of pages to scan in one scan run.
     property Pages: integer read FPages write FPages;
     // Cleans up image (postprocessing): straightens them up, despeckles etc. Returns true if succesful
@@ -467,8 +464,6 @@ begin
       //raise Exception.CreateFmt(Message, [Scanner.FileName]);
     end;
     TigerLog.WriteLog(etDebug, 'Image file: ' + Scanner.FileName);
-    FImageFiles.Clear;
-    FImageFiles.Add(Scanner.FileName); //We need to fill this for processimages
 
     TigerLog.WriteLog(etDebug, 'going to process single image) '+Scanner.FileName);
     if FDocumentID = INVALIDID then
@@ -478,7 +473,7 @@ begin
     else
     begin
       // Add images to database
-      result:=FTigerDB.InsertImage(FDocumentID, ImageOrder, FImageFiles[0], '');
+      result:=FTigerDB.InsertImage(FDocumentID, ImageOrder, Scanner.FileName, '');
     end;
   finally
     Scanner.Free;
@@ -544,7 +539,6 @@ begin
   TigerLog.WriteLog(etDebug, Self.ServerInfo);
   FSettings := TTigerSettings.Create;
   FCurrentOCRLanguage := FSettings.Language; //read language from settings; can be overridden by command line optoin
-  FImageFiles := TStringList.Create;
   FPages := 1; //Assume single scan, not batch
   FTigerDB := TTigerDB.Create;
 end;
@@ -552,7 +546,6 @@ end;
 destructor TTigerServerCore.Destroy;
 begin
   TigerLog.WriteLog(etDebug, 'TTigerServerCore: stopping.');
-  FImageFiles.Free;
   FTigerDB.Free;
   FSettings.Free;
   inherited Destroy;
