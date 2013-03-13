@@ -236,19 +236,12 @@ begin
         (ARequest.QueryFields.Values['processdocument'] = 'true') then
       begin
         DocumentID := StrToIntDef(ExtractWord(2, StrippedPath, ['/']), INVALIDID);
-        //todo debug
-        TigerLog.WriteLog(etDebug, 'Document module: doc id ' + IntToStr(DocumentID));
         if DocumentID <> INVALIDID then
         begin
           if FTigerCore.ProcessImages(DocumentID, 0) <> '' then
           begin
             IsValidRequest := True;
             // we could return the pdf name etc but it doesn't make much sense
-          end
-          else
-          begin
-            //todo debug: should be handled by processimages
-            TigerLog.WriteLog(etDebug, 'Document module: processimages failed.');
           end;
         end
         else
