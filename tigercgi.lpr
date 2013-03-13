@@ -7,7 +7,10 @@ uses
 
 begin
   Application.Initialize;
-  Application.AllowDefaultModule:=false; //do not redirect unknown urls to document module handler
+  Application.AllowDefaultModule:=false; //all URLs must include the module name (image, document..)
+  { If there is only 1 element in the URL, like something in http://localhost/cgi-bin/something,
+   treat it as a module by setting PreferModuleName. Otherwise it would have been treated like an action.}
+  Application.PreferModuleName:=true;
   if Application.EventLog=nil then ;  //initialize event log
   Application.Run;
 end.
