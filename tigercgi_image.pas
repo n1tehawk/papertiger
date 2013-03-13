@@ -233,6 +233,10 @@ begin
   end;
   if not(IsValidRequest) then
   begin
+    TigerLog.WriteLog(etWarning,'Image module: invalid request; got stripped path: '+StrippedPath+' with method '+ARequest.Method);
+    if ARequest.QueryString<>'' then
+      TigerLog.WriteLog(etWarning,'Image module: invalid request; got query: '+ARequest.QueryString);
+    TigerLog.WriteLog(etWarning,'Image module: invalid request; got URL interesting wordcount: '+inttostr(WordCount(StrippedPath,['/'])));
     AResponse.Code:=404;
     AResponse.CodeText:='Image not found.';
     AResponse.Contents.Add('<p>Image not found/invalid request</p>');

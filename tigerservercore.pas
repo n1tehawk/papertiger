@@ -502,23 +502,21 @@ constructor TTigerServerCore.Create;
 
 begin
   inherited Create;
-  TigerLog.WriteLog(etDebug, 'Starting TTigerServerCore');
+  TigerLog.WriteLog(etDebug, 'TTigerServerCore: starting.');
   TigerLog.WriteLog(etDebug, Self.ServerInfo);
   FSettings := TTigerSettings.Create;
   FCurrentOCRLanguage := FSettings.Language; //read language from settings; can be overridden by command line optoin
   FImageFiles := TStringList.Create;
   FPages := 1; //Assume single scan, not batch
   FTigerDB := TTigerDB.Create;
-  TigerLog.WriteLog(etDebug, 'TTigerServerCore.Create complete.');
 end;
 
 destructor TTigerServerCore.Destroy;
 begin
-  TigerLog.WriteLog(etDebug, 'TTigerServerCore.Destroy started.');
+  TigerLog.WriteLog(etDebug, 'TTigerServerCore: stopping.');
   FImageFiles.Free;
   FTigerDB.Free;
   FSettings.Free;
-  TigerLog.WriteLog(etDebug, 'TTigerServerCore stopped');
   inherited Destroy;
 end;
 

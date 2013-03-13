@@ -274,6 +274,10 @@ begin
   end;
   if not(IsValidRequest) then
   begin
+    TigerLog.WriteLog(etWarning,'Document module: invalid request; got stripped path: '+StrippedPath+' with method '+ARequest.Method);
+    if ARequest.QueryString<>'' then
+      TigerLog.WriteLog(etWarning,'Document module: invalid request; got query: '+ARequest.QueryString);
+    TigerLog.WriteLog(etWarning,'Document module: invalid request; got URL interesting wordcount: '+inttostr(WordCount(StrippedPath,['/'])));
     AResponse.Code:=404;
     AResponse.CodeText:='Document not found.';
     AResponse.Contents.Add('<p>Document not found/invalid request</p>');
