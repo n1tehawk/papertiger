@@ -242,7 +242,6 @@ begin
         else
         begin
           TigerLog.WriteLog(etDebug,'Document module: got invalid document ID.');
-          TigerLog.WriteLog(etDebug,'Document module: processdocument query value: '+ARequest.QueryFields.Values['processdocument']);
         end;
       end;
     end;
