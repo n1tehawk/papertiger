@@ -236,6 +236,10 @@ begin
             IsValidRequest:=true;
             // we could return the pdf name etc but it doesn't make much sense
           end;
+        end
+        else
+        begin
+          TigerLog.WriteLog(etDebug,'Document module: got invalid document ID');
         end;
       end;
     end;
