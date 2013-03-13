@@ -75,7 +75,7 @@ type
     function InsertImage(const DocumentID, Imageorder: integer; const Path, ImageHash: string): integer;
     // Lists document with DocumentID or all documents if DocumentID=INVALIDID
     procedure ListDocuments(const DocumentID: integer; var DocumentsArray: TJSONArray);
-    // List images with DocumentID or all images if DocumentID=INVALIDID
+    // List images with DocumentID or all images if DocumentID=INVALIDID. Path has full path and image filename.
     procedure ListImages(const DocumentID: integer; var DocumentsArray: TJSONArray);
     // Returns path+filename for PDF associated with document
     function GetPDFPath(DocumentID: integer): string;
