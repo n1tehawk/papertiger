@@ -155,7 +155,7 @@ begin
   except
     on E: Exception do
     begin
-      TigerLog.WriteLog(etError, 'TScanner.Scan: exception ('+E.Message+') occurred running command: ' + ScanCommand + Options);
+      TigerLog.WriteLog(etError, 'TScanner.Scan: exception (' + E.Message + ') occurred running command: ' + ScanCommand + Options);
     end;
   end;
 end;

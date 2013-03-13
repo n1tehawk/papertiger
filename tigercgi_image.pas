@@ -1,4 +1,5 @@
 unit tigercgi_image;
+
 { Papertiger CGI handling for image-related functionality.
 
   Copyright (c) 2013 Reinier Olislagers
@@ -27,7 +28,8 @@ unit tigercgi_image;
 interface
 
 uses
-  SysUtils, Classes, httpdefs, fpHTTP, fpWeb, tigerutil, tigerservercore, strutils, fpjson, jsonparser;
+  SysUtils, Classes, httpdefs, fpHTTP, fpWeb, tigerutil, tigerservercore,
+  strutils, fpjson, jsonparser;
 
 type
 
@@ -37,7 +39,7 @@ type
     procedure DataModuleCreate(Sender: TObject);
     procedure DataModuleDestroy(Sender: TObject);
     procedure DataModuleRequest(Sender: TObject; ARequest: TRequest;
-      AResponse: TResponse; var Handled: Boolean);
+      AResponse: TResponse; var Handled: boolean);
   private
     { private declarations }
     FTigerCore: TTigerServerCore;
@@ -56,7 +58,7 @@ implementation
 
 procedure TFPWebimage.DataModuleCreate(Sender: TObject);
 begin
-  FTigerCore:=TTigerServerCore.Create;
+  FTigerCore := TTigerServerCore.Create;
 end;
 
 procedure TFPWebimage.DataModuleDestroy(Sender: TObject);
@@ -65,7 +67,7 @@ begin
 end;
 
 procedure TFPWebimage.DataModuleRequest(Sender: TObject; ARequest: TRequest;
-  AResponse: TResponse; var Handled: Boolean);
+  AResponse: TResponse; var Handled: boolean);
 // We don't define any actions but handle the request at the module level before any actions would be evaluated.
 {
 Handled URLs/methods:
@@ -86,54 +88,57 @@ var
   OutputJSON: TJSONObject;
   StrippedPath: string;
 begin
-  IsValidRequest:=false;
+  IsValidRequest := False;
   {
   pathinfo apparently returns something like
   /image/304
   StrippedPath will remove trailing and leading /
   }
-  StrippedPath:=copy(ARequest.PathInfo,2,Length(ARequest.PathInfo));
-  if RightStr(StrippedPath,1)='/' then StrippedPath:=Copy(StrippedPath,1,Length(StrippedPath)-1);
-  TigerLog.WriteLog(etDebug,'Document module: got stripped path: '+StrippedPath+' with method '+ARequest.Method);
-  if ARequest.QueryString<>'' then
-    TigerLog.WriteLog(etDebug,'Document module: got query: '+ARequest.QueryString);
-  TigerLog.WriteLog(etDebug,'Wordcount: '+inttostr(WordCount(StrippedPath,['/'])));
+  StrippedPath := copy(ARequest.PathInfo, 2, Length(ARequest.PathInfo));
+  if RightStr(StrippedPath, 1) = '/' then
+    StrippedPath := Copy(StrippedPath, 1, Length(StrippedPath) - 1);
+  TigerLog.WriteLog(etDebug, 'Document module: got stripped path: ' +
+    StrippedPath + ' with method ' + ARequest.Method);
+  if ARequest.QueryString <> '' then
+    TigerLog.WriteLog(etDebug, 'Document module: got query: ' + ARequest.QueryString);
+  TigerLog.WriteLog(etDebug, 'Wordcount: ' + IntToStr(WordCount(StrippedPath, ['/'])));
 
   // Make sure the user didn't specify levels in the URI we don't support:
   case ARequest.Method of
     'DELETE':
     begin
-      case WordCount(StrippedPath,['/']) of
+      case WordCount(StrippedPath, ['/']) of
         1: //http://server/cgi-bin/tigercgi/image/
         begin
-          IsValidRequest:=true;
+          IsValidRequest := True;
           //todo: delete every image
           AResponse.Contents.Add('<p>todo delete all images</p>');
         end;
         2: //http://server/cgi-bin/tigercgi/image/304
         begin
-          ImageID:=StrToIntDef(ExtractWord(2,StrippedPath,['/']), INVALIDID);
-          if ImageID<>INVALIDID then IsValidRequest:=true;
+          ImageID := StrToIntDef(ExtractWord(2, StrippedPath, ['/']), INVALIDID);
+          if ImageID <> INVALIDID then
+            IsValidRequest := True;
           //todo: delete given image
-          AResponse.Contents.Add('<p>todo delete image '+inttostr(ImageID)+'</p>');
+          AResponse.Contents.Add('<p>todo delete image ' + IntToStr(ImageID) + '</p>');
         end;
       end;
     end;
     'GET':
     begin
-      case WordCount(StrippedPath,['/']) of
+      case WordCount(StrippedPath, ['/']) of
         1: //http://server/cgi-bin/tigercgi/image/ either get list of images or all images
         begin
-          IsValidRequest:=true;
+          IsValidRequest := True;
           //todo: get every image
           AResponse.Contents.Add('<p>todo get all images</p>');
         end;
         2: //http://server/cgi-bin/tigercgi/image/304 get specific image
         begin
-          ImageID:=StrToIntDef(ExtractWord(2,StrippedPath,['/']), INVALIDID);
-          if ImageID<>INVALIDID then
+          ImageID := StrToIntDef(ExtractWord(2, StrippedPath, ['/']), INVALIDID);
+          if ImageID <> INVALIDID then
           begin
-            IsValidRequest:=true;
+            IsValidRequest := True;
             //retrieve tiff and put in output stream
             AResponse.ContentStream := TMemoryStream.Create;
             try
@@ -143,12 +148,13 @@ begin
               begin
                 // Indicate papertiger should be able to deal with this data:
                 AResponse.ContentType := 'image/tiff; application=papertiger';
-                AResponse.ContentLength:=AResponse.ContentStream.Size; //apparently doesn't happen automatically?
+                AResponse.ContentLength := AResponse.ContentStream.Size;
+                //apparently doesn't happen automatically?
                 AResponse.SendContent;
               end
               else
               begin
-                ISValidRequest:=false; //ask follow up code to return 404 error
+                ISValidRequest := False; //ask follow up code to return 404 error
               end;
             finally
               AResponse.ContentStream.Free;
@@ -164,24 +170,24 @@ begin
       POST   http://server/cgi-bin/tigercgi/image/?documentid=55 // with image posted as form data: upload image, return imageid
       }
       // Note we don't allow empty images to be created: either scan or upload image
-      if WordCount(StrippedPath,['/'])=1 then
+      if WordCount(StrippedPath, ['/']) = 1 then
       begin
         // Check if user wants to add image/scan to existing document, by a query field or...
-        DocumentID:=INVALIDID;
-        if (ARequest.QueryFields.Values['documentid']<>'') then
+        DocumentID := INVALIDID;
+        if (ARequest.QueryFields.Values['documentid'] <> '') then
         begin
-          DocumentID:=StrToIntDef(ARequest.QueryFields.Values['documentid'],INVALIDID);
-          if DocumentID<>INVALIDID then
+          DocumentID := StrToIntDef(ARequest.QueryFields.Values['documentid'], INVALIDID);
+          if DocumentID <> INVALIDID then
           begin
             // Scan
-            ImageID:=FTigerCore.ScanSinglePage(DocumentID);
-            if ImageID<>INVALIDID then
+            ImageID := FTigerCore.ScanSinglePage(DocumentID);
+            if ImageID <> INVALIDID then
             begin
-              IsValidRequest:=true;
+              IsValidRequest := True;
               AResponse.ContentType := 'application/json';
               OutputJSON := TJSONObject.Create();
               try
-                OutputJSON.Add('imageid',ImageID);
+                OutputJSON.Add('imageid', ImageID);
                 AResponse.Contents.Add(OutputJSON.AsJSON);
               finally
                 OutputJSON.Free;
@@ -189,21 +195,22 @@ begin
             end
             else
             begin
-              IsValidRequest:=false;
-              DocumentID:=INVALIDID; //don't process the upload new image part
+              IsValidRequest := False;
+              DocumentID := INVALIDID; //don't process the upload new image part
             end;
           end;
         end;
-        if DocumentID<>INVALIDID then
+        if DocumentID <> INVALIDID then
         begin
           // Check for uploaded image file
           //todo: figure out how to get resolution: it is encoded in the TIFF file; edentify bla.tif =>20130218144142.tif: TIFF 2472x3262 @ 300x300dpi (209x276mm) 1 bit, 1 channel
           // see e.g. http://stackoverflow.com/questions/7861600/get-horizontal-resolution-from-tif-in-c/7862187#7862187
-          if ARequest.Files.Count>0 then
+          if ARequest.Files.Count > 0 then
           begin
-            ImageID:=FTigerCore.AddImage(ARequest.Files[0].Stream,ARequest.Files[0].FileName,DocumentID,-1);
-            if ImageID<>INVALIDID then
-              IsValidRequest:=true;
+            ImageID := FTigerCore.AddImage(ARequest.Files[0].Stream,
+              ARequest.Files[0].FileName, DocumentID, -1);
+            if ImageID <> INVALIDID then
+              IsValidRequest := True;
           end;
         end;
       end;
@@ -212,7 +219,7 @@ begin
         AResponse.ContentType := 'application/json';
         OutputJSON := TJSONObject.Create();
         try
-          OutputJSON.Add('imageid',ImageID);
+          OutputJSON.Add('imageid', ImageID);
           AResponse.Contents.Add(OutputJSON.AsJSON);
         finally
           OutputJSON.Free;
@@ -222,30 +229,34 @@ begin
     'PUT':
     begin
       //http://server/cgi-bin/tigercgi/image/304 modify this image/replace with new data
-      if WordCount(StrippedPath,['/'])=2 then
+      if WordCount(StrippedPath, ['/']) = 2 then
       begin
-        ImageID:=StrToIntDef(ExtractWord(2,StrippedPath,['/']), INVALIDID);
-        if ImageID<>INVALIDID then IsValidRequest:=true;
+        ImageID := StrToIntDef(ExtractWord(2, StrippedPath, ['/']), INVALIDID);
+        if ImageID <> INVALIDID then
+          IsValidRequest := True;
         //todo: modify given image
-        AResponse.Contents.Add('<p>todo put/modify image '+inttostr(ImageID)+'</p>');
+        AResponse.Contents.Add('<p>todo put/modify image ' + IntToStr(ImageID) + '</p>');
       end;
     end;
   end;
-  if not(IsValidRequest) then
+  if not (IsValidRequest) then
   begin
-    TigerLog.WriteLog(etWarning,'Image module: invalid request; got stripped path: '+StrippedPath+' with method '+ARequest.Method);
-    if ARequest.QueryString<>'' then
-      TigerLog.WriteLog(etWarning,'Image module: invalid request; got query: '+ARequest.QueryString);
-    TigerLog.WriteLog(etWarning,'Image module: invalid request; got URL interesting wordcount: '+inttostr(WordCount(StrippedPath,['/'])));
-    AResponse.Code:=404;
-    AResponse.CodeText:='Image not found.';
+    TigerLog.WriteLog(etWarning, 'Image module: invalid request; got stripped path: ' +
+      StrippedPath + ' with method ' + ARequest.Method);
+    if ARequest.QueryString <> '' then
+      TigerLog.WriteLog(etWarning, 'Image module: invalid request; got query: ' +
+        ARequest.QueryString);
+    TigerLog.WriteLog(etWarning,
+      'Image module: invalid request; got URL interesting wordcount: ' +
+      IntToStr(WordCount(StrippedPath, ['/'])));
+    AResponse.Code := 404;
+    AResponse.CodeText := 'Image not found.';
     AResponse.Contents.Add('<p>Image not found/invalid request</p>');
   end;
-  Handled:=true;
+  Handled := True;
 end;
 
 initialization
   // This registration will handle http://server/cgi-bin/tigercgi/image/*
   RegisterHTTPModule('image', TFPWebimage);
 end.
-

@@ -28,7 +28,8 @@ unit tigercgi_document;
 interface
 
 uses
-  SysUtils, Classes, httpdefs, fpHTTP, fpWeb, tigerutil, tigerservercore, strutils, fpjson, jsonparser;
+  SysUtils, Classes, httpdefs, fpHTTP, fpWeb, tigerutil, tigerservercore,
+  strutils, fpjson, jsonparser;
 
 type
 
@@ -38,7 +39,7 @@ type
     procedure DataModuleCreate(Sender: TObject);
     procedure DataModuleDestroy(Sender: TObject);
     procedure DataModuleRequest(Sender: TObject; ARequest: TRequest;
-      AResponse: TResponse; var Handled: Boolean);
+      AResponse: TResponse; var Handled: boolean);
   private
     { private declarations }
     FTigerCore: TTigerServerCore;
@@ -57,7 +58,7 @@ implementation
 
 procedure TFPWebdocument.DataModuleCreate(Sender: TObject);
 begin
-  FTigerCore:=TTigerServerCore.Create;
+  FTigerCore := TTigerServerCore.Create;
 end;
 
 procedure TFPWebdocument.DataModuleDestroy(Sender: TObject);
@@ -66,7 +67,7 @@ begin
 end;
 
 procedure TFPWebdocument.DataModuleRequest(Sender: TObject; ARequest: TRequest;
-  AResponse: TResponse; var Handled: Boolean);
+  AResponse: TResponse; var Handled: boolean);
 // We don't define any actions but handle the request at the module level before any actions would be evaluated.
 {
 Handled URLs/methods:
@@ -86,48 +87,52 @@ var
   OutputJSON: TJSONObject;
   StrippedPath: string;
 begin
-  IsValidRequest:=false;
+  IsValidRequest := False;
   {
   pathinfo apparently returns something like
   /document/304
   StrippedPath will remove trailing and leading /
   }
-  StrippedPath:=copy(ARequest.PathInfo,2,Length(ARequest.PathInfo));
-  if RightStr(StrippedPath,1)='/' then StrippedPath:=Copy(StrippedPath,1,Length(StrippedPath)-1);
-  TigerLog.WriteLog(etDebug,'Document module: got stripped path: '+StrippedPath+' with method '+ARequest.Method);
-  if ARequest.QueryString<>'' then
-    TigerLog.WriteLog(etDebug,'Document module: got query: '+ARequest.QueryString);
-  TigerLog.WriteLog(etDebug,'Wordcount: '+inttostr(WordCount(StrippedPath,['/'])));
+  StrippedPath := copy(ARequest.PathInfo, 2, Length(ARequest.PathInfo));
+  if RightStr(StrippedPath, 1) = '/' then
+    StrippedPath := Copy(StrippedPath, 1, Length(StrippedPath) - 1);
+  TigerLog.WriteLog(etDebug, 'Document module: got stripped path: ' +
+    StrippedPath + ' with method ' + ARequest.Method);
+  if ARequest.QueryString <> '' then
+    TigerLog.WriteLog(etDebug, 'Document module: got query: ' + ARequest.QueryString);
+  TigerLog.WriteLog(etDebug, 'Wordcount: ' + IntToStr(WordCount(StrippedPath, ['/'])));
 
   // Make sure the user didn't specify levels in the URI we don't support:
   case ARequest.Method of
     'DELETE':
     begin
-      case WordCount(StrippedPath,['/']) of
+      case WordCount(StrippedPath, ['/']) of
         1: //http://server/cgi-bin/tigercgi/document/
         begin
-          IsValidRequest:=true;
+          IsValidRequest := True;
           //todo: delete every document
           FTigerCore.DeleteDocuments;
-          if FTigerCore.DeleteDocuments=false then IsValidRequest:=false; //generate 404
+          if FTigerCore.DeleteDocuments = False then
+            IsValidRequest := False; //generate 404
         end;
         2: //http://server/cgi-bin/tigercgi/document/304
         begin
-          DocumentID:=StrToIntDef(ExtractWord(2,StrippedPath,['/']), INVALIDID);
-          if DocumentID<>INVALIDID then
+          DocumentID := StrToIntDef(ExtractWord(2, StrippedPath, ['/']), INVALIDID);
+          if DocumentID <> INVALIDID then
           begin
-            IsValidRequest:=true;
-            if FTigerCore.DeleteDocument(DocumentID)=false then IsValidRequest:=false; //generate 404
+            IsValidRequest := True;
+            if FTigerCore.DeleteDocument(DocumentID) = False then
+              IsValidRequest := False; //generate 404
           end;
         end;
       end;
     end;
     'GET':
     begin
-      case WordCount(StrippedPath,['/']) of
+      case WordCount(StrippedPath, ['/']) of
         1: //http://server/cgi-bin/tigercgi/document/ get list of documents
         begin
-          IsValidRequest:=true;
+          IsValidRequest := True;
           DocumentArray := TJSONArray.Create();
           try
             FTigerCore.ListDocuments(INVALIDID, DocumentArray);
@@ -137,30 +142,31 @@ begin
             on E: Exception do
             begin
               DocumentArray.Clear;
-              DocumentArray.Add(TJSONSTring.Create('listRequest: exception ' + E.Message));
+              DocumentArray.Add(TJSONSTring.Create('listRequest: exception ' +
+                E.Message));
               AResponse.Contents.Insert(0, DocumentArray.AsJSON);
             end;
           end;
         end;
         2: //http://server/cgi-bin/tigercgi/document/304 get document details
         begin
-          IsValidRequest:=true;
+          IsValidRequest := True;
           DocumentArray := TJSONArray.Create();
           OutputJSON := TJSONObject.Create();
           try
             try
               // document name, pdf path, scandate, document hash
-              OutputJSON.Add('documentid',DocumentID);
+              OutputJSON.Add('documentid', DocumentID);
               //todo: add doc details
               // list of images: image order, path, imagehash
               FTigerCore.ListImages(DocumentID, DocumentArray);
-              OutputJSON.Add('imagedetails',DocumentArray);
+              OutputJSON.Add('imagedetails', DocumentArray);
               AResponse.ContentType := 'application/json';
               AResponse.Contents.Add(OutputJSON.AsJSON);
             except
               on E: Exception do
               begin
-                OutputJSON.Add('error','documentDetails request: exception '+E.Message);
+                OutputJSON.Add('error', 'documentDetails request: exception ' + E.Message);
                 AResponse.Contents.Insert(0, OutputJSON.AsJSON);
               end;
             end;
@@ -171,12 +177,12 @@ begin
         end;
         3: //http://server/cgi-bin/tigercgi/document/304/pdf get document as PDF
         begin
-          if lowercase(ExtractWord(3,StrippedPath,['/']))='pdf' then
+          if lowercase(ExtractWord(3, StrippedPath, ['/'])) = 'pdf' then
           begin
-            DocumentID:=StrToIntDef(ExtractWord(2,StrippedPath,['/']), INVALIDID);
-            if DocumentID<>INVALIDID then
+            DocumentID := StrToIntDef(ExtractWord(2, StrippedPath, ['/']), INVALIDID);
+            if DocumentID <> INVALIDID then
             begin
-              IsValidRequest:=true;
+              IsValidRequest := True;
               //retrieve pdf and put in output stream
               AResponse.ContentStream := TMemoryStream.Create;
               try
@@ -185,12 +191,13 @@ begin
                 begin
                   // Indicate papertiger should be able to deal with this data:
                   AResponse.ContentType := 'application/pdf';
-                  AResponse.ContentLength:=AResponse.ContentStream.Size; //apparently doesn't happen automatically?
+                  AResponse.ContentLength := AResponse.ContentStream.Size;
+                  //apparently doesn't happen automatically?
                   AResponse.SendContent;
                 end
                 else
                 begin
-                  IsValidRequest:=false; //follow up code will return 404 error
+                  IsValidRequest := False; //follow up code will return 404 error
                 end;
               finally
                 AResponse.ContentStream.Free;
@@ -203,21 +210,21 @@ begin
     'POST':
     begin
       //http://server/cgi-bin/tigercgi/document/
-      if WordCount(StrippedPath,['/'])=1 then
+      if WordCount(StrippedPath, ['/']) = 1 then
       begin
-        IsValidRequest:=true;
-        DocumentID:=FTigerCore.AddDocument('Document ' +
+        IsValidRequest := True;
+        DocumentID := FTigerCore.AddDocument('Document ' +
           FormatDateTime('yyyymmddhhnnss', Now));
-        if DocumentID=INVALIDID then
+        if DocumentID = INVALIDID then
         begin
-          IsValidRequest:=false;
+          IsValidRequest := False;
         end
         else
         begin
           AResponse.ContentType := 'application/json';
           OutputJSON := TJSONObject.Create();
           try
-            OutputJSON.Add('documentid',DocumentID);
+            OutputJSON.Add('documentid', DocumentID);
             AResponse.Contents.Add(OutputJSON.AsJSON);
           finally
             OutputJSON.Free;
@@ -225,47 +232,47 @@ begin
         end;
       end;
       //POST   http://server/cgi-bin/tigercgi/document/304?processdocument=true  //do OCR for all images etc
-      if (WordCount(StrippedPath,['/'])=2) and
-        (ARequest.QueryFields.Values['processdocument']='true') then
+      if (WordCount(StrippedPath, ['/']) = 2) and
+        (ARequest.QueryFields.Values['processdocument'] = 'true') then
       begin
-        DocumentID:=StrToIntDef(ExtractWord(2,StrippedPath,['/']), INVALIDID);
+        DocumentID := StrToIntDef(ExtractWord(2, StrippedPath, ['/']), INVALIDID);
         //todo debug
-        TigerLog.WriteLog(etDebug,'Document module: doc id '+inttostr(DocumentID));
-        if DocumentID<>INVALIDID then
+        TigerLog.WriteLog(etDebug, 'Document module: doc id ' + IntToStr(DocumentID));
+        if DocumentID <> INVALIDID then
         begin
-          if FTigerCore.ProcessImages(DocumentID, 0)<>'' then
+          if FTigerCore.ProcessImages(DocumentID, 0) <> '' then
           begin
-            IsValidRequest:=true;
+            IsValidRequest := True;
             // we could return the pdf name etc but it doesn't make much sense
           end
           else
           begin
             //todo debug: should be handled by processimages
-            TigerLog.WriteLog(etDebug,'Document module: processimages failed.');
+            TigerLog.WriteLog(etDebug, 'Document module: processimages failed.');
           end;
         end
         else
         begin
-          TigerLog.WriteLog(etDebug,'Document module: got invalid document ID.');
+          TigerLog.WriteLog(etDebug, 'Document module: got invalid document ID.');
         end;
       end;
     end;
     'PUT':
     begin
       //http://server/cgi-bin/tigercgi/document/304
-      if WordCount(StrippedPath,['/'])=2 then
+      if WordCount(StrippedPath, ['/']) = 2 then
       begin
-        DocumentID:=StrToIntDef(ExtractWord(2,StrippedPath,['/']), INVALIDID);
-        if DocumentID<>INVALIDID then
+        DocumentID := StrToIntDef(ExtractWord(2, StrippedPath, ['/']), INVALIDID);
+        if DocumentID <> INVALIDID then
         begin
-          IsValidRequest:=true;
+          IsValidRequest := True;
           //todo: modify given document, not add it
           //FTigerCore.UpdateDocument(....)
-          DocumentID:=INVALIDID; //replace with actual code
-          if DocumentID=INVALIDID then
+          DocumentID := INVALIDID; //replace with actual code
+          if DocumentID = INVALIDID then
           begin
-            AResponse.Code:=404;
-            AResponse.CodeText:='Error inserting new document.';
+            AResponse.Code := 404;
+            AResponse.CodeText := 'Error inserting new document.';
             AResponse.Contents.Add('<p>Error inserting new document.</p>');
           end
           else
@@ -273,7 +280,7 @@ begin
             AResponse.ContentType := 'application/json';
             OutputJSON := TJSONObject.Create();
             try
-              OutputJSON.Add('documentid',DocumentID);
+              OutputJSON.Add('documentid', DocumentID);
               AResponse.Contents.Add(OutputJSON.AsJSON);
             finally
               OutputJSON.Free;
@@ -283,21 +290,24 @@ begin
       end;
     end;
   end;
-  if not(IsValidRequest) then
+  if not (IsValidRequest) then
   begin
-    TigerLog.WriteLog(etWarning,'Document module: invalid request; got stripped path: '+StrippedPath+' with method '+ARequest.Method);
-    if ARequest.QueryString<>'' then
-      TigerLog.WriteLog(etWarning,'Document module: invalid request; got query: '+ARequest.QueryString);
-    TigerLog.WriteLog(etWarning,'Document module: invalid request; got URL interesting wordcount: '+inttostr(WordCount(StrippedPath,['/'])));
-    AResponse.Code:=404;
-    AResponse.CodeText:='Document not found.';
+    TigerLog.WriteLog(etWarning, 'Document module: invalid request; got stripped path: ' +
+      StrippedPath + ' with method ' + ARequest.Method);
+    if ARequest.QueryString <> '' then
+      TigerLog.WriteLog(etWarning, 'Document module: invalid request; got query: ' +
+        ARequest.QueryString);
+    TigerLog.WriteLog(etWarning,
+      'Document module: invalid request; got URL interesting wordcount: ' +
+      IntToStr(WordCount(StrippedPath, ['/'])));
+    AResponse.Code := 404;
+    AResponse.CodeText := 'Document not found.';
     AResponse.Contents.Add('<p>Document not found/invalid request</p>');
   end;
-  Handled:=true;
+  Handled := True;
 end;
 
 initialization
   // This registration will handle http://server/cgi-bin/tigercgi/document/*
   RegisterHTTPModule('document', TFPWebdocument);
 end.
-

@@ -130,7 +130,7 @@ type
           jtNumber: Write(Cell + ';');
           jtString:
           begin
-            if FTigerCore.TryParseDate(Cell,DateCell) then
+            if FTigerCore.TryParseDate(Cell, DateCell) then
               Write(DateTimeToStr(DateCell))
             else
               Write(Cell + ';');
@@ -154,8 +154,7 @@ type
     PDF: string;
   begin
     // quick check parameters
-    ErrorMsg := CheckOptions('hi:l:p:sv',
-      'help image: language: list pages: scan version');
+    ErrorMsg := CheckOptions('hi:l:p:sv', 'help image: language: list pages: scan version');
     if ErrorMsg <> '' then
     begin
       ShowException(Exception.Create(ErrorMsg));
@@ -202,11 +201,10 @@ type
     if HasOption('i', 'image') then
     begin
       //todo: add support for ; or , separated image names when pages>1
-      DocumentID:=FTigerCore.AddDocument('Document ' +
-          FormatDateTime('yyyymmddhhnnss', Now));
-      if DocumentID<>INVALIDID then
+      DocumentID := FTigerCore.AddDocument('Document ' + FormatDateTime('yyyymmddhhnnss', Now));
+      if DocumentID <> INVALIDID then
       begin
-        if FTigerCore.AddImage(ExpandFileName(GetOptionValue('i', 'image')),DocumentID,0)<>INVALIDID then
+        if FTigerCore.AddImage(ExpandFileName(GetOptionValue('i', 'image')), DocumentID, 0) <> INVALIDID then
         begin
           PDF := FTigerCore.ProcessImages(DocumentID, 0);
           if PDF <> '' then
@@ -228,20 +226,19 @@ type
       DocumentID := INVALIDID;
       PDF := '';
       try
-        DocumentID:=FTigerCore.AddDocument('Document ' +
-          FormatDateTime('yyyymmddhhnnss', Now));
-        if DocumentID<>INVALIDID then
+        DocumentID := FTigerCore.AddDocument('Document ' + FormatDateTime('yyyymmddhhnnss', Now));
+        if DocumentID <> INVALIDID then
         begin
-          for i:=1 to FTigerCore.Pages do
+          for i := 1 to FTigerCore.Pages do
           begin
             FTigerCore.ScanSinglePage(DocumentID);
-            if (FTigerCore.Pages>1) and (i<FTigerCore.Pages) then
+            if (FTigerCore.Pages > 1) and (i < FTigerCore.Pages) then
             begin
-              writeln('Please put page '+inttostr(i+1)+' in the scanner and press enter to continue.');
+              writeln('Please put page ' + IntToStr(i + 1) + ' in the scanner and press enter to continue.');
               readln;
             end;
           end;
-          PDF:=FTigerCore.ProcessImages(DocumentID, 0);
+          PDF := FTigerCore.ProcessImages(DocumentID, 0);
         end;
       except
         on E: Exception do
@@ -263,7 +260,10 @@ type
   constructor TTigerServer.Create(TheOwner: TComponent);
   begin
     inherited Create(TheOwner);
-    StopOnException := True;
+    StopOnException := true;
+
+
+
     FTigerCore := TTigerServerCore.Create;
   end;
 
