@@ -206,7 +206,7 @@ begin
       RequestResult := HttpRequestWithData(CommJSON, FCGIURL + 'document/', rmPost);
       if RequestResult.Code <> 200 then
       begin
-        ShowMessage('Error from server. HTTP result code: ' + IntToStr(RequestResult.Code) + '/' + RequestResult.Text);
+        ShowMessage('Adddocument: error from server. HTTP result code: ' + IntToStr(RequestResult.Code) + '/' + RequestResult.Text);
         exit;
       end
       else
@@ -218,14 +218,16 @@ begin
           if (CommJSON.JSONType = jtObject) then
           begin
             if ((CommJSON as TJSONObject).IndexOfName('documentid', false) > -1) then
-              Result := (CommJSON as TJSONObject).Integers['documentid'];
+              Result := (CommJSON as TJSONObject).Integers['documentid']
+            else
+              ShowMessage('Adddocument: got an invalid document ID from server.');
           end;
         end;
       end;
     except
       on E: Exception do
       begin
-        ShowMessage('Error interpreting response from server. Technical details: ' + E.Message);
+        ShowMessage('Adddocument: error interpreting response from server. Technical details: ' + E.Message);
         exit;
       end;
     end;
@@ -247,7 +249,8 @@ begin
   DocumentID := AddDocument;
   if DocumentID = INVALIDID then
   begin
-    ShowMessage('Error trying to create a new document on server. Aborting.');
+    // AddDocument must have already given error messages, no need to repeat.
+    //ShowMessage('Error trying to create a new document on server. Aborting.');
     exit;
   end;
 
