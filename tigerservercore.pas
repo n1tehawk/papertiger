@@ -89,7 +89,7 @@ type
     function GetPDF(DocumentID: integer; const ImageStream: TStream): boolean;
     // Lists document specified by DocumentID or all documents (if DocumentID is INVALIDID)
     procedure ListDocuments(DocumentID: integer; var DocumentsArray: TJSONArray);
-    // List images specified DocumentID or all images (if DocumentID is INVALIDID)
+    // List images specified DocumentID or all images (if DocumentID is INVALIDID). Image path contains full path+file name.
     procedure ListImages(DocumentID: integer; var DocumentsArray: TJSONArray);
     // Process (set of) existing (TIFF) image(s); should be named <image>.tif
     // Images are specified using the Images property
