@@ -202,15 +202,24 @@ type
     if HasOption('i', 'image') then
     begin
       //todo: add support for ; or , separated image names when pages>1
-      FTigerCore.Images.Clear;
-      FTigerCore.Images.Add(ExpandFileName(GetOptionValue('i', 'image')));
       DocumentID:=FTigerCore.AddDocument('Document ' +
           FormatDateTime('yyyymmddhhnnss', Now));
       if DocumentID<>INVALIDID then
       begin
-        PDF := FTigerCore.ProcessImages(DocumentID, 0);
-        if PDF <> '' then
-          writeln('Error creating PDF. Stopping.');
+        if FTigerCore.AddImage(ExpandFileName(GetOptionValue('i', 'image')),DocumentID,0)<>INVALIDID then
+        begin
+          PDF := FTigerCore.ProcessImages(DocumentID, 0);
+          if PDF <> '' then
+            writeln('Error creating PDF. Stopping.');
+        end
+        else
+        begin
+          writeln('Error adding image. Stopping.');
+        end;
+      end
+      else
+      begin
+        writeln('Error getting document ID. Stopping.');
       end;
     end;
 

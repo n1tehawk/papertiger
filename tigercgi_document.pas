@@ -237,6 +237,11 @@ begin
           begin
             IsValidRequest:=true;
             // we could return the pdf name etc but it doesn't make much sense
+          end
+          else
+          begin
+            //todo debug: should be handled by processimages
+            TigerLog.WriteLog(etDebug,'Document module: processimages failed.');
           end;
         end
         else
