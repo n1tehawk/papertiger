@@ -326,7 +326,7 @@ begin
     (VData as TJSONObject).Add('documentid', DocumentID);
     (VData as TJSONObject).Add('imageorder', ImageOrder); //sort order number
     //post a request to show the image
-    RequestResult := HttpRequestWithDataStream(VData, FCGIURL + 'image', TIFFStream, rmPost);
+    RequestResult := HttpRequestWithDataStream(VData, FCGIURL + 'image', TIFFStream, rmGet);
     if RequestResult.Code <> 200 then
     begin
       ShowMessage('Error getting image from server. HTTP result code: ' + IntToStr(RequestResult.Code) + '/' + RequestResult.Text);

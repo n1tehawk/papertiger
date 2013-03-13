@@ -182,7 +182,6 @@ begin
             DocumentID := StrToIntDef(ExtractWord(2, StrippedPath, ['/']), INVALIDID);
             if DocumentID <> INVALIDID then
             begin
-              IsValidRequest := True;
               //retrieve pdf and put in output stream
               AResponse.ContentStream := TMemoryStream.Create;
               try
@@ -190,19 +189,29 @@ begin
                 if FTigerCore.GetPDF(DocumentID, AResponse.ContentStream) then
                 begin
                   // Indicate papertiger should be able to deal with this data:
+                  IsValidRequest := True;
                   AResponse.ContentType := 'application/pdf';
                   AResponse.ContentLength := AResponse.ContentStream.Size;
-                  //apparently doesn't happen automatically?
+                  //apparently doesn't happen automatically:
                   AResponse.SendContent;
                 end
                 else
                 begin
-                  IsValidRequest := False; //follow up code will return 404 error
+                  TigerLog.WriteLog(etDebug,'Document module: could not get valid PDF.');
+                  IsValidRequest := False; //spell it out; follow up code will return 404 error
                 end;
               finally
                 AResponse.ContentStream.Free;
               end;
+            end
+            else
+            begin
+              TigerLog.WriteLog(etDebug,'Document module: pdf request: invalid document ID was passed: '+ExtractWord(2, StrippedPath, ['/']));
             end;
+          end
+          else
+          begin
+            TigerLog.WriteLog(etDebug,'Document module: failure: received '+StrippedPath+' expecting PDF request.');
           end;
         end;
       end;
