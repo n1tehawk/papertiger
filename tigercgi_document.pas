@@ -229,6 +229,8 @@ begin
         (ARequest.QueryFields.Values['processdocument']='true') then
       begin
         DocumentID:=StrToIntDef(ExtractWord(2,StrippedPath,['/']), INVALIDID);
+        //todo debug
+        TigerLog.WriteLog(etDebug,'Document module: doc id '+inttostr(DocumentID));
         if DocumentID<>INVALIDID then
         begin
           if FTigerCore.ProcessImages(DocumentID, 0)<>'' then
@@ -239,7 +241,8 @@ begin
         end
         else
         begin
-          TigerLog.WriteLog(etDebug,'Document module: got invalid document ID');
+          TigerLog.WriteLog(etDebug,'Document module: got invalid document ID.');
+          TigerLog.WriteLog(etDebug,'Document module: processdocument query value: '+ARequest.QueryFields.Values['processdocument']);
         end;
       end;
     end;
