@@ -341,7 +341,8 @@ begin
   begin
     if (DocumentsArray.Items[i].JSONType=jtObject) then
     begin
-      ImageFile:=FSettings.ImageDirectory+(DocumentsArray.Items[i] as TJSONObject).Elements['path'].AsString;
+      // path contain full image path, no need to add FSettings.ImageDirectory
+      ImageFile:=(DocumentsArray.Items[i] as TJSONObject).Elements['path'].AsString;
       Success := CleanUpImage(ImageFile);
       if Success then
       begin
