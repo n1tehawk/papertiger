@@ -96,7 +96,7 @@ type
     // Images are specified using the Images property
     // Specify resolution override to indicate image resolution to hocr2pdf
     // Specify 0 to leave alone and let hocr detect resolution or fallback to 300dpi
-    // Returns resulting pdf file (including path)
+    // Returns resulting pdf file (including path) or empty if error
     function ProcessImages(DocumentID: integer; Resolution: integer): string;
     // Scans a single page and adds it to an existing document.
     // Returns image ID or INVALIDID if failure
@@ -293,6 +293,7 @@ function TTigerServerCore.ProcessImages(DocumentID: integer; Resolution: integer
 var
   HOCRFile: string;
   i: integer;
+  Message: string;
   OCR: TOCR;
   PDF: TPDF;
   Success: boolean;
@@ -303,10 +304,20 @@ begin
   unpaper input.ppm output.ppm => perhaps more formats than ppm? use eg. exactimage's econvert for format conversion}
   Result := '';
   if not (ForceDirectories(FSettings.PDFDirectory)) then
-    raise Exception.CreateFmt('PDF directory %s does not exist and cannot be created.',[FSettings.PDFDirectory]);
+  begin
+    Message:='PDF directory %s does not exist and cannot be created.';
+    TigerLog.WriteLog(etError,StringReplace(Message,'%s',FSettings.PDFDirectory,[rfReplaceAll]));
+    exit;
+    //raise Exception.CreateFmt(Message,[FSettings.PDFDirectory]); rather pass back empty value to indicate failure
+  end;
   if DocumentID=INVALIDID then
-    raise Exception.Create('ProcessImages: document ID must be valid. Please fix the program code.');
-  //todo: add image if not already in db?
+  begin
+    Message:='ProcessImages: document ID must be valid. Please fix the program code.';
+    TigerLog.WriteLog(etError,Message);
+    exit;
+    //raise Exception.Create(Message); rather pass back empty value to indicate failure
+  end;
+
   for i := 0 to FImageFiles.Count - 1 do
   begin
     Success := CleanUpImage(FImageFiles[i]);
@@ -331,6 +342,7 @@ begin
         // Only pass on overrides on resolution
         if Resolution > 0 then
           PDF.ImageResolution := Resolution;
+        // todo: read tiff file and extract resolution ourselves, pass it on
         PDF.HOCRFile := HOCRFile;
         PDF.ImageFile := FImageFiles[i];
         TigerLog.WriteLog(etDebug,'pdfdirectory: ' + FSettings.PDFDirectory);
@@ -408,7 +420,8 @@ begin
   begin
     Message:='Image directory %s does not exist and cannot be created.';
     TigerLog.WriteLog(etError,StringReplace(Message,'%s',FSettings.ImageDirectory,[rfReplaceAll]));
-    raise Exception.CreateFmt('Image directory %s does not exist and cannot be created.', [FSettings.ImageDirectory]);
+    exit;
+    //raise Exception.CreateFmt('Image directory %s does not exist and cannot be created.', [FSettings.ImageDirectory]);
   end;
   Scanner := TScanner.Create;
 
@@ -426,7 +439,8 @@ begin
     begin
       message:='TigerServerCore: an error occurred while scanning document %s';
       TigerLog.WriteLog(etError,StringReplace(Message,'%s',Scanner.FileName,[rfReplaceAll]));
-      raise Exception.CreateFmt(Message, [Scanner.FileName]);
+      exit;
+      //raise Exception.CreateFmt(Message, [Scanner.FileName]);
     end;
     TigerLog.WriteLog(etDebug, 'Image file: ' + Scanner.FileName);
     FImageFiles.Clear;
