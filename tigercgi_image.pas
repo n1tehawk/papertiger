@@ -74,8 +74,8 @@ Handled URLs/methods:
 DELETE http://server/cgi-bin/tigercgi/image/               //delete all images?!?!
 GET    http://server/cgi-bin/tigercgi/image/               //list of images
 GET    http://server/cgi-bin/tigercgi/image/304            // get specific image
-POST   http://server/cgi-bin/tigercgi/image/?documentid=55 // let server scan new image, return imageid
-POST   http://server/cgi-bin/tigercgi/image/?documentid=55 // with image posted as form data: upload image, return imageid
+POST   http://server/cgi-bin/tigercgi/image?documentid=55  // let server scan new image, return imageid
+POST   http://server/cgi-bin/tigercgi/image?documentid=55  // with image posted as form data: upload image, return imageid
 DELETE http://server/cgi-bin/tigercgi/image/304            //remove image with id 304
 GET    http://server/cgi-bin/tigercgi/image/304            //get image with id 304
 PUT    http://server/cgi-bin/tigercgi/image/304            //edit image with id 304
@@ -166,8 +166,8 @@ begin
     'POST':
     begin
       {
-      POST   http://server/cgi-bin/tigercgi/image/?documentid=55 // let server scan new image, return imageid
-      POST   http://server/cgi-bin/tigercgi/image/?documentid=55 // with image posted as form data: upload image, return imageid
+      POST   http://server/cgi-bin/tigercgi/image?documentid=55 // let server scan new image, return imageid
+      POST   http://server/cgi-bin/tigercgi/image?documentid=55 // with image posted as form data: upload image, return imageid
       }
       // Note we don't allow empty images to be created: either scan or upload image
       if WordCount(StrippedPath, ['/']) = 1 then
@@ -179,38 +179,43 @@ begin
           DocumentID := StrToIntDef(ARequest.QueryFields.Values['documentid'], INVALIDID);
           if DocumentID <> INVALIDID then
           begin
-            // Scan
-            ImageID := FTigerCore.ScanSinglePage(DocumentID);
-            if ImageID <> INVALIDID then
+            // Check for uploaded image file
+            if ARequest.Files.Count > 0 then
             begin
-              IsValidRequest := True;
-              AResponse.ContentType := 'application/json';
-              OutputJSON := TJSONObject.Create();
-              try
-                OutputJSON.Add('imageid', ImageID);
-                AResponse.Contents.Add(OutputJSON.AsJSON);
-              finally
-                OutputJSON.Free;
-              end;
+              ImageID := FTigerCore.AddImage(ARequest.Files[0].Stream,
+                ARequest.Files[0].FileName, DocumentID, -1);
+              if ImageID <> INVALIDID then
+                IsValidRequest := True
+              else
+                TigerLog.WriteLog(etDebug,'Module image: upload image attempt resulted in error.');
             end
             else
             begin
-              IsValidRequest := False;
-              DocumentID := INVALIDID; //don't process the upload new image part
+              // Scan.
+              // todo: add support for uploading image
+              ImageID := FTigerCore.ScanSinglePage(DocumentID);
+              if ImageID <> INVALIDID then
+              begin
+                IsValidRequest := True;
+                AResponse.ContentType := 'application/json';
+                OutputJSON := TJSONObject.Create();
+                try
+                  OutputJSON.Add('imageid', ImageID);
+                  AResponse.Contents.Add(OutputJSON.AsJSON);
+                finally
+                  OutputJSON.Free;
+                end;
+              end
+              else
+              begin
+                IsValidRequest := False; //for extra clarity, not really needed
+                DocumentID := INVALIDID; //don't process the upload new image part
+              end;
             end;
-          end;
-        end;
-        if DocumentID <> INVALIDID then
-        begin
-          // Check for uploaded image file
-          //todo: figure out how to get resolution: it is encoded in the TIFF file; edentify bla.tif =>20130218144142.tif: TIFF 2472x3262 @ 300x300dpi (209x276mm) 1 bit, 1 channel
-          // see e.g. http://stackoverflow.com/questions/7861600/get-horizontal-resolution-from-tif-in-c/7862187#7862187
-          if ARequest.Files.Count > 0 then
+          end
+          else
           begin
-            ImageID := FTigerCore.AddImage(ARequest.Files[0].Stream,
-              ARequest.Files[0].FileName, DocumentID, -1);
-            if ImageID <> INVALIDID then
-              IsValidRequest := True;
+            TigerLog.WriteLog(etDebug,'Module image: POST handler: received invalid document ID');
           end;
         end;
       end;

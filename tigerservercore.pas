@@ -59,7 +59,6 @@ type
   private
     FCurrentOCRLanguage: string;
     //effective language (from settings file, possibly overridden by e.g. command-line options)
-    FDocumentID: integer; //database ID for currently handled scanned document
     FPages: integer;
     // Number of pages to scan/process at once
     // Use >1 for batch (e.g. multipage documents)
@@ -150,18 +149,25 @@ begin
     // First get image into file system
     if not (assigned(ImageData)) then
     begin
-      TigerLog.WriteLog('AddImage: no valid stream with image data.');
+      TigerLog.WriteLog(etError,'AddImage: no valid stream with image data.');
       exit;
     end;
     // Extract only filename part from image name and add to storage path
     ImagePath := FSettings.ImageDirectory + ExtractFileName(ImageName);
     MemStream := TMemoryStream.Create;
     try
-      ImageData.Position := 0;
-      MemStream.CopyFrom(ImageData, ImageData.Size);
-      MemStream.SaveToFile(ImagePath);
-      MemStream.Position := 0;
-      ImageHash := MD5Print(MD5Buffer(MemStream.Memory^, MemStream.Size));
+      try
+        ImageData.Position := 0;
+        MemStream.CopyFrom(ImageData, ImageData.Size);
+        MemStream.SaveToFile(ImagePath);
+        MemStream.Position := 0;
+        ImageHash := MD5Print(MD5Buffer(MemStream.Memory^, MemStream.Size));
+      except
+        on E: Exception do
+        begin
+          TigerLog.WriteLog(etError,'AddImage: exception copying image file: '+E.Message);
+        end;
+      end;
     finally
       MemStream.Free;
     end;
@@ -447,41 +453,46 @@ We could save some data here? If so, what?
 function TTigerServerCore.ScanSinglePage(DocumentID: integer): integer;
 var
   i: integer;
+  ImageOrder: integer;
   Message: string;
   Resolution: integer;
   Scanner: TScanner;
-  ImageOrder: integer;
   StartDate: TDateTime;
   StartDateString: string;
 begin
   Result := INVALIDID; //fail by default
-  FDocumentID := DocumentID; //Avoid processing old documents after failure
 
   // Try a 300dpi scan, probably best for normal sized letters on paper
   Resolution := 300;
   if not (ForceDirectories(FSettings.ImageDirectory)) then
   begin
-    Message := 'Image directory %s does not exist and cannot be created.';
+    Message := 'ScanSinglePage: Image directory %s does not exist and cannot be created.';
     TigerLog.WriteLog(etError, StringReplace(Message, '%s',
       FSettings.ImageDirectory, [rfReplaceAll]));
     exit;
     //raise Exception.CreateFmt('Image directory %s does not exist and cannot be created.', [FSettings.ImageDirectory]);
   end;
-  Scanner := TScanner.Create;
 
+  Scanner := TScanner.Create;
   try
     Scanner.Resolution := Resolution;
     Scanner.ColorType := stLineArt;
     StartDate := Now(); //local time
     StartDateString := FormatDateTime('yyyymmddhhnnss', StartDate);
 
-    TigerLog.WriteLog(etInfo, 'Going to scan single page; start date: ' +
+    TigerLog.WriteLog(etInfo, 'ScanSinglePage: Going to scan single page; start date: ' +
       StartDateString);
 
-    ImageOrder := FTigerDB.GetHighestImageOrder(DocumentID) + 1;
-    //insert image after existing images
+    //Insert image after existing images:
+    try
+      ImageOrder := FTigerDB.GetHighestImageOrder(DocumentID) + 1;
+    except
+      TigerLog.WriteLog(etError,'ScanSinglePage: error getting next image order for document '+inttostr(DocumentID));
+      exit;
+    end;
     Scanner.FileName := FSettings.ImageDirectory + StartDateString +
       '_' + format('%.4d', [ImageOrder]) + TESSERACTTIFFEXTENSION;
+
     if not (Scanner.Scan) then
     begin
       message := 'TigerServerCore: an error occurred while scanning document %s';
@@ -490,22 +501,13 @@ begin
       exit;
       //raise Exception.CreateFmt(Message, [Scanner.FileName]);
     end;
-    TigerLog.WriteLog(etDebug, 'Image file: ' + Scanner.FileName);
-
-    TigerLog.WriteLog(etDebug, 'going to process single image) ' + Scanner.FileName);
-    if FDocumentID = INVALIDID then
-    begin
-      TigerLog.WriteLog(etError,
-        'ScanAndProcess: Error: could not insert document/scan into database. Please try again.');
-    end
-    else
-    begin
-      // Add images to database
-      Result := FTigerDB.InsertImage(FDocumentID, ImageOrder, Scanner.FileName, '');
-    end;
+    TigerLog.WriteLog(etDebug, 'ScanSinglePage: going to process single image) ' + Scanner.FileName);
+    Result := FTigerDB.InsertImage(DocumentID, ImageOrder, Scanner.FileName, '');
   finally
     Scanner.Free;
   end;
+  if result=INVALIDID then
+    TigerLog.WriteLog(etDebug,'ScanSinglePage: an error occurred.');
 end;
 
 function TTigerServerCore.ServerInfo: string;

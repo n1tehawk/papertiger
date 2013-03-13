@@ -73,7 +73,7 @@ type
     // TheScanDate: please pass UTC date/time, pass a pre 1900 date to specify unknown date
     function InsertDocument(const DocumentName, PDFPath, DocumentHash: string;
       TheScanDate: TDateTime): integer;
-    // Inserts a new image record in database (specify image number/imageorder >1 to place image after existing images for a document)
+    // Inserts a new image record in database (specify specifc image order or -1 to place image after existing images for a document)
     // Returns image ID.
     function InsertImage(const DocumentID, Imageorder: integer;
       const Path, ImageHash: string): integer;
