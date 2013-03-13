@@ -70,8 +70,10 @@ type
   public
     // Adds new, empty document (with name if specified), returns document ID
     function AddDocument(DocumentName: string=''): integer;
-    // Adds the tiff image to given documentID. Add at end of any existing images, unless ImageOrder>0.
+    // Adds the tiff image to given documentID. Add at end of any existing images, unless ImageOrder>0. Returns image ID or INVALIDID when failed.
     function AddImage(ImageData: TStream; ImageName: string; DocumentID: integer; ImageOrder: integer): integer;
+    // Adds the tiff image to given documentID. Add at end of any existing images, unless ImageOrder>0. Returns image ID or INVALIDID when failed.
+    function AddImage(ImageFile: string; DocumentID: integer; ImageOrder: integer): integer;
     // Language to be used for OCR. Will not be saved in settings
     property CurrentOCRLanguage: string read FCurrentOCRLanguage write FCurrentOCRLanguage;
     // Image files to be OCRed or files that result from scanning
@@ -169,6 +171,18 @@ begin
     begin
       TigerLog.WriteLog('AddImage: error adding new document. '+E.Message);
     end;
+  end;
+end;
+
+function TTigerServerCore.AddImage(ImageFile: string; DocumentID: integer; ImageOrder: integer): integer;
+var
+  ImageStream: TFileStream;
+begin
+  ImageStream:=TFileStream.Create(ImageFile,fmOpenRead);
+  try
+    result:=AddImage(ImageStream, ExtractFileName(ImageFile), DocumentID, ImageOrder)
+  finally
+    ImageStream.Free;
   end;
 end;
 
@@ -293,6 +307,8 @@ function TTigerServerCore.ProcessImages(DocumentID: integer; Resolution: integer
 var
   HOCRFile: string;
   i: integer;
+  DocumentsArray: TJSONArray;
+  ImageFile: string;
   Message: string;
   OCR: TOCR;
   PDF: TPDF;
@@ -303,6 +319,7 @@ begin
   scantailor new version: https://sourceforge.net/projects/scantailor/files/scantailor-devel/enhanced/
   unpaper input.ppm output.ppm => perhaps more formats than ppm? use eg. exactimage's econvert for format conversion}
   Result := '';
+  Success := false;
   if not (ForceDirectories(FSettings.PDFDirectory)) then
   begin
     Message:='PDF directory %s does not exist and cannot be created.';
@@ -318,47 +335,53 @@ begin
     //raise Exception.Create(Message); rather pass back empty value to indicate failure
   end;
 
-  for i := 0 to FImageFiles.Count - 1 do
+  // Get images belonging to document
+  FTigerDB.ListImages(DocumentID,DocumentsArray);
+  for i := 0 to DocumentsArray.Count - 1 do
   begin
-    Success := CleanUpImage(FImageFiles[i]);
-    if Success then
+    if (DocumentsArray.Items[i].JSONType=jtObject) then
     begin
-      OCR := TOCR.Create;
-      try
-        OCR.ImageFile := FImageFiles[i];
-        OCR.Language := FCurrentOCRLanguage;
-        Success := OCR.RecognizeText;
-        HOCRFile := OCR.HOCRFile;
-        TigerLog.WriteLog(etDebug,'ProcessImages: Got this text:'+OCR.Text);
-      finally
-        OCR.Free;
-      end;
-    end;
-
-    if Success then
-    begin
-      PDF := TPDF.Create;
-      try
-        // Only pass on overrides on resolution
-        if Resolution > 0 then
-          PDF.ImageResolution := Resolution;
-        // todo: read tiff file and extract resolution ourselves, pass it on
-        PDF.HOCRFile := HOCRFile;
-        PDF.ImageFile := FImageFiles[i];
-        TigerLog.WriteLog(etDebug,'pdfdirectory: ' + FSettings.PDFDirectory);
-        PDF.PDFFile := IncludeTrailingPathDelimiter(FSettings.PDFDirectory) + ChangeFileExt(ExtractFileName(FImageFiles[i]), '.pdf');
-        //todo: add metadata stuff to pdf unit
-        //todo: add compression to pdf unit?
-        Success := PDF.CreatePDF;
-        if Success then
-        begin
-          TigerLog.WriteLog(etDebug,'ProcessImages: Got PDF: '+PDF.PDFFile);
-          FTigerDB.SetPDFPath(DocumentID,PDF.PDFFile);
-          Result := PDF.PDFFile;
+      ImageFile:=FSettings.ImageDirectory+(DocumentsArray.Items[i] as TJSONObject).Elements['path'].AsString;
+      Success := CleanUpImage(ImageFile);
+      if Success then
+      begin
+        OCR := TOCR.Create;
+        try
+          OCR.ImageFile := ImageFile;
+          OCR.Language := FCurrentOCRLanguage;
+          Success := OCR.RecognizeText;
+          HOCRFile := OCR.HOCRFile;
+          TigerLog.WriteLog(etDebug,'ProcessImages: Got this text:'+OCR.Text);
+        finally
+          OCR.Free;
         end;
-        //todo: update pdf name based on OCR?!?
-      finally
-        PDF.Free;
+      end;
+
+      if Success then
+      begin
+        PDF := TPDF.Create;
+        try
+          // Only pass on overrides on resolution
+          if Resolution > 0 then
+            PDF.ImageResolution := Resolution;
+          // todo: read tiff file and extract resolution ourselves, pass it on
+          PDF.HOCRFile := HOCRFile;
+          PDF.ImageFile := ImageFile;
+          TigerLog.WriteLog(etDebug,'pdfdirectory: ' + FSettings.PDFDirectory);
+          PDF.PDFFile := IncludeTrailingPathDelimiter(FSettings.PDFDirectory) + ChangeFileExt(ExtractFileName(ImageFile), '.pdf');
+          //todo: add metadata stuff to pdf unit
+          //todo: add compression to pdf unit?
+          Success := PDF.CreatePDF;
+          if Success then
+          begin
+            TigerLog.WriteLog(etDebug,'ProcessImages: Got PDF: '+PDF.PDFFile);
+            FTigerDB.SetPDFPath(DocumentID,PDF.PDFFile);
+            Result := PDF.PDFFile;
+          end;
+          //todo: update pdf name based on OCR?!?
+        finally
+          PDF.Free;
+        end;
       end;
     end;
   end; //all images added
