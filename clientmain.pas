@@ -263,8 +263,7 @@ begin
     try
       Screen.Cursor:=crHourglass;
       try
-        RequestResult:=HTTPRequest(FCGIURL+'image?documentid='+inttostr(DocumentID),CommJSON,rmGet);
-        //todo: if wanted, do postprocessing on image, and send back using PUT
+        RequestResult:=HTTPRequest(FCGIURL+'image?documentid='+inttostr(DocumentID),CommJSON,rmPost);
         if RequestResult.Code<>200 then
         begin
           Screen.Cursor:=crDefault;
@@ -281,11 +280,9 @@ begin
       end;
     finally
       Screen.Cursor:=crDefault;
-      //CommJSON.Free;
     end;
   end; //all pages scanned now
 
-  //CommJSON:=TJSONObject.Create();
   try
     RequestResult:=HttpRequest(FCGIURL+'document/'+inttostr(DocumentID)+'?processdocument=true',CommJSON,rmPost);
     if RequestResult.Code<>200 then
