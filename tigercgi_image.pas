@@ -97,10 +97,10 @@ begin
   StrippedPath := copy(ARequest.PathInfo, 2, Length(ARequest.PathInfo));
   if RightStr(StrippedPath, 1) = '/' then
     StrippedPath := Copy(StrippedPath, 1, Length(StrippedPath) - 1);
-  TigerLog.WriteLog(etDebug, 'Document module: got stripped path: ' +
+  TigerLog.WriteLog(etDebug, 'Image module: got stripped path: ' +
     StrippedPath + ' with method ' + ARequest.Method);
   if ARequest.QueryString <> '' then
-    TigerLog.WriteLog(etDebug, 'Document module: got query: ' + ARequest.QueryString);
+    TigerLog.WriteLog(etDebug, 'Image module: got query: ' + ARequest.QueryString);
   TigerLog.WriteLog(etDebug, 'Wordcount: ' + IntToStr(WordCount(StrippedPath, ['/'])));
 
   // Make sure the user didn't specify levels in the URI we don't support:
@@ -192,6 +192,7 @@ begin
             else
             begin
               // Scan.
+              TigerLog.WriteLog(etDebug,'Module image: going to start scan for document id '+inttostr(DocumentID));
               // todo: add support for uploading image
               ImageID := FTigerCore.ScanSinglePage(DocumentID);
               if ImageID <> INVALIDID then
@@ -208,6 +209,7 @@ begin
               end
               else
               begin
+                TigerLog.WriteLog(etDebug,'Module image: error calling ScanSinglePage for document '+inttostr(DocumentID));
                 IsValidRequest := False; //for extra clarity, not really needed
                 DocumentID := INVALIDID; //don't process the upload new image part
               end;
@@ -215,7 +217,7 @@ begin
           end
           else
           begin
-            TigerLog.WriteLog(etDebug,'Module image: POST handler: received invalid document ID');
+            TigerLog.WriteLog(etDebug,'Module image: POST handler: received no document ID in query field.');
           end;
         end;
       end;
