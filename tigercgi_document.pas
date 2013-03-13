@@ -109,11 +109,9 @@ begin
       case WordCount(StrippedPath, ['/']) of
         1: //http://server/cgi-bin/tigercgi/document/
         begin
-          IsValidRequest := True;
           //todo: delete every document
           FTigerCore.DeleteDocuments;
-          if FTigerCore.DeleteDocuments = False then
-            IsValidRequest := False; //generate 404
+          IsValidRequest:=FTigerCore.DeleteDocuments = False;
         end;
         2: //http://server/cgi-bin/tigercgi/document/304
         begin

@@ -44,6 +44,7 @@ begin
   VData := TMemoryStream.Create;
   try
     case AMethod of
+      rmDelete: VMethod := 'DELETE';
       rmGet: VMethod := 'GET';
       rmHead: VMethod := 'HEAD';
       rmOptions: VMethod := 'OPTIONS';
@@ -88,10 +89,10 @@ begin
   VData := TMemoryStream.Create;
   try
     case AMethod of
-      rmPost: VMethod := 'POST';
-      rmPut: VMethod := 'PUT';
       rmDelete: VMethod := 'DELETE';
       rmGet: VMethod := 'GET';
+      rmPost: VMethod := 'POST';
+      rmPut: VMethod := 'PUT';
     else
       raise Exception.Create('HttpRequest: Invalid request method.');
     end;
@@ -150,10 +151,10 @@ begin
   VHttp := TFPHTTPClient.Create(nil);
   try
     case AMethod of
-      rmPost: VMethod := 'POST';
-      rmPut: VMethod := 'PUT';
       rmDelete: VMethod := 'DELETE';
       rmGet: VMethod := 'GET';
+      rmPost: VMethod := 'POST';
+      rmPut: VMethod := 'PUT';
     else
       raise Exception.Create('HttpRequest: Invalid request method.');
     end;
