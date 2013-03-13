@@ -207,8 +207,10 @@ type
         if FTigerCore.AddImage(ExpandFileName(GetOptionValue('i', 'image')), DocumentID, 0) <> INVALIDID then
         begin
           PDF := FTigerCore.ProcessImages(DocumentID, 0);
-          if PDF <> '' then
-            writeln('Error creating PDF. Stopping.');
+          if PDF = '' then
+            writeln('Error creating PDF. Stopping.')
+          else
+            writeln('Finished adding image.');
         end
         else
         begin
