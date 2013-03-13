@@ -91,6 +91,7 @@ begin
       rmPost: VMethod := 'POST';
       rmPut: VMethod := 'PUT';
       rmDelete: VMethod := 'DELETE';
+      rmGet: VMethod := 'GET';
     else
       raise Exception.Create('HttpRequest: Invalid request method.');
     end;
@@ -152,6 +153,7 @@ begin
       rmPost: VMethod := 'POST';
       rmPut: VMethod := 'PUT';
       rmDelete: VMethod := 'DELETE';
+      rmGet: VMethod := 'GET';
     else
       raise Exception.Create('HttpRequest: Invalid request method.');
     end;
