@@ -116,8 +116,7 @@ begin
     if (status = MagickFalse) then
     begin
       description := MagickGetException(wand, @severity);
-      raise Exception.Create(Format('LoadMagickBitmap: an error ocurred. Description: %s',
-        [description]));
+      raise Exception.Create(Format('LoadMagickBitmap: an error ocurred. Description: %s', [description]));
       description := MagickRelinquishMemory(description);
     end;
     img := GetImageFromMagickWand(wand);
@@ -142,6 +141,7 @@ begin
     wand := DestroyMagickWand(wand);
   end;
 end;
+
 {$ENDIF USEMAGICK}
 
 { TForm1 }
@@ -151,23 +151,24 @@ var
   Message: string;
   CommJSON: TJSONData;
   ReturnJSON: TJSONObject;
-  Success:boolean;
+  Success: boolean;
 begin
-  Success:=false;
-  ReturnJSON:=TJSONObject.Create;
+  Success := false;
+  ReturnJSON := TJSONObject.Create;
   try
-    Success:=(HttpRequestWithData(CommJSON,FCGIURL+'serverinfo',rmPost).Code=200);
+    Success := (HttpRequestWithData(CommJSON, FCGIURL + 'serverinfo', rmPost).Code = 200);
     if Success then
-    try
-      Message:=(CommJSON as TJSONObject).Strings['serverinfo'];
-    except
-      on E: Exception do
-      begin
-        Success:=false;
-        Message:='Error getting server info. Technical details: exception '+E.Message;
+      try
+        Message := (CommJSON as TJSONObject).Strings['serverinfo'];
+      except
+        on E: Exception do
+        begin
+          Success := false;
+          Message := 'Error getting server info. Technical details: exception ' + E.Message;
+        end;
       end;
-    end;
-    Message:='Papertiger client' + LineEnding + 'version: based on commit ' + RevisionStr + ' (' + versiondate + ')' + LineEnding + 'build date: ' +
+    Message := 'Papertiger client' + LineEnding + 'version: based on commit ' + RevisionStr + ' (' + versiondate +
+      ')' + LineEnding + 'build date: ' +
   {$INCLUDE %DATE%}
       +' ' +
   {$INCLUDE %TIME%}
@@ -175,10 +176,7 @@ begin
   {$INCLUDE %FPCTARGETCPU%}
       ) + ' on ' + lowercase(
   {$INCLUDE %FPCTARGETOS%}
-      ) +LineEnding+
-       'Uses ImageMagick software.'+LineEnding+
-       LineEnding+
-       'Papertiger server: '+Message;
+      ) + LineEnding + 'Uses ImageMagick software.' + LineEnding + LineEnding + 'Papertiger server: ' + Message;
     ShowMessage(Message);
   finally
     ReturnJSON.Free;
@@ -201,14 +199,14 @@ var
   RequestResult: THttpResult;
   CommJSON: TJSONData;
 begin
-  result:=INVALIDID;
-  CommJSON:=TJSONObject.Create;
+  Result := INVALIDID;
+  CommJSON := TJSONObject.Create;
   try
     try
-      RequestResult:=HttpRequestWithData(CommJSON,FCGIURL+'document/',rmPost);
-      if RequestResult.Code<>200 then
+      RequestResult := HttpRequestWithData(CommJSON, FCGIURL + 'document/', rmPost);
+      if RequestResult.Code <> 200 then
       begin
-        showmessage('Error from server. HTTP result code: '+inttostr(RequestResult.Code)+'/'+RequestResult.Text);
+        ShowMessage('Error from server. HTTP result code: ' + IntToStr(RequestResult.Code) + '/' + RequestResult.Text);
         exit;
       end
       else
@@ -217,17 +215,17 @@ begin
         begin
           // We have to first check for existence of documentid to avoid an access violation/
           // SIGSEGV
-          if (CommJSON.JSONType=jtObject) then
+          if (CommJSON.JSONType = jtObject) then
           begin
-            if ((CommJSON as TJSONObject).IndexOfName('documentid',false)>-1) then
-              result:=(CommJSON as TJSONObject).Integers['documentid'];
+            if ((CommJSON as TJSONObject).IndexOfName('documentid', false) > -1) then
+              Result := (CommJSON as TJSONObject).Integers['documentid'];
           end;
         end;
       end;
     except
       on E: Exception do
       begin
-        showmessage('Error interpreting response from server. Technical details: '+E.Message);
+        ShowMessage('Error interpreting response from server. Technical details: ' + E.Message);
         exit;
       end;
     end;
@@ -244,56 +242,56 @@ var
   RequestResult: THttpResult;
   CommJSON: TJSONData;
 begin
-  NumberPages:=StrToIntDef(NumberPagesControl.Text,1);
+  NumberPages := StrToIntDef(NumberPagesControl.Text, 1);
 
-  DocumentID:=AddDocument;
-  if DocumentID=INVALIDID then
+  DocumentID := AddDocument;
+  if DocumentID = INVALIDID then
   begin
     ShowMessage('Error trying to create a new document on server. Aborting.');
     exit;
   end;
 
-  for CurrentPage:=1 to NumberPages do
+  for CurrentPage := 1 to NumberPages do
   begin
-    if CurrentPage>1 then
+    if CurrentPage > 1 then
     begin
-      ShowMessage('Please put page '+inttostr(CurrentPage)+' in the scanner.');
+      ShowMessage('Please put page ' + IntToStr(CurrentPage) + ' in the scanner.');
     end;
 
     try
-      Screen.Cursor:=crHourglass;
+      Screen.Cursor := crHourglass;
       try
-        RequestResult:=HTTPRequest(FCGIURL+'image?documentid='+inttostr(DocumentID),CommJSON,rmPost);
-        if RequestResult.Code<>200 then
+        RequestResult := HTTPRequest(FCGIURL + 'image?documentid=' + IntToStr(DocumentID), CommJSON, rmPost);
+        if RequestResult.Code <> 200 then
         begin
-          Screen.Cursor:=crDefault;
-          showmessage('Error from server. HTTP result code: '+inttostr(RequestResult.Code)+'/'+RequestResult.Text);
+          Screen.Cursor := crDefault;
+          ShowMessage('Error from server. HTTP result code: ' + IntToStr(RequestResult.Code) + '/' + RequestResult.Text);
           exit;
         end;
       except
         on E: Exception do
         begin
-          Screen.Cursor:=crDefault;
-          showmessage('Error interpreting response from server. Technical details: '+E.Message);
+          Screen.Cursor := crDefault;
+          ShowMessage('Error interpreting response from server. Technical details: ' + E.Message);
           exit;
         end;
       end;
     finally
-      Screen.Cursor:=crDefault;
+      Screen.Cursor := crDefault;
     end;
   end; //all pages scanned now
 
   try
-    RequestResult:=HttpRequest(FCGIURL+'document/'+inttostr(DocumentID)+'?processdocument=true',CommJSON,rmPost);
-    if RequestResult.Code<>200 then
+    RequestResult := HttpRequest(FCGIURL + 'document/' + IntToStr(DocumentID) + '?processdocument=true', CommJSON, rmPost);
+    if RequestResult.Code <> 200 then
     begin
-      showmessage('Error from server. HTTP result code: '+inttostr(RequestResult.Code)+'/'+RequestResult.Text);
+      ShowMessage('Error from server. HTTP result code: ' + IntToStr(RequestResult.Code) + '/' + RequestResult.Text);
       exit;
     end;
   except
     on E: Exception do
     begin
-      showmessage('Error interpreting response from server. Technical details: '+E.Message);
+      ShowMessage('Error interpreting response from server. Technical details: ' + E.Message);
       exit;
     end;
   end;
@@ -312,43 +310,42 @@ var
   VData: TJSONData;
 begin
   // Check for selected document
-  if DocumentsGrid.Row<1 then
+  if DocumentsGrid.Row < 1 then
   begin
     ShowMessage('No document selected. Please select a document in the grid first.');
     exit;
   end;
 
-  VData:=TJSONObject.Create;
-  TIFFStream:=TMemoryStream.Create;
+  VData := TJSONObject.Create;
+  TIFFStream := TMemoryStream.Create;
   try
-    ImageOrder:=1; //todo: add support for multi tiff images, e.g. using next/previous button & capturing errors
-    (VData as TJSONObject).Add('documentid',DocumentID);
-    (VData as TJSONObject).Add('imageorder',ImageOrder); //sort order number
+    ImageOrder := 1; //todo: add support for multi tiff images, e.g. using next/previous button & capturing errors
+    (VData as TJSONObject).Add('documentid', DocumentID);
+    (VData as TJSONObject).Add('imageorder', ImageOrder); //sort order number
     //post a request to show the image
-    RequestResult:=HttpRequestWithDataStream(VData,FCGIURL+'image',TIFFStream,rmPost);
-    if RequestResult.Code<>200 then
+    RequestResult := HttpRequestWithDataStream(VData, FCGIURL + 'image', TIFFStream, rmPost);
+    if RequestResult.Code <> 200 then
     begin
-      showmessage('Error getting image from server. HTTP result code: '+inttostr(RequestResult.Code)+'/'+RequestResult.Text);
+      ShowMessage('Error getting image from server. HTTP result code: ' + IntToStr(RequestResult.Code) + '/' + RequestResult.Text);
       exit;
     end;
     imageform.Hide;
-    if TIFFStream.Size=0 then
+    if TIFFStream.Size = 0 then
     begin
       ShowMessage('Got an empty image from server.');
       exit;
     end
     else
     begin
-      TIFFStream.Position:=0;
+      TIFFStream.Position := 0;
       try
         // Convert to a viewable bitmap with our modified FPC tiff routines supporting black & white tiff
-        Imageform.ScanImage.Picture.LoadFromStreamWithFileExt(TIFFStream,'.tiffcustom1bit');
+        Imageform.ScanImage.Picture.LoadFromStreamWithFileExt(TIFFStream, '.tiffcustom1bit');
         ImageForm.Show;
       except
         on E: Exception do
         begin
-          showmessage('Error showing image'+LineEnding+
-          'Technical details: '+E.Message);
+          ShowMessage('Error showing image' + LineEnding + 'Technical details: ' + E.Message);
         end;
       end;
     end;
@@ -363,12 +360,12 @@ var
   DocumentID: integer;
 begin
   // Check for selected document
-  if DocumentsGrid.Row<1 then
+  if DocumentsGrid.Row < 1 then
   begin
     ShowMessage('No document selected. Please select a document in the grid first.');
     exit;
   end;
-  DocumentID:=StrToInt(DocumentsGrid.Cells[0,DocumentsGrid.Row]);
+  DocumentID := StrToInt(DocumentsGrid.Cells[0, DocumentsGrid.Row]);
 
   ShowPDF(DocumentID);
 end;
@@ -380,30 +377,30 @@ var
   RequestResult: THTTPResult;
   CommJSON: TJSONData;
 begin
-  if DocumentsGrid.Row<1 then
+  if DocumentsGrid.Row < 1 then
   begin
     // Create new document if user wants to
-    if (MessageDlg('Create document?',
-      'No document selected. Create a new document for this image?',
-      mtConfirmation,[mbOK,mbCancel],0,mbOK)=mrCancel) then exit;
-    DocumentID:=AddDocument;
+    if (MessageDlg('Create document?', 'No document selected. Create a new document for this image?',
+      mtConfirmation, [mbOK, mbCancel], 0, mbOK) = mrCancel) then
+      exit;
+    DocumentID := AddDocument;
   end
   else
   begin
-    DocumentID:=StrToInt(DocumentsGrid.Cells[0,DocumentsGrid.Row]);
+    DocumentID := StrToInt(DocumentsGrid.Cells[0, DocumentsGrid.Row]);
   end;
 
 
   OpenDialog1.Execute;
-  ImageFile:=OpenDialog1.FileName;
-  if ImageFile<>'' then
+  ImageFile := OpenDialog1.FileName;
+  if ImageFile <> '' then
   begin
-    CommJSON:=TJSONObject.Create;
+    CommJSON := TJSONObject.Create;
     try
-      RequestResult:=HttpRequestWithData(CommJSON,FCGIURL+'image/',rmPost);
-      if RequestResult.Code<>200 then
+      RequestResult := HttpRequestWithData(CommJSON, FCGIURL + 'image/', rmPost);
+      if RequestResult.Code <> 200 then
       begin
-        showmessage('Error getting document list from server. HTTP result code: '+inttostr(RequestResult.Code)+'/'+RequestResult.Text);
+        ShowMessage('Error getting document list from server. HTTP result code: ' + IntToStr(RequestResult.Code) + '/' + RequestResult.Text);
         exit;
       end
       else
@@ -428,15 +425,15 @@ var
 begin
   try
     ClearGrid(DocumentsGrid);
-    RequestResult:=HttpRequest(FCGIURL+'document/',VData,rmGet);
-    if RequestResult.Code<>200 then
+    RequestResult := HttpRequest(FCGIURL + 'document/', VData, rmGet);
+    if RequestResult.Code <> 200 then
     begin
-      showmessage('Error getting document list from server. HTTP result code: '+inttostr(RequestResult.Code)+'/'+RequestResult.Text);
+      ShowMessage('Error getting document list from server. HTTP result code: ' + IntToStr(RequestResult.Code) + '/' + RequestResult.Text);
       exit;
     end
     else
     begin
-      LoadJSON(DocumentsGrid,(VData as TJSONArray),false,false,true);
+      LoadJSON(DocumentsGrid, (VData as TJSONArray), false, false, true);
     end;
   finally
     VData.Free;
@@ -450,26 +447,25 @@ var
   PDFStream: TMemoryStream;
   VData: TJSONData;
 begin
-  PDFStream:=TMemoryStream.Create;
+  PDFStream := TMemoryStream.Create;
   try
     // post a request to get the PDF
-    HttpRequest(FCGIURL+'document/'+inttostr(DocumentID)+'/pdf',VData,rmGet);
-    if RequestResult.Code<>200 then
+    HttpRequest(FCGIURL + 'document/' + IntToStr(DocumentID) + '/pdf', VData, rmGet);
+    if RequestResult.Code <> 200 then
     begin
-      showmessage('Error getting PDF from server. HTTP result code: '+inttostr(RequestResult.Code)+'/'+RequestResult.Text);
+      ShowMessage('Error getting PDF from server. HTTP result code: ' + IntToStr(RequestResult.Code) + '/' + RequestResult.Text);
       exit;
     end;
     imageform.Hide;
-    PDFStream.Position:=0;
+    PDFStream.Position := 0;
     try
-      PDFFile:=ChangeFileExt(sysutils.GetTempFileName('','tpdf'), '.pdf');
+      PDFFile := ChangeFileExt(SysUtils.GetTempFileName('', 'tpdf'), '.pdf');
       PDFStream.SaveToFile(PDFFile);
       OpenDocument(PDFFile);
     except
       on E: Exception do
       begin
-        showmessage('Error showing PDF'+LineEnding+
-        'Technical details: '+E.Message);
+        ShowMessage('Error showing PDF' + LineEnding + 'Technical details: ' + E.Message);
       end;
     end;
   finally
@@ -482,9 +478,9 @@ procedure TForm1.FormCreate(Sender: TObject);
 var
   Settings: TTigerSettings;
 begin
-  Settings:=TTigerSettings.Create('tigerclient.ini');
+  Settings := TTigerSettings.Create('tigerclient.ini');
   try
-    FCGIURL:=Settings.CGIURL;
+    FCGIURL := Settings.CGIURL;
   finally
     Settings.Free;
   end;
@@ -498,48 +494,52 @@ var
   ImageFile: string;
   RequestResult: THttpResult;
 begin
-  if DocumentsGrid.Row<1 then
+  if DocumentsGrid.Row < 1 then
   begin
     ShowMessage('Please select the document you want to delete first.');
   end
   else
   begin
-    DocumentID:=StrToInt(DocumentsGrid.Cells[0,DocumentsGrid.Row]);
+    DocumentID := StrToInt(DocumentsGrid.Cells[0, DocumentsGrid.Row]);
   end;
 
   // Create new document if user wants to
-  if DocumentsGrid.Cells[1,DocumentsGrid.Row]='' then
-    DocumentPrompt:='ID '+ inttostr(DocumentID)+'?'
+  if DocumentsGrid.Cells[1, DocumentsGrid.Row] = '' then
+    DocumentPrompt := 'ID ' + IntToStr(DocumentID) + '?'
   else
-    DocumentPrompt:='"'+DocumentsGrid.Cells[1,DocumentsGrid.Row]+'"?';
+    DocumentPrompt := '"' + DocumentsGrid.Cells[1, DocumentsGrid.Row] + '"?';
 
-  if (MessageDlg('Delete document?',
-    'Are you sure you want to delete document '+DocumentPrompt,
-    mtConfirmation,[mbOK,mbCancel],0,mbCancel)=mrCancel) then exit;
+  if (MessageDlg('Delete document?', 'Are you sure you want to delete document ' + DocumentPrompt,
+    mtConfirmation, [mbOK, mbCancel], 0, mbCancel) = mrCancel) then
+    exit;
 
   try
-    Screen.Cursor:=crHourglass;
+    Screen.Cursor := crHourglass;
     try
-      RequestResult:=HTTPRequest(FCGIURL+'document/'+inttostr(DocumentID),CommJSON,rmDelete);
-      if RequestResult.Code<>200 then
+      RequestResult := HTTPRequest(FCGIURL + 'document/' + IntToStr(DocumentID), CommJSON, rmDelete);
+      if RequestResult.Code <> 200 then
       begin
-        Screen.Cursor:=crDefault;
-        showmessage('Error from server. HTTP result code: '+inttostr(RequestResult.Code)+'/'+RequestResult.Text);
+        Screen.Cursor := crDefault;
+        ShowMessage('Error from server. HTTP result code: ' + IntToStr(RequestResult.Code) + '/' + RequestResult.Text);
         exit;
       end;
     except
       on E: Exception do
       begin
-        Screen.Cursor:=crDefault;
-        showmessage('Error interpreting response from server. Technical details: '+E.Message);
+        Screen.Cursor := crDefault;
+        ShowMessage('Error interpreting response from server. Technical details: ' + E.Message);
         exit;
       end;
     end;
   finally
-    Screen.Cursor:=crDefault;
+    Screen.Cursor := crDefault;
     CommJSON.Free;
   end;
 end;
 
 end.
+
+
+
+
 
