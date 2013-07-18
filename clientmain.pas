@@ -460,6 +460,7 @@ begin
       exit;
     end;
     imageform.Hide;
+    //todo: verify this works
     PDFStream.Position := 0;
     try
       PDFFile := ChangeFileExt(SysUtils.GetTempFileName('', 'tpdf'), '.pdf');

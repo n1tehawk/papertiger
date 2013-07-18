@@ -118,9 +118,11 @@ begin
           DocumentID := StrToIntDef(ExtractWord(2, StrippedPath, ['/']), INVALIDID);
           if DocumentID <> INVALIDID then
           begin
-            IsValidRequest := True;
-            if FTigerCore.DeleteDocument(DocumentID) = False then
-              IsValidRequest := False; //generate 404
+            IsValidRequest:= FTigerCore.DeleteDocument(DocumentID);
+          end
+          else
+          begin
+            TigerLog.WriteLog('Document module: delete method: got invalid document ID');
           end;
         end;
       end;

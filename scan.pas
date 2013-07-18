@@ -55,7 +55,7 @@ type
     property FileName: string read FFileName write FFileName;
     // Scan resolution in DPI
     property Resolution: integer read FResolution write FResolution;
-    // Device to be used to scan with; e.g. genesys:libusb:001:002
+    // Device to be used to scan with in sane notation; e.g. genesys:libusb:001:002
     // Specify e.g. net:192.168.0.4:genesys:libusb:001:002 for a sane network
     // scanner
     property ScanDevice: string read FScanDevice write FScanDevice;
@@ -73,10 +73,6 @@ uses processutils;
 
 // Common constants etc:
 {$i tigercommondefs.inc}
-
-const
-  //todo: perhaps write FPC wrapper instead of bash scanwrap.sh
-  ScanCommand = './scanwrap.sh';
 
 { TScanner }
 

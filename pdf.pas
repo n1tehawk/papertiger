@@ -42,17 +42,17 @@ type
     FPDFFile: string;
 
   public
-    property HOCRFile: string write FHOCRFile;
     // File with hOCR: position and text in image
-    property ImageFile: string write FImageFile;
+    property HOCRFile: string write FHOCRFile;
     // Input image
-    property PDFFile: string read FPDFFile write FPDFFile;
+    property ImageFile: string write FImageFile;
     // Output PDF file
-    property ImageResolution: integer write FImageResolution;
+    property PDFFile: string read FPDFFile write FPDFFile;
     // Manual override/specification of image resolution. Enter 0 for no override.
     // Used for passing to hocr2pdf
-    function CreatePDF: boolean;
+    property ImageResolution: integer write FImageResolution;
     // Takes hOCR file, image and creates a PDF from that. Returns success or failure
+    function CreatePDF: boolean;
     constructor Create;
     destructor Destroy; override;
   end;
