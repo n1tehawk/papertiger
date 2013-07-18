@@ -26,7 +26,8 @@ program tigerserver;
 {
 //todo:
 - use unpaper/scantailor for deskewing/despeckling instead of device/driver dependent sane functionality
-- orientation detection (e.g. upside down) with new tesseract (or by doing OCR on all orientations, picking highing confidence level)
+- orientation detection (e.g. upside down) with new tesseract using API (option -psd)
+  (or by doing OCR on all orientations, picking highestg confidence level)
 - look at ocropus 0.6 which apparently has tesseract as line recognizer
 - look at getting ocrfeeder (text mode) instead of the scan/ocr/pdf processes
 http://git.gnome.org/browse/ocrfeeder
@@ -154,7 +155,7 @@ type
     PDF: string;
   begin
     // quick check parameters
-    ErrorMsg := CheckOptions('hi:l:p:sv', 'help image: language: list pages: scan version');
+    ErrorMsg := CheckOptions('d:hi:l:p:sv', 'device: help image: language: list pages: scan version');
     if ErrorMsg <> '' then
     begin
       ShowException(Exception.Create(ErrorMsg));
@@ -170,6 +171,15 @@ type
       WriteHelp;
       Terminate;
       Exit;
+    end;
+
+    if HasOption('d','device') then
+    begin
+      FScanDevice:=GetOptionValue('d','device');
+    end
+    else
+    begin
+      FScanDevice:='';
     end;
 
     if HasOption('list') then
@@ -278,6 +288,8 @@ type
   procedure TTigerServer.WriteHelp;
   begin
     writeln('Usage: ', ExeName, ' -h');
+    writeln('-d <device> --device=<device>');
+    writeln(' Scanning device (use sane notation) - empty to select default.');
     writeln('-i <image> --image=<image>');
     writeln(' Process image.');
     writeln('-l <lang> --language=<language>');

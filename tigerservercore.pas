@@ -60,6 +60,7 @@ type
     FCurrentOCRLanguage: string;
     //effective language (from settings file, possibly overridden by e.g. command-line options)
     FPages: integer;
+    FScanDevice: string;
     // Number of pages to scan/process at once
     // Use >1 for batch (e.g. multipage documents)
     //todo: think about multipage tiff
@@ -80,6 +81,10 @@ type
       write FCurrentOCRLanguage;
     // Number of pages to scan in one scan run.
     property Pages: integer read FPages write FPages;
+    // Device to be used to scan with in sane notation; e.g. genesys:libusb:001:002
+    // Specify e.g. net:192.168.0.4:genesys:libusb:001:002 for a sane network
+    // scanner
+    property ScanDevice: string read FScanDevice write FScanDevice;
     // Cleans up image (postprocessing): straightens them up, despeckles etc. Returns true if succesful
     function CleanUpImage(const ImageFile: string): boolean;
     // Delete document and associated images from DB and filesystem
@@ -203,9 +208,11 @@ begin
   Result := False;
   Cleaner := TImageCleaner.Create;
   try
-    //todo: write me
+    Cleaner.ScanDevice:=FScanDevice;
+    Cleaner.ImageFile:=ImageFile;
+    Cleaner.DetectApplyRotation;
     Result := True;
-    TigerLog.WriteLog(etInfo, 'CleanImage: not yet implemented. File argument passed: ' +
+    TigerLog.WriteLog(etInfo, 'CleanImage: not yet completely implemented. File argument passed: ' +
       ImageFile);
   finally
     Cleaner.Free;
@@ -361,7 +368,7 @@ begin
     begin
       // path contain full image path, no need to add FSettings.ImageDirectory
       ImageFile := (ImagesArray.Items[i] as TJSONObject).Elements['path'].AsString;
-      Success := CleanUpImage(ImageFile);
+      Success := CleanUpImage(ImageFile, Resolution);
       if Success then
       begin
         OCR := TOCR.Create;
@@ -477,6 +484,7 @@ begin
   try
     Scanner.Resolution := Resolution;
     Scanner.ColorType := stLineArt;
+    Scanner.ScanDevice := FScanDevice;
     StartDate := Now(); //local time
     StartDateString := FormatDateTime('yyyymmddhhnnss', StartDate);
 

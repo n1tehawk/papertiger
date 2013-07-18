@@ -55,19 +55,19 @@ type
     //todo: unicode??
     FText: string;
   public
-    function RecognizeText: boolean;
     // Perform the actual OCR
-    property HOCRFile: string read FHOCRFile;
+    function RecognizeText: boolean;
     // File with hOCR: position and text in image
-    property ImageFile: string write FImageFile;
+    property HOCRFile: string read FHOCRFile;
     // Input image
+    property ImageFile: string write FImageFile;
+    // Language to use for OCR, e.g. eng for English, nld for Dutch
     property Language: string read FLanguage write FLanguage;
-    // Language to use for OCR, e.g. en for English, nld for Dutch
-    property Orientation: Orientation read FOrientation write FOrientation;
     // Rotation (if any) of scanned image versus reality
-    property Text: string read FText write FText;
+    property Orientation: Orientation read FOrientation write FOrientation;
     // Text recognized in image
     //todo: add outputfile property?!?!!
+    property Text: string read FText write FText;
     constructor Create;
     destructor Destroy; override;
   end;
