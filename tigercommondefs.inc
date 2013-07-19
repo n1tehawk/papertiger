@@ -4,4 +4,5 @@ const
   TESSERACTTIFFEXTENSION='.tif'; //Extension for .tiff files. Needs to be this for tesseract support.
   //todo: perhaps write FPC wrapper instead of bash scanwrap.sh
   ScanCommand = './scanwrap.sh'; //for command line use
+  TextDetectCommand = './textdetect.sh'; //for counting all words and the number of incorrectly spelled words
 
