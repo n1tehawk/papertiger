@@ -135,7 +135,7 @@ type
     PDF: string;
   begin
     // quick check parameters
-    ErrorMsg := CheckOptions('d:hi:l:p:sv', 'device: help image: language: list pages: scan version');
+    ErrorMsg := CheckOptions('d:hi:l:p:r:sv', 'device: help image: language: list pages: rotate: scan version');
     if ErrorMsg <> '' then
     begin
       ShowException(Exception.Create(ErrorMsg));

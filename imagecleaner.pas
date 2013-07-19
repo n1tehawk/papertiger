@@ -49,15 +49,15 @@ type
     function CheckRecognition(ImageFile: string; var CorrectWords: integer): integer;
     // Returns degrees image needs to be turned to end right-side-up
     function DetectRotation: integer;
-    // Rotates source image to destination image over specified number of degrees clockwise
-    // Returns true if succesful
-    function Rotate(Degrees: integer; SourceFile, DestinationFile: string): boolean;
   public
     // Reads image, performs OCR tests on it to figure out if it needs to be rotated.
     // Rotates image if needed
     // Returns number of degrees the image has been turned,
     // e.g. -90: image rotated counterclockwise 90 degrees
     function DetectApplyRotation: integer;
+    // Rotates source image to destination image over specified number of degrees clockwise
+    // Returns true if succesful
+    function Rotate(Degrees: integer; SourceFile, DestinationFile: string): boolean;
     // Input image
     property ImageFile: string write FImageFile;
     // Language to use for OCR, e.g. eng for English, nld for Dutch
@@ -77,7 +77,7 @@ var
   severity: ExceptionType;
 begin
   description := MagickGetException(wand, @severity);
-  TigerLog.WriteLog(etError,Format('An error ocurred. Description: %s', [description]));
+  TigerLog.WriteLog(etError,Format('ImageCleaner: an imagemagick error ocurred. Description: %s', [description]));
   description := MagickRelinquishMemory(description);
   Abort;
 end;

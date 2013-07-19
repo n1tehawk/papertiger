@@ -77,6 +77,7 @@ type
   TTigerServerCore = class(TObject)
   private
     FCurrentOCRLanguage: string;
+    FDesiredRotation: integer;
     //effective language (from settings file, possibly overridden by e.g. command-line options)
     FPages: integer;
     FScanDevice: string;
@@ -132,6 +133,9 @@ type
     function ServerInfo: string;
     // Tries to parse full ISO8601 UTC datetime; returns datetime (1,1,0,0,0) if invalid
     class function TryParseDate(DateString: string; out ParseDate: TDateTime): boolean;
+    // Desired rotation of image in degrees, e.g.:
+    // 90 means: rotate the image 90 degrees clockwise
+    property DesiredRotation: integer read FDesiredRotation write FDesiredRotation;
     constructor Create;
     destructor Destroy; override;
   end;
@@ -228,6 +232,9 @@ begin
   Cleaner := TImageCleaner.Create;
   try
     Cleaner.ImageFile:=ImageFile;
+    // If user wanted to, rotate and overwrite existing image
+    if FDesiredRotation<>0 then
+      Cleaner.Rotate(FDesiredRotation,ImageFile, ImageFile);
     Cleaner.DetectApplyRotation;
     Result := True;
     TigerLog.WriteLog(etInfo, 'CleanImage: not yet completely implemented. File argument passed: ' +
@@ -594,8 +601,9 @@ begin
   TigerLog.WriteLog(etDebug, 'TTigerServerCore: starting.');
   TigerLog.WriteLog(etDebug, Self.ServerInfo);
   FSettings := TTigerSettings.Create;
+  //read language from settings; can be overridden by command line option
   FCurrentOCRLanguage := FSettings.Language;
-  //read language from settings; can be overridden by command line optoin
+  FDesiredRotation:=0;
   FPages := 1; //Assume single scan, not batch
   FTigerDB := TTigerDB.Create;
 end;
