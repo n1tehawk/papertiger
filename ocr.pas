@@ -44,11 +44,14 @@ type
   // clockwise to get the correct orientation
   Orientation=(orNormal,orUpsideDown,orTurnedClock,orTurnedAntiClock,orUnknown);
 
+  // Output format of scan - plain text or HOCR (HTML with OCR info)
+  ScanOutputFormat=(sofHOCR, sofPlainText);
+
   { TOCR }
 
   TOCR = class(TObject)
   private
-    FHOCRFile: string;
+    FOCRFile: string;
     FImageFile: string;
     FLanguage: string;
     FOrientation: Orientation;
@@ -56,9 +59,11 @@ type
     FText: string;
   public
     // Perform the actual OCR
-    function RecognizeText: boolean;
-    // File with hOCR: position and text in image
-    property HOCRFile: string read FHOCRFile;
+    function RecognizeText(Format: ScanOutputFormat): boolean;
+    // Scan results file containing
+    // hOCR (position and text in image) or plain text depending on
+    // output format set
+    property OCRFile: string read FOCRFile;
     // Input image
     property ImageFile: string write FImageFile;
     // Language to use for OCR, e.g. eng for English, nld for Dutch
@@ -77,7 +82,7 @@ uses processutils;
 
 { TOCR }
 
-function TOCR.RecognizeText: boolean;
+function TOCR.RecognizeText(Format: ScanOutputFormat): boolean;
 const
   OCRCommand='tesseract';
 var
@@ -90,7 +95,7 @@ begin
   result:=false;
   OutputFile:=GetTempFileName;
   FText:='';
-  FHOCRFile:='';
+  FOCRFile:='';
   //todo: upside down detection? OCR 2x, higher detection rate is right orientation
   //=> we can use tesseract 3 -pam parameter perhaps?
   // tesseract sticks results in outputfile+.txt
@@ -114,17 +119,23 @@ begin
     case HOCRResult of
       0:
       begin
-        FHOCRFile:=OutputFile+'.html';
+        if Format=sofHOCR then
+          FOCRFile:=OutputFile+'.html'
+        else
+          FOCRFile:=OutputFile+'.txt';
         {$IFDEF DEBUG}
-        TigerLog.WriteLog(etDebug,'Result: hocr done: '+FHOCRFile);
+        TigerLog.WriteLog(etDebug,'Result: hocr done: '+FOCRFile);
         {$ENDIF}
         result:=true;
       end;
       1:  //OCR error, need not be a problem
       begin
-        FHOCRFile:=OutputFile+'.html';
+        if Format=sofHOCR then
+          FOCRFile:=OutputFile+'.html'
+        else
+          FOCRFile:=OutputFile+'.txt';
         {$IFDEF DEBUG}
-        TigerLog.WriteLog(etDebug,'Result: hocr found no text for: '+FHOCRFile);
+        TigerLog.WriteLog(etDebug,'Result: hocr found no text for: '+FOCRFile);
         {$ENDIF}
         result:=true;
       end;
@@ -145,7 +156,7 @@ end;
 constructor TOCR.Create;
 begin
   inherited Create;
-  FHOCRFile:='';
+  FOCRFile:='';
   FLanguage:='eng'; //default to English; tesseract format
   FOrientation:=orUnknown;
 end;
