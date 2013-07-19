@@ -368,7 +368,7 @@ begin
     begin
       // path contain full image path, no need to add FSettings.ImageDirectory
       ImageFile := (ImagesArray.Items[i] as TJSONObject).Elements['path'].AsString;
-      Success := CleanUpImage(ImageFile, Resolution);
+      Success := CleanUpImage(ImageFile);
       if Success then
       begin
         OCR := TOCR.Create;

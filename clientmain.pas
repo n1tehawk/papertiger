@@ -141,7 +141,6 @@ begin
     wand := DestroyMagickWand(wand);
   end;
 end;
-
 {$ENDIF USEMAGICK}
 
 { TForm1 }
