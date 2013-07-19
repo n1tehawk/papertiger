@@ -193,18 +193,28 @@ end;
 function TImageCleaner.Rotate(Degrees: integer; SourceFile,
   DestinationFile: string): boolean;
 var
+  TempFile: string;
   status: MagickBooleanType;
   wand: PMagickWand;
 begin
+  if ExpandFileName(SourceFile)=ExpandFileName(DestinationFile) then
+    TempFile:=GetTempFileName('','TIF')
+  else
+    TempFile:=DestinationFile;
   wand := NewMagickWand;
   try
     status := MagickReadImage(wand, PChar(SourceFile));
     if (status = MagickFalse) then ThrowWandException(wand);
     MagickRotateImage(wand,nil,Degrees);
     if (status = MagickFalse) then ThrowWandException(wand);
-    status := MagickWriteImages(wand, PChar(DestinationFile), MagickTrue);
+    status := MagickWriteImage(wand, PChar(TempFile));
     if (status = MagickFalse) then ThrowWandException(wand);
     result := not(status=MagickFalse);
+    if (result) and (ExpandFileName(SourceFile)=ExpandFileName(DestinationFile)) then
+    begin
+      // Copy over original file as requested
+      result:=RenameFile(TempFile,DestinationFile);
+    end;
   finally
     wand := DestroyMagickWand(wand);
     MagickWandTerminus;
