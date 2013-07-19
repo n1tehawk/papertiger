@@ -175,11 +175,11 @@ type
 
     if HasOption('d','device') then
     begin
-      FScanDevice:=GetOptionValue('d','device');
+      FTigerCore.ScanDevice:=GetOptionValue('d','device');
     end
     else
     begin
-      FScanDevice:='';
+      FTigerCore.ScanDevice:='';
     end;
 
     if HasOption('list') then
