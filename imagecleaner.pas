@@ -33,7 +33,7 @@ interface
 uses
   Classes, SysUtils,
   processutils, tigerutil,
-  magick_wand, ocr;
+  ocr;
 
 type
 
@@ -145,11 +145,10 @@ const
 var
   DetectedRotation: integer;
   RotatedImage: string;
-  Options: string;
   Rotation: integer;
   Score: integer;
-  TopScore: integer;
-  CorrectWords: integer;
+  TopScore: integer=0;
+  CorrectWords: integer=0;
 begin
   //todo: first convert image to 300dpi, lineart if it isn't already
   Result := 0;
@@ -165,7 +164,7 @@ begin
     {$IFDEF DEBUG}
     TigerLog.WriteLog(etDebug, 'File: '+FImageFile+' rotation '+inttostr(Rotation)+' score '+inttostr(Score)+' %; correct words: '+inttostr(CorrectWOrds));
     {$ENDIF}
-    if Score>TopScore then
+    if (Score>TopScore) and (CorrectWords>MinWords) then
     begin
       TopScore:=Score;
       DetectedRotation:=Rotation;

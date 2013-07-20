@@ -484,7 +484,6 @@ We could save some data here? If so, what?
 
 function TTigerServerCore.ScanSinglePage(DocumentID: integer): integer;
 var
-  i: integer;
   ImageOrder: integer;
   Message: string;
   Resolution: integer;
