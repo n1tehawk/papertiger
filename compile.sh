@@ -9,8 +9,10 @@ chmod ug+x scanwrap.sh
 chmod ug+x test.sh
 chmod ug+x textdetect.sh
 
-~/trunk/lazarus/lazbuild --pcp="~/trunk/config_lazarus" --build-mode=Default tigercgi.lpr
-~/trunk/lazarus/lazbuild --pcp="~/trunk/config_lazarus" --build-mode=Default tigerserver.lpr
-~/trunk/lazarus/lazbuild --pcp="~/trunk/config_lazarus" --build-mode=Default tigerclient.lpr
+# apparently current laz trunk suffers from not building when it is necessary, so add
+# --build-all to force it.
+~/trunk/lazarus/lazbuild --pcp="~/trunk/config_lazarus" --build-mode=Default tigercgi.lpr --build-all
+~/trunk/lazarus/lazbuild --pcp="~/trunk/config_lazarus" --build-mode=Default tigerserver.lpr --build-all
+~/trunk/lazarus/lazbuild --pcp="~/trunk/config_lazarus" --build-mode=Default tigerclient.lpr --build-all
 
 
