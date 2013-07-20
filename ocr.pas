@@ -93,6 +93,13 @@ var
   TessResult:integer;
 begin
   result:=false;
+
+  if not(FileExists(FImageFile)) then
+  begin
+    TigerLog.WriteLog(etError,'TOCR.RecognizeText: input image file '+FImageFile+' does not exist. Aborting.');
+    exit;
+  end;
+
   OutputFile:=GetTempFileName;
   FText:='';
   FOCRFile:='';
