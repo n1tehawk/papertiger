@@ -10,6 +10,7 @@ chmod ug+x test.sh
 chmod ug+x textdetect.sh
 
 ~/trunk/lazarus/lazbuild --pcp="~/trunk/config_lazarus" --build-mode=Default tigercgi.lpr
-~/trunk/lazarus/lazbuild --pcp="~/trunk/config_lazarus" --build-mode=Default tigerclient.lpr
 ~/trunk/lazarus/lazbuild --pcp="~/trunk/config_lazarus" --build-mode=Default tigerserver.lpr
+~/trunk/lazarus/lazbuild --pcp="~/trunk/config_lazarus" --build-mode=Default tigerclient.lpr
+
 
