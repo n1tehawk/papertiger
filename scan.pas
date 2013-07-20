@@ -92,13 +92,11 @@ begin
   }
   if ExecuteCommand(ScanListCommand + ' --list-devices', Output, false) = 0 then
   begin
-    writeln('Result:');
     DeviceList.Text := Output;
-    writeln(Output);
   end
   else
   begin
-    writeln('Error running command.');
+    TigerLog.WriteLog(etError, 'TScanner.ShowDevices: error calling '+ScanListCommand);
   end;
 end;
 

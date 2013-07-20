@@ -472,9 +472,6 @@ var
 begin
   PE:=TProcessEx.Create(nil);
   try
-    {$IFDEF DEBUG}
-    writeln('debug: executing command line: '+CommandLine);
-    {$ENDIF DEBUG}
     if Directory<>'' then
       PE.CurrentDirectory:=Directory;
     PE.Executable:=GetFirstWord;
@@ -482,9 +479,6 @@ begin
     while s<>'' do
       begin
       PE.Parameters.Add(s);
-      {$IFDEF DEBUG}
-      writeln('debug: adding parameter: '+s);
-      {$ENDIF DEBUG}
       s:=GetFirstWord;
       end;
     PE.ShowWindow := swoHIDE;
