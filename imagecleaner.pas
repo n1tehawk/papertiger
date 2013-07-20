@@ -33,7 +33,7 @@ interface
 uses
   Classes, SysUtils,
   processutils, tigerutil,
-  magick_wand, ImageMagick, fpimage, ocr;
+  magick_wand, ocr;
 
 type
 
@@ -71,16 +71,8 @@ implementation
 // Common constants etc:
 {$i tigercommondefs.inc}
 
-procedure ThrowWandException(wand: PMagickWand);
-var
-  description: PChar;
-  severity: ExceptionType;
-begin
-  description := MagickGetException(wand, @severity);
-  TigerLog.WriteLog(etError,Format('ImageCleaner: an imagemagick error ocurred. Description: %s', [description]));
-  description := MagickRelinquishMemory(description);
-  Abort;
-end;
+const
+  ConvertCommand='econvert'; //exactimage's econvert utility
 
 function TImageCleaner.CheckRecognition(ImageFile: string; var CorrectWords: integer): integer;
 const
@@ -192,32 +184,37 @@ end;
 
 function TImageCleaner.Rotate(Degrees: integer; SourceFile,
   DestinationFile: string): boolean;
+// Rotates uses exactimage tools (econvert); imagemagick
+// seems not to except certain file types and we need
+// an exactimage dependency anyway for hocr2pdf
 var
+  ErrorCode: integer;
   TempFile: string;
-  status: MagickBooleanType;
-  wand: PMagickWand;
 begin
+  result:=false;
   if ExpandFileName(SourceFile)=ExpandFileName(DestinationFile) then
     TempFile:=GetTempFileName('','TIF')
   else
     TempFile:=DestinationFile;
-  wand := NewMagickWand;
-  try
-    status := MagickReadImage(wand, PChar(SourceFile));
-    if (status = MagickFalse) then ThrowWandException(wand);
-    MagickRotateImage(wand,nil,Degrees);
-    if (status = MagickFalse) then ThrowWandException(wand);
-    status := MagickWriteImage(wand, PChar(TempFile));
-    if (status = MagickFalse) then ThrowWandException(wand);
-    result := not(status=MagickFalse);
-    if (result) and (ExpandFileName(SourceFile)=ExpandFileName(DestinationFile)) then
-    begin
-      // Copy over original file as requested
-      result:=RenameFile(TempFile,DestinationFile);
-    end;
-  finally
-    wand := DestroyMagickWand(wand);
-    MagickWandTerminus;
+  // Rotate
+  // --resolution
+  ErrorCode:=ExecuteCommand(ConvertCommand+
+    ' --rotate '+inttostr(Degrees)+
+    ' --input "'+SourceFile+'" --output "'+TempFile+'"', false);
+  if ErrorCode=0 then
+  begin
+    result:=true;
+  end
+  else
+  begin
+    TigerLog.WriteLog(etWarning,
+      'TImageCleaner.Rotate: got result code '+inttostr(ErrorCode)+
+      ' when calling '+ConvertCommand+' for rotation '+inttostr(Degrees));
+  end;
+  if (result) and (ExpandFileName(SourceFile)=ExpandFileName(DestinationFile)) then
+  begin
+    // Copy over original file as requested
+    result:=RenameFile(TempFile,DestinationFile);
   end;
 end;
 
