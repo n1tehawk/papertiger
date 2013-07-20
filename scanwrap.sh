@@ -6,4 +6,5 @@
 OUTPUTFILE="$1"
 # get rid of first parameter, the output filename
 shift
-scanimage "$@" > $OUTPUTFILE
+# call sane with the rest of the parameters:
+scanimage "$@" > $OUTPUTFILE 2>/tmp/scanerrors.txt
