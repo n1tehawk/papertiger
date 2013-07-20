@@ -230,12 +230,10 @@ begin
   else
     TempFile:=DestinationFile;
   // Rotate; indicate output should be tiff format
-  //todo: add support for
-  // --resolution x
-  // --colorspace BW or BILEVEL?
   ErrorCode:=ExecuteCommand(ConvertCommand+
     ' --rotate '+inttostr(Degrees)+
-    ' --input "'+SourceFile+'" --output "tiff:'+TempFile+'"', false);
+    ' --input "'+SourceFile+'"'+
+    ' --output "tiff:'+TempFile+'" ', false);
   if ErrorCode=0 then
   begin
     result:=true;
