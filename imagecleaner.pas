@@ -93,7 +93,8 @@ begin
     TempOCR.ImageFile:=ImageFile;
     TempOCR.Language:=FLanguage;
     TempOCR.RecognizeText(sofPlainText);
-    // Now open the text file to check effectiveness
+
+    // Now run a spell check and open the result text file to check effectiveness
     if ExecuteCommand(TextDetectCommand+' "'+TempOCR.OCRFile+'"',false)<>0 then
     begin
       // hardcoded results in /tmp/detectlog.txt
@@ -234,7 +235,7 @@ begin
   // --colorspace BW or BILEVEL?
   ErrorCode:=ExecuteCommand(ConvertCommand+
     ' --rotate '+inttostr(Degrees)+
-    ' --input "'+SourceFile+'" --output tiff:"'+TempFile+'"', false);
+    ' --input "'+SourceFile+'" --output "tiff:'+TempFile+'"', false);
   if ErrorCode=0 then
   begin
     result:=true;
