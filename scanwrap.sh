@@ -7,4 +7,6 @@ OUTPUTFILE="$1"
 # get rid of first parameter, the output filename
 shift
 # call sane with the rest of the parameters:
-scanimage "$@" > $OUTPUTFILE 2>/tmp/scanerrors.txt
+# workaround for issue
+# http://arch.debian.org/tracker/?func=detail&atid=410366&aid=313851&group_id=30186
+scanimage "$@" | grep -v "Failed cupsGetDevices" > $OUTPUTFILE 
