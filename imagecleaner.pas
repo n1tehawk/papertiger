@@ -159,8 +159,10 @@ begin
     if Rotation = 0 then
       RotatedImage:=FImageFile
     else
+    begin
       RotatedImage:=GetTempFileName('',inttostr(Rotation));
-    Rotate(Rotation,FImageFile, RotatedImage);
+      Rotate(Rotation,FImageFile, RotatedImage);
+    end;
     Score:=CheckRecognition(RotatedImage,CorrectWords);
     {$IFDEF DEBUG}
     TigerLog.WriteLog(etDebug, 'File: '+FImageFile+' rotation '+inttostr(Rotation)+' score '+inttostr(Score)+' %; correct words: '+inttostr(CorrectWOrds));
