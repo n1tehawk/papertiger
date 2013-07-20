@@ -58,6 +58,8 @@ type
     // Rotates source image to destination image over specified number of degrees clockwise
     // Returns true if succesful
     function Rotate(Degrees: integer; SourceFile, DestinationFile: string): boolean;
+    // Convert image to black and white TIFF image
+    function ToBlackWhiteTIFF(SourceFile,DestinationFile: string): boolean;
     // Input image
     property ImageFile: string write FImageFile;
     // Language to use for OCR, e.g. eng for English, nld for Dutch
@@ -73,6 +75,7 @@ implementation
 
 const
   ConvertCommand='econvert'; //exactimage's econvert utility
+  NormalizeCommand='optimize2bw'; //exactimage's => black&white TIFF conversion tool
 
 function TImageCleaner.CheckRecognition(ImageFile: string; var CorrectWords: integer): integer;
 const
@@ -182,6 +185,36 @@ begin
   inherited Destroy;
 end;
 
+function TImageCleaner.ToBlackWhiteTIFF(SourceFile,DestinationFile: string): boolean;
+var
+  ErrorCode: integer;
+  TempFile: string;
+begin
+  result:=false;
+  if ExpandFileName(SourceFile)=ExpandFileName(DestinationFile) then
+    TempFile:=GetTempFileName('','TIF')
+  else
+    TempFile:=DestinationFile;
+  ErrorCode:=ExecuteCommand(NormalizeCommand+
+    ' --denoise --dpi 300'+
+    ' --input "'+SourceFile+'" --output tiff:"'+TempFile+'"', false);
+  if ErrorCode=0 then
+  begin
+    result:=true;
+  end
+  else
+  begin
+    TigerLog.WriteLog(etWarning,
+      'ToBlackWhiteTIFF: got result code '+inttostr(ErrorCode)+
+      ' when calling '+NormalizeCommand+' for image '+SourceFile);
+  end;
+  if (result) and (ExpandFileName(SourceFile)=ExpandFileName(DestinationFile)) then
+  begin
+    // Copy over original file as requested
+    result:=RenameFile(TempFile,DestinationFile);
+  end;
+end;
+
 function TImageCleaner.Rotate(Degrees: integer; SourceFile,
   DestinationFile: string): boolean;
 // Rotates uses exactimage tools (econvert); imagemagick
@@ -196,11 +229,13 @@ begin
     TempFile:=GetTempFileName('','TIF')
   else
     TempFile:=DestinationFile;
-  // Rotate
-  // --resolution
+  // Rotate; indicate output should be tiff format
+  //todo: add support for
+  // --resolution x
+  // --colorspace BW or BILEVEL?
   ErrorCode:=ExecuteCommand(ConvertCommand+
     ' --rotate '+inttostr(Degrees)+
-    ' --input "'+SourceFile+'" --output "'+TempFile+'"', false);
+    ' --input "'+SourceFile+'" --output tiff:"'+TempFile+'"', false);
   if ErrorCode=0 then
   begin
     result:=true;
