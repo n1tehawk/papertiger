@@ -176,7 +176,7 @@ end;
 
 constructor TImageCleaner.Create;
 begin
-
+  FLanguage:='eng'; //default to English; tesseract format
 end;
 
 destructor TImageCleaner.Destroy;

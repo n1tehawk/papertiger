@@ -232,6 +232,7 @@ begin
   Cleaner := TImageCleaner.Create;
   try
     Cleaner.ImageFile:=ImageFile;
+    Cleaner.Language:=FCurrentOCRLanguage;
     // If user wanted to, rotate and overwrite existing image
     if FDesiredRotation<>0 then
       Cleaner.Rotate(FDesiredRotation,ImageFile, ImageFile);
