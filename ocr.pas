@@ -107,6 +107,7 @@ begin
   //=> we can use tesseract 3 -pam parameter perhaps?
   // tesseract sticks results in outputfile+.txt
   Command:=OCRCommand+' "'+FImageFile+'" "'+OutputFile+'" -l '+FLanguage;
+  TigerLog.WriteLog(etDebug,'TOCR.RecognizeText: going to run '+Command);
   TessResult:=ExecuteCommand(Command,false);
   if TessResult=0 then
   begin
