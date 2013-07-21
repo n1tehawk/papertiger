@@ -106,60 +106,62 @@ function FindInStream(Stream: TStream; Start: int64; SearchFor: string): int64;
 // http://wiki.lazarus.freepascal.org/Rosetta_Stone#Finding_all_occurrences_of_some_bytes_in_a_file
 var
   a: array of byte;
-  block: array of byte;
-  blocksize:integer = 1024*1024;
-  CharCounter: int64;
-  readsize:integer;
+  BlockArray: array of byte; //Gets a block of bytes from the stream
+  BlockSize:integer = 1024*1024;
+  ReadSize:integer;
   fPos:Int64;
-  fifoBuff:array of byte;
-  fifoSt,fifoEn,searchLen,lpbyte:integer;
+  FifoBuff:array of byte; //Window into blockarray, used to match SearchFor
+  FifoStart,FifoEnd,SearchLen,lpbyte:integer;
+
   function CheckPos: int64;
   var
     l,p:integer;
   begin
     result:=-1;
-    p := fifoST;
+    p := FifoStart;
     for l := 0 to pred(SearchLen) do
     begin
-      if a[l] <> fifoBuff[p] then exit;
+      if a[l] <> FifoBuff[p] then exit; //match broken off
       //p := (p+1) mod SearchLen,   the if seems quicker
-      inc(p); if p >= SearchLen then p := 0;
+      inc(p);
+      if p >= SearchLen then p := 0;
     end;
-    result:=(fpos-searchLen);
+    result:=(fpos-SearchLen);
   end;
 
 begin
   SetLength(a,length(SearchFor));
-  Move(Searchfor[1], a, Length(Searchfor)); //todo check if this shouldn't be a^
+  Move(Searchfor[1], a[0], Length(Searchfor)); //todo check if this shouldn't be a^
 
-  setlength(block,blocksize);
+  setlength(BlockArray,BlockSize);
   Stream.Position:=Start;
-  readsize := Stream.Read(block[0],Length(block));
-  searchLen := length(a);
-  if searchLen > length(block) then
-    raise Exception.Create('Search term larger than blocksize');
-  if readsize < searchLen then exit;
-  setlength(fifoBuff,searchLen);
-  move(block[0],fifoBuff[0],searchLen);
+  ReadSize := Stream.Read(BlockArray[0],Length(BlockArray));
+  SearchLen := length(a);
+  if SearchLen > length(BlockArray) then
+    raise Exception.CreateFmt('FindInStream: search term %s larger than blocksize',[SearchFor]);
+  if ReadSize < SearchLen then exit; //can't be in there so quit
+
+  setlength(FifoBuff,SearchLen);
+  move(BlockArray[0],FifoBuff[0],SearchLen);
   fPos:=0;
-  fifoSt:=0;
-  fifoEn:=SearchLen-1;
+  FifoStart:=0;
+  FifoEnd:=SearchLen-1;
   result:=CheckPos;
   if result>-1 then
     exit; //found it
-  while readsize > 0 do
+  while ReadSize > 0 do
   begin
-    for lpByte := 0 to pred(readsize) do
+    for lpByte := 0 to pred(ReadSize) do
     begin
-      inc(fifoSt); if fifoSt>=SearchLen then fifoST := 0;
-      inc(fifoEn); if fifoEn>=SearchLen then fifoEn := 0;
-      fifoBuff[fifoEn] := block[lpByte];
+      inc(FifoStart); if FifoStart>=SearchLen then FifoStart := 0;
+      inc(FifoEnd); if FifoEnd>=SearchLen then FifoEnd := 0;
+      FifoBuff[FifoEnd] := BlockArray[lpByte];
       inc(fPos);
       result:=CheckPos;
       if result>-1 then
         exit; //found it
     end;
-    readsize := Stream.Read(block[0],Length(block));
+    ReadSize := Stream.Read(BlockArray[0],Length(BlockArray));
   end;
 end;
 
