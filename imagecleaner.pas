@@ -43,14 +43,13 @@ type
 
   TImageCleaner = class(TObject)
   private
-    FImageFile: string;
     FLanguage: string;
     // Tests page layout by running a scan.
     // Returns OCR recognition score (percentage) as well as the
     // approximate number of correctly-spelled words found
     function CheckRecognition(ImageFile: string; var CorrectWords: integer): integer;
     // Returns degrees image needs to be turned to end right-side-up
-    function DetectRotation: integer;
+    function DetectRotation(Source: string): integer;
   public
     // Cleans up before scanning:
     // Converts image to black/white
@@ -59,14 +58,12 @@ type
     // Returns number of degrees the image has been turned,
     // e.g. 90: image rotated counterclockwise 90 degrees
     // Returns INVALIDID if function failed.
-    function Clean: integer;
+    function Clean(Source, Destination: string): integer;
     // Rotates source image to destination image over specified number of degrees clockwise
     // Returns true if succesful
     function Rotate(Degrees: integer; SourceFile, DestinationFile: string): boolean;
     // Convert image to black and white TIFF image
     function ToBlackWhiteTIFF(SourceFile,DestinationFile: string): boolean;
-    // Input image
-    property ImageFile: string write FImageFile;
     // Language to use for OCR, e.g. eng for English, nld for Dutch
     property Language: string read FLanguage write FLanguage;
     constructor Create;
@@ -150,7 +147,7 @@ begin
 end;
 
 { TImageCleaner }
-function TImageCleaner.DetectRotation: integer;
+function TImageCleaner.DetectRotation(Source: string): integer;
 const
   MinWords = 10; //Below this number, the image probably has no valid text
 var
@@ -166,11 +163,11 @@ begin
   while Rotation <= 270 do
   begin
     if Rotation = 0 then
-      RotatedImage:=FImageFile
+      RotatedImage:=Source
     else
     begin
       RotatedImage:=GetTempFileName('',inttostr(Rotation));
-      Rotate(Rotation,FImageFile,RotatedImage);
+      Rotate(Rotation,Source,RotatedImage);
     end;
     Score:=CheckRecognition(RotatedImage,CorrectWords);
     TigerLog.WriteLog(etDebug, 'File: '+RotatedImage+' rotation '+inttostr(Rotation)+' score '+inttostr(Score)+' %; correct words: '+inttostr(CorrectWOrds));
@@ -242,7 +239,12 @@ begin
     TempFile:=GetTempFileName('','TIF')
   else
     TempFile:=DestinationFile;
+
+  // We just let the tool do the 0 degree rotations, too.
   {$IFDEF USE_EXACTIMAGE}
+  //todo: this just doesn't seem to rotate. Command line appears correct
+  // perhaps bug in exactimage 0.8.8 which I ran.
+
   // Rotate; indicate output should be tiff format
   // Output appears to be CCIT fax T.6, but apparently tesseract 3.02.02
   // can now read that
@@ -277,26 +279,20 @@ begin
   end;
 end;
 
-function TImageCleaner.Clean: integer;
+function TImageCleaner.Clean(Source, Destination: string): integer;
 var
-  BWImage: string;
+  TempImage: string;
   Degrees:integer;
-  OriginalImage: string;
 begin
   Result:=INVALIDID;
-  OriginalImage:=FImageFile;
-  BWImage:=GetTempFileName('','BW');
-  ToBlackWhiteTIFF(FImageFile,BWImage);
-  FImageFile:=BWImage;
-  Degrees:=DetectRotation;
-  if Rotate(Degrees,FImageFile,FImageFile) then
+  TempImage:=GetTempFileName('','BW');
+  ToBlackWhiteTIFF(Source,TempImage);
+  Degrees:=DetectRotation(TempImage);
+  if Rotate(Degrees,TempImage,Destination) then
     result:=Degrees;
-  // Make sure our fixes are copied over
-  if ExpandFileName(OriginalImage)<>ExpandFileName(FImageFile) then
-  begin
-    RenameFile(FImageFile,OriginalImage);
-    FImageFile:=OriginalImage;
-  end;
+  {$IFNDEF DEBUG}
+  DeleteFile(TempImage);
+  {$ENDIF}
 end;
 
 end.

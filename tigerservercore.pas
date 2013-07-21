@@ -108,7 +108,7 @@ type
     // scanner
     property ScanDevice: string read FScanDevice write FScanDevice;
     // Cleans up image (postprocessing): straightens them up, despeckles etc. Returns true if succesful
-    function CleanUpImage(const ImageFile: string): boolean;
+    function CleanUpImage(const Source, Destination: string): boolean;
     // Delete document and associated images from DB and filesystem
     function DeleteDocument(const DocumentID: integer): boolean;
     // Delete all document and associated images from DB and filesystem
@@ -234,7 +234,6 @@ begin
   begin
     Clean:=TImageCleaner.Create;
     try
-      Clean.ImageFile:=ImageFile;
       if not(Clean.Rotate(FDesiredRotation,ImageFile,ImageFile)) then
       begin
         result:=INVALIDID;
@@ -254,7 +253,7 @@ begin
   end;
 end;
 
-function TTigerServerCore.CleanUpImage(const ImageFile: string): boolean;
+function TTigerServerCore.CleanUpImage(const Source, Destination: string): boolean;
   // Cleans up image before OCR (despeckle etc)
 var
   Cleaner: TImageCleaner;
@@ -262,15 +261,12 @@ begin
   Result := False;
   Cleaner := TImageCleaner.Create;
   try
-    Cleaner.ImageFile:=ImageFile;
     Cleaner.Language:=FCurrentOCRLanguage;
     // If user wanted to, rotate and overwrite existing image
     if FDesiredRotation<>0 then
-      Cleaner.Rotate(FDesiredRotation,ImageFile, ImageFile);
-    Cleaner.Clean;
+      Cleaner.Rotate(FDesiredRotation,Source,Source);
+    Cleaner.Clean(Source, Destination); //result in destination
     Result := True;
-    TigerLog.WriteLog(etInfo, 'CleanImage: not yet completely implemented. File argument passed: ' +
-      ImageFile);
   finally
     Cleaner.Free;
   end;
@@ -386,6 +382,7 @@ end;
 function TTigerServerCore.ProcessImages(DocumentID: integer;
   Resolution: integer): string;
 var
+  CleanImage: string;
   HOCRFile: string;
   i: integer;
   ImagesArray: TJSONArray;
@@ -425,12 +422,14 @@ begin
     begin
       // path contain full image path, no need to add FSettings.ImageDirectory
       ImageFile := (ImagesArray.Items[i] as TJSONObject).Elements['path'].AsString;
-      Success := CleanUpImage(ImageFile);
+      CleanImage:=GetTempFileName('','TIFC');
+      // Clean up image, copy into temporary file
+      Success := CleanUpImage(ImageFile, CleanImage);
       if Success then
       begin
         OCR := TOCR.Create;
         try
-          OCR.ImageFile := ImageFile;
+          OCR.ImageFile := CleanImage;
           OCR.Language := FCurrentOCRLanguage;
           Success := OCR.RecognizeText(sofHOCR);
           HOCRFile := OCR.OCRFile;
@@ -438,6 +437,9 @@ begin
         finally
           OCR.Free;
         end;
+        {$IFNDEF DEBUG}
+        DeleteFile(CleanImage);
+        {$ENDIF}
       end;
 
       if Success then
@@ -449,7 +451,7 @@ begin
             PDF.ImageResolution := Resolution;
           // todo: read tiff file and extract resolution ourselves, pass it on
           PDF.HOCRFile := HOCRFile;
-          PDF.ImageFile := ImageFile;
+          PDF.ImageFile := ImageFile; // The original, unaltered image file
           TigerLog.WriteLog(etDebug, 'pdfdirectory: ' + FSettings.PDFDirectory);
           PDF.PDFFile := IncludeTrailingPathDelimiter(FSettings.PDFDirectory) +
             ChangeFileExt(ExtractFileName(ImageFile), '.pdf');
@@ -572,7 +574,6 @@ begin
     begin
       Clean:=TImageCleaner.Create;
       try
-        Clean.ImageFile:=Scanner.FileName;
         if not(Clean.Rotate(FDesiredRotation,Scanner.FileName,Scanner.FileName)) then
         begin
           result:=INVALIDID;
