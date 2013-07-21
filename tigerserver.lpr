@@ -184,7 +184,12 @@ type
 
     if HasOption('p', 'pages') then
     begin
-      FTigerCore.Pages := StrToInt(GetOptionValue('p', 'pages'));
+      FTigerCore.Pages := StrToIntDef(GetOptionValue('p', 'pages'),1);
+    end;
+
+    if HasOption('r', 'rotate') then
+    begin
+      FTigerCore.DesiredRotation:=StrToIntDef(GetOptionValue('r','rotate'),0);
     end;
 
     // Branching off into processing starts here
@@ -278,6 +283,8 @@ type
     writeln(' language codes (e.g. man tesseract)');
     writeln('--list');
     writeln(' list already scanned documents');
+    writeln('-r <d> --rotate <d>');
+    writeln(' rotate image or scan d degrees clockwise before processing');
     writeln('-s --scan');
     writeln(' Scan document, process.');
     writeln('-p <n> --pages=<n>');
