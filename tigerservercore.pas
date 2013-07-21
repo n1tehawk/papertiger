@@ -425,6 +425,7 @@ begin
       CleanImage:=GetTempFileName('','TIFC');
       // Clean up image, copy into temporary file
       Success := CleanUpImage(ImageFile, CleanImage);
+
       if Success then
       begin
         OCR := TOCR.Create;
@@ -584,6 +585,7 @@ begin
         Clean.Free;
       end;
     end;
+
     TigerLog.WriteLog(etDebug, 'ScanSinglePage: going to process single image) ' + Scanner.FileName);
     Result := FTigerDB.InsertImage(DocumentID, ImageOrder, Scanner.FileName, '');
   finally
