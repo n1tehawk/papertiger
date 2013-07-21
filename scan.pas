@@ -47,6 +47,11 @@ type
     FResolution: integer;
     FScanDevice: string;
     FColorType: ScanType;
+    // Check for and fix sane bug
+    // http://arch.debian.org/tracker/?func=detail&atid=410366&aid=313851&group_id=30186
+    // sane inserts Failed cupsGetDevices and an LF before the tiff data
+    // Useful both when scanning and when using ready made files
+    procedure FixSaneBug313851(TIFFile: string);
   public
     // Black & white, grayscale or colour scan?
     property ColorType: ScanType read FColorType write FColorType;
@@ -75,6 +80,26 @@ uses processutils;
 {$i tigercommondefs.inc}
 
 { TScanner }
+
+procedure TScanner.FixSaneBug313851(TIFFile: string);
+const
+  BuggyText='Failed cupsGetDevices'+Chr($0A); //linefeed
+var
+  ScanFileText: TStringList;
+begin
+  ScanFileText:=TStringList.Create;
+  try
+    ScanFileText.LoadFromFile(TIFFile);
+    if pos(BuggyText, ScanFileText[0])=1 then
+    begin
+      ScanFileText[0]:=copy(ScanFileText[0], length(BuggyText)+1, Length(
+        ScanFileText[0]));
+      ScanFileText.SaveToFile(TIFFile);
+    end;
+  finally
+    ScanFileText.Free;
+  end;
+end;
 
 procedure TScanner.ShowDevices(var DeviceList: TStringList);
 const
@@ -139,6 +164,7 @@ begin
   try
     if ExecuteCommand(ScanCommand + Options, false) = 0 then
     begin
+      FixSaneBug313851(FFileName);
       TigerLog.WriteLog(etDebug, 'Scan succeeded.');
       Result := true;
     end

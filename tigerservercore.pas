@@ -94,7 +94,7 @@ type
     function AddImage(ImageData: TStream; ImageName: string;
       DocumentID: integer; ImageOrder: integer): integer;
     // Adds the tiff image to given documentID.
-    // Rotates it first if the user asked for it
+    // Rotates it first if the user asked for it, and checks for sane bug
     // Add at end of any existing images, unless ImageOrder>0. Returns image ID or INVALIDID when failed.
     function AddImage(ImageFile: string; DocumentID: integer;
       ImageOrder: integer): integer;
@@ -189,6 +189,7 @@ begin
       try
         ImageData.Position := 0;
         MemStream.CopyFrom(ImageData, ImageData.Size);
+        //todo: do sane bug detection
         MemStream.SaveToFile(ImagePath);
         MemStream.Position := 0;
         ImageHash := MD5Print(MD5Buffer(MemStream.Memory^, MemStream.Size));
