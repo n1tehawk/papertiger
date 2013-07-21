@@ -130,9 +130,7 @@ begin
           FOCRFile:=OutputFile+'.html'
         else
           FOCRFile:=OutputFile+'.txt';
-        {$IFDEF DEBUG}
         TigerLog.WriteLog(etDebug,'Result: hocr done: '+FOCRFile);
-        {$ENDIF}
         result:=true;
       end;
       1:  //OCR error, need not be a problem
@@ -141,9 +139,7 @@ begin
           FOCRFile:=OutputFile+'.html'
         else
           FOCRFile:=OutputFile+'.txt';
-        {$IFDEF DEBUG}
         TigerLog.WriteLog(etDebug,'Result: hocr found no text for: '+FOCRFile);
-        {$ENDIF}
         result:=true;
       end;
       else
