@@ -92,6 +92,7 @@ begin
     ScanFileText.LoadFromFile(TIFFile);
     if pos(BuggyText, ScanFileText[0])=1 then
     begin
+      TigerLog.WriteLog(etDebug,'TScanner.FixSaneBug313851: found bug in file '+TIFFile);
       ScanFileText[0]:=copy(ScanFileText[0], length(BuggyText)+1, Length(
         ScanFileText[0]));
       ScanFileText.SaveToFile(TIFFile);
