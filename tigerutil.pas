@@ -59,6 +59,10 @@ var
 // Delete length characters from starting position from a stream
 procedure DeleteFromStream(Stream: TStream; Start, Length: Int64);
 
+// Searches for SearchFor in Stream starting at Start.
+// Returns -1 or position in stream (0-based)
+function FindInStream(Stream: TStream; Start: int64; SearchFor: string): int64;
+
 //Shows non-debug messages on screen; also shows debug messages if DEBUG defined
 procedure infoln(Message: string; Level: TEventType);
 
@@ -94,6 +98,68 @@ begin
     Stream.Size := DestPos;
   finally
     FreeMem(Buffer);
+  end;
+end;
+
+function FindInStream(Stream: TStream; Start: int64; SearchFor: string): int64;
+// Adapted from
+// http://wiki.lazarus.freepascal.org/Rosetta_Stone#Finding_all_occurrences_of_some_bytes_in_a_file
+var
+  a: array of byte;
+  block: array of byte;
+  blocksize:integer = 1024*1024;
+  CharCounter: int64;
+  readsize:integer;
+  fPos:Int64;
+  fifoBuff:array of byte;
+  fifoSt,fifoEn,searchLen,lpbyte:integer;
+  function CheckPos: int64;
+  var
+    l,p:integer;
+  begin
+    result:=-1;
+    p := fifoST;
+    for l := 0 to pred(SearchLen) do
+    begin
+      if a[l] <> fifoBuff[p] then exit;
+      //p := (p+1) mod SearchLen,   the if seems quicker
+      inc(p); if p >= SearchLen then p := 0;
+    end;
+    result:=(fpos-searchLen);
+  end;
+
+begin
+  SetLength(a,length(SearchFor));
+  Move(Searchfor[1], a, Length(Searchfor)); //todo check if this shouldn't be a^
+
+  setlength(block,blocksize);
+  Stream.Position:=Start;
+  readsize := Stream.Read(block[0],Length(block));
+  searchLen := length(a);
+  if searchLen > length(block) then
+    raise Exception.Create('Search term larger than blocksize');
+  if readsize < searchLen then exit;
+  setlength(fifoBuff,searchLen);
+  move(block[0],fifoBuff[0],searchLen);
+  fPos:=0;
+  fifoSt:=0;
+  fifoEn:=SearchLen-1;
+  result:=CheckPos;
+  if result>-1 then
+    exit; //found it
+  while readsize > 0 do
+  begin
+    for lpByte := 0 to pred(readsize) do
+    begin
+      inc(fifoSt); if fifoSt>=SearchLen then fifoST := 0;
+      inc(fifoEn); if fifoEn>=SearchLen then fifoEn := 0;
+      fifoBuff[fifoEn] := block[lpByte];
+      inc(fPos);
+      result:=CheckPos;
+      if result>-1 then
+        exit; //found it
+    end;
+    readsize := Stream.Read(block[0],Length(block));
   end;
 end;
 
