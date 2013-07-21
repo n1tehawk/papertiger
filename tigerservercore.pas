@@ -93,7 +93,9 @@ type
     // Adds the tiff image to given documentID. Add at end of any existing images, unless ImageOrder>0. Returns image ID or INVALIDID when failed.
     function AddImage(ImageData: TStream; ImageName: string;
       DocumentID: integer; ImageOrder: integer): integer;
-    // Adds the tiff image to given documentID. Add at end of any existing images, unless ImageOrder>0. Returns image ID or INVALIDID when failed.
+    // Adds the tiff image to given documentID.
+    // Rotates it first if the user asked for it
+    // Add at end of any existing images, unless ImageOrder>0. Returns image ID or INVALIDID when failed.
     function AddImage(ImageFile: string; DocumentID: integer;
       ImageOrder: integer): integer;
     // Language to be used for OCR. Will not be saved in settings
@@ -161,7 +163,7 @@ begin
   except
     on E: Exception do
     begin
-      TigerLog.WriteLog('AddDocument: error adding new document. ' + E.Message);
+      TigerLog.WriteLog(etError, 'AddDocument: error adding new document. ' + E.Message);
     end;
   end;
 end;
@@ -213,8 +215,28 @@ end;
 function TTigerServerCore.AddImage(ImageFile: string; DocumentID: integer;
   ImageOrder: integer): integer;
 var
+  Clean: TImageCleaner;
   ImageStream: TFileStream;
 begin
+  result:=0;
+
+  // Rotate image first if user had requested it
+  if FDesiredRotation<>0 then
+  begin
+    Clean:=TImageCleaner.Create;
+    try
+      Clean.ImageFile:=ImageFile;
+      if not(Clean.Rotate(FDesiredRotation,ImageFile,ImageFile)) then
+      begin
+        result:=INVALIDID;
+        TigerLog.WriteLog(etError,'TTigerServerCore.AddImage: error rotating image '+ImageFile+'. Aborting.');
+        exit;
+      end;
+    finally
+      Clean.Free;
+    end;
+  end;
+
   ImageStream := TFileStream.Create(ImageFile, fmOpenRead);
   try
     Result := AddImage(ImageStream, ExtractFileName(ImageFile), DocumentID, ImageOrder)
@@ -485,6 +507,7 @@ We could save some data here? If so, what?
 
 function TTigerServerCore.ScanSinglePage(DocumentID: integer): integer;
 var
+  Clean: TImageCleaner;
   ImageOrder: integer;
   Message: string;
   Resolution: integer;
@@ -533,6 +556,23 @@ begin
         Scanner.FileName, [rfReplaceAll]));
       exit;
       //raise Exception.CreateFmt(Message, [Scanner.FileName]);
+    end;
+
+    // Rotate image first if user had requested it
+    if FDesiredRotation<>0 then
+    begin
+      Clean:=TImageCleaner.Create;
+      try
+        Clean.ImageFile:=Scanner.FileName;
+        if not(Clean.Rotate(FDesiredRotation,Scanner.FileName,Scanner.FileName)) then
+        begin
+          result:=INVALIDID;
+          TigerLog.WriteLog(etError,'TTigerServerCore.AddImage: error rotating image '+Scanner.FileName+'. Aborting.');
+          exit;
+        end;
+      finally
+        Clean.Free;
+      end;
     end;
     TigerLog.WriteLog(etDebug, 'ScanSinglePage: going to process single image) ' + Scanner.FileName);
     Result := FTigerDB.InsertImage(DocumentID, ImageOrder, Scanner.FileName, '');

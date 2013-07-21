@@ -164,9 +164,8 @@ begin
       Rotate(Rotation,FImageFile, RotatedImage);
     end;
     Score:=CheckRecognition(RotatedImage,CorrectWords);
-    {$IFDEF DEBUG}
     TigerLog.WriteLog(etDebug, 'File: '+FImageFile+' rotation '+inttostr(Rotation)+' score '+inttostr(Score)+' %; correct words: '+inttostr(CorrectWOrds));
-    {$ENDIF}
+
     if (Score>TopScore) and (CorrectWords>MinWords) then
     begin
       TopScore:=Score;
