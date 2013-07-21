@@ -192,6 +192,8 @@ begin
         // Fix sane bug
         if FindInStream(ImageData,0,SaneBuggyText)=0 then
         begin
+          //todo: debug
+          TigerLog.WriteLog(etDebug,'TTigerServerCore.AddImage: found sane bug 313851 for file '+ImageName);
           DeleteFromStream(ImageData,0,length(SaneBuggyText));
           TigerLog.WriteLog(etDebug,'TTigerServerCore.AddImage: fixed sane bug 313851 for file '+ImageName);
         end;
