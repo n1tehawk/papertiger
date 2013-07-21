@@ -50,11 +50,14 @@ type
     // Returns degrees image needs to be turned to end right-side-up
     function DetectRotation: integer;
   public
+    // Cleans up before scanning:
+    // Converts image to black/white
     // Reads image, performs OCR tests on it to figure out if it needs to be rotated.
     // Rotates image if needed
     // Returns number of degrees the image has been turned,
-    // e.g. -90: image rotated counterclockwise 90 degrees
-    function DetectApplyRotation: integer;
+    // e.g. 90: image rotated counterclockwise 90 degrees
+    // Returns INVALIDID if function failed.
+    function Clean: integer;
     // Rotates source image to destination image over specified number of degrees clockwise
     // Returns true if succesful
     function Rotate(Degrees: integer; SourceFile, DestinationFile: string): boolean;
@@ -151,7 +154,6 @@ var
   TopScore: integer=0;
   CorrectWords: integer=0;
 begin
-  //todo: first convert image to 300dpi, lineart if it isn't already
   Result := 0;
   Rotation:=0;
   while Rotation <= 270 do
@@ -167,7 +169,7 @@ begin
     TigerLog.WriteLog(etDebug, 'File: '+RotatedImage+' rotation '+inttostr(Rotation)+' score '+inttostr(Score)+' %; correct words: '+inttostr(CorrectWOrds));
     {$IFNDEF DEBUG}
     DeleteFile(RotatedImage); //clean up
-    {$ELSE}
+    {$ENDIF}
 
     if (Score>TopScore) and (CorrectWords>MinWords) then
     begin
@@ -234,6 +236,8 @@ begin
   else
     TempFile:=DestinationFile;
   // Rotate; indicate output should be tiff format
+  // Output appears to be CCIT fax T.6, but apparently tesseract 3.02.02
+  // can now read that
   ErrorCode:=ExecuteCommand(ConvertCommand+
     ' --rotate '+inttostr(Degrees)+
     ' --input "'+SourceFile+'" '+
@@ -255,14 +259,26 @@ begin
   end;
 end;
 
-function TImageCleaner.DetectApplyRotation: integer;
+function TImageCleaner.Clean: integer;
 var
+  BWImage: string;
   Degrees:integer;
+  OriginalImage: string;
 begin
-  Result:=0;
+  Result:=INVALIDID;
+  OriginalImage:=FImageFile;
+  BWImage:=GetTempFileName('','BW');
+  ToBlackWhiteTIFF(FImageFile,BWImage);
+  FImageFile:=BWImage;
   Degrees:=DetectRotation;
   if Rotate(Degrees,FImageFile,FImageFile) then
     result:=Degrees;
+  // Make sure our fixes are copied over
+  if ExpandFileName(OriginalImage)<>ExpandFileName(FImageFile) then
+  begin
+    RenameFile(FImageFile,OriginalImage);
+    FImageFile:=OriginalImage;
+  end;
 end;
 
 end.

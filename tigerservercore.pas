@@ -267,7 +267,7 @@ begin
     // If user wanted to, rotate and overwrite existing image
     if FDesiredRotation<>0 then
       Cleaner.Rotate(FDesiredRotation,ImageFile, ImageFile);
-    Cleaner.DetectApplyRotation;
+    Cleaner.Clean;
     Result := True;
     TigerLog.WriteLog(etInfo, 'CleanImage: not yet completely implemented. File argument passed: ' +
       ImageFile);
