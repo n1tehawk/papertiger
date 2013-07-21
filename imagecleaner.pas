@@ -161,10 +161,13 @@ begin
     else
     begin
       RotatedImage:=GetTempFileName('',inttostr(Rotation));
-      Rotate(Rotation,FImageFile, RotatedImage);
+      Rotate(Rotation,FImageFile,RotatedImage);
     end;
     Score:=CheckRecognition(RotatedImage,CorrectWords);
-    TigerLog.WriteLog(etDebug, 'File: '+FImageFile+' rotation '+inttostr(Rotation)+' score '+inttostr(Score)+' %; correct words: '+inttostr(CorrectWOrds));
+    TigerLog.WriteLog(etDebug, 'File: '+RotatedImage+' rotation '+inttostr(Rotation)+' score '+inttostr(Score)+' %; correct words: '+inttostr(CorrectWOrds));
+    {$IFNDEF DEBUG}
+    DeleteFile(RotatedImage); //clean up
+    {$ELSE}
 
     if (Score>TopScore) and (CorrectWords>MinWords) then
     begin
@@ -198,7 +201,7 @@ begin
     TempFile:=DestinationFile;
   ErrorCode:=ExecuteCommand(NormalizeCommand+
     ' --denoise --dpi 300'+
-    ' --input '+SourceFile+' --output "tiff:'+TempFile+'" ', false);
+    ' --input "'+SourceFile+'" --output "tiff:'+TempFile+'" ', false);
   if ErrorCode=0 then
   begin
     result:=true;
@@ -233,7 +236,7 @@ begin
   // Rotate; indicate output should be tiff format
   ErrorCode:=ExecuteCommand(ConvertCommand+
     ' --rotate '+inttostr(Degrees)+
-    ' --input '+SourceFile+' '+
+    ' --input "'+SourceFile+'" '+
     ' --output "tiff:'+TempFile+'" ', false);
   if ErrorCode=0 then
   begin
@@ -256,15 +259,10 @@ function TImageCleaner.DetectApplyRotation: integer;
 var
   Degrees:integer;
 begin
+  Result:=0;
   Degrees:=DetectRotation;
-  try
-    //todo: actual turning
-  except
-    Degrees:=0;
-    //error message
-  end;
-  result:=Degrees;
-
+  if Rotate(Degrees,FImageFile,FImageFile) then
+    result:=Degrees;
 end;
 
 end.
