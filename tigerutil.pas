@@ -52,6 +52,12 @@ type
     destructor Destroy; override;
   end;
 
+{todo: need translation array:
+- tesseract language code (nld, eng...)
+- cuneiform language code (=ISO x letter code)
+- LANG code for Linux environment for Hunspell
+and lookup/translation
+}
 var
   TigerLog: TLogger;
 //Created by unit initialization so available for every referencing unit
