@@ -62,7 +62,7 @@
     <RunParams>
       <local>
         <FormatVersion Value="1"/>
-        <CommandLineParams Value="--list"/>
+        <CommandLineParams Value="--image=/tmp/bla.tiff"/>
       </local>
     </RunParams>
     <Units Count="2">
