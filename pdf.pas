@@ -81,14 +81,10 @@ begin
   if FImageResolution > 0 then
     ResolutionOption := ' --resolution ' + IntToStr(FImageResolution);
   Options := ' "' + FHOCRFile + '" -i "' + FImageFile + '" -o "' + FPDFFile + '"' + ResolutionOption + ' --sloppy-text';
-  {$IFDEF DEBUG}
   TigerLog.WriteLog(etDebug, 'CreatePDF: PDF generation: running ' + Command + Options, true);
-  {$ENDIF}
   if ExecuteCommand(Command + Options, false) = 0 then
   begin
-    {$IFDEF DEBUG}
     TigerLog.WriteLog(etDebug, 'CreatePDF: PDF succeeded.', true);
-    {$ENDIF}
     Result := true;
   end
   else
