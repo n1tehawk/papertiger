@@ -170,6 +170,8 @@ end;
 
 function TTigerServerCore.AddImage(ImageData: TStream; ImageName: string;
   DocumentID: integer; ImageOrder: integer): integer;
+const
+  SaneBuggyText='Failed cupsGetDevices'+Chr($0A); //linefeed
 var
   MemStream: TMemoryStream;
   ImagePath, ImageHash: string;
@@ -187,6 +189,12 @@ begin
     MemStream := TMemoryStream.Create;
     try
       try
+        // Fix sane bug
+        if FindInStream(ImageData,0,SaneBuggyText)=0 then
+        begin
+          DeleteFromStream(ImageData,0,length(SaneBuggyText));
+          TigerLog.WriteLog(etDebug,'TTigerServerCore.AddImage: fixed sane bug 313851 for file '+ImageName);
+        end;
         ImageData.Position := 0;
         MemStream.CopyFrom(ImageData, ImageData.Size);
         //todo: do sane bug detection
