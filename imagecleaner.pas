@@ -235,8 +235,12 @@ var
   TempFile: string;
 begin
   result:=false;
+  TigerLog.WriteLog(etDebug,
+    'TImageCleaner.Rotate: going to rotate '+SourceFile+' to '+
+    DestinationFile+' over '+inttostr(Degrees)+' degrees');
+
   if ExpandFileName(SourceFile)=ExpandFileName(DestinationFile) then
-    TempFile:=GetTempFileName('','TIF')
+    TempFile:=GetTempFileName('','TIFR')
   else
     TempFile:=DestinationFile;
 
