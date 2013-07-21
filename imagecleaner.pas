@@ -27,6 +27,8 @@ unit imagecleaner;
 
 
 {$i tigerserver.inc}
+{$DEFINE USE_IMAGEMAGICK}
+{.$DEFINE USE_EXACTIMAGE}
 
 interface
 
@@ -77,7 +79,12 @@ implementation
 {$i tigercommondefs.inc}
 
 const
+  {$IFDEF USE_EXACTIMAGE}
   ConvertCommand='econvert'; //exactimage's econvert utility
+  {$ENDIF}
+  {$IFDEF USE_IMAGEMAGICK}
+  ConvertCommand='convert'; //Imagemagick's version
+  {$ENDIF}
   NormalizeCommand='optimize2bw'; //exactimage's => black&white TIFF conversion tool
 
 function TImageCleaner.CheckRecognition(ImageFile: string; var CorrectWords: integer): integer;
@@ -235,6 +242,7 @@ begin
     TempFile:=GetTempFileName('','TIF')
   else
     TempFile:=DestinationFile;
+  {$IFDEF USE_EXACTIMAGE}
   // Rotate; indicate output should be tiff format
   // Output appears to be CCIT fax T.6, but apparently tesseract 3.02.02
   // can now read that
@@ -242,6 +250,16 @@ begin
     ' --rotate '+inttostr(Degrees)+
     ' --input "'+SourceFile+'" '+
     ' --output "tiff:'+TempFile+'" ', false);
+  {$ENDIF}
+  {$IFDEF USE_IMAGEMAGICK}
+  // Rotate; indicate output should be tiff format
+  // Output appears to be CCIT fax T.6, but apparently tesseract 3.02.02
+  // can now read that
+  ErrorCode:=ExecuteCommand(ConvertCommand+
+    ' "'+SourceFile+'" '+
+    ' -rotate '+inttostr(Degrees)+
+    ' "'+TempFile+'" ', false);
+  {$ENDIF}
   if ErrorCode=0 then
   begin
     result:=true;
