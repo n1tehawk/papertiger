@@ -87,6 +87,8 @@ const
 var
   ScanFileText: TStringList;
 begin
+  writeln('debug: looking for:');
+  writeln('*'+BuggyText+'*');
   ScanFileText:=TStringList.Create;
   try
     ScanFileText.LoadFromFile(TIFFile);

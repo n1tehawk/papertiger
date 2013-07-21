@@ -56,10 +56,46 @@ var
   TigerLog: TLogger;
 //Created by unit initialization so available for every referencing unit
 
+// Delete length characters from starting position from a stream
+procedure DeleteFromStream(Stream: TStream; Start, Length: Int64);
+
 //Shows non-debug messages on screen; also shows debug messages if DEBUG defined
 procedure infoln(Message: string; Level: TEventType);
 
 implementation
+uses math;
+
+procedure DeleteFromStream(Stream: TStream; Start, Length: Int64);
+// Source:
+// http://stackoverflow.com/questions/9598032/is-it-possible-to-delete-bytes-from-the-beginning-of-a-file
+var
+  Buffer: Pointer;
+  BufferSize: Integer;
+  BytesToRead: Int64;
+  BytesRemaining: Int64;
+  SourcePos, DestPos: Int64;
+begin
+  SourcePos := Start+Length;
+  DestPos := Start;
+  BytesRemaining := Stream.Size-SourcePos;
+  BufferSize := Min(BytesRemaining, 1024*1024*16);//no bigger than 16MB
+  GetMem(Buffer, BufferSize);
+  try
+    while BytesRemaining>0 do begin
+      BytesToRead := Min(BufferSize, BytesRemaining);
+      Stream.Position := SourcePos;
+      Stream.ReadBuffer(Buffer^, BytesToRead);
+      Stream.Position := DestPos;
+      Stream.WriteBuffer(Buffer^, BytesToRead);
+      inc(SourcePos, BytesToRead);
+      inc(DestPos, BytesToRead);
+      dec(BytesRemaining, BytesToRead);
+    end;
+    Stream.Size := DestPos;
+  finally
+    FreeMem(Buffer);
+  end;
+end;
 
 procedure infoln(Message: string; Level: TEventType);
 var
