@@ -107,6 +107,12 @@ begin
       // hardcoded results in /tmp/detectlog.txt
       ResList.LoadFromFile(DetectLog);
       LinesRead:=0;
+      if ResList.Count=0 then
+      begin
+        TigerLog.WriteLog(etError,'TImageCleaner.CheckRecognition: error running spell check recognition for image '+ImageFile+': empty file '+DetectLog);
+        exit;
+      end;
+
       for i:=0 to ResList.Count-1 do
       begin
         // Ignore comments starting with #
@@ -117,6 +123,7 @@ begin
             begin
               // Total wordcount
               WordsTotal:=strtointdef(Trim(ResList[i]),-1);
+              TigerLog.WriteLog(etDebug,'TImageCleaner.CheckRecognition: found '+inttostr(WordsTotal)+' total words.');
               LinesRead:=LinesRead+1;
             end;
           1:
@@ -126,6 +133,8 @@ begin
                 WordsWrong:=strtointdef(Trim(ResList[i]),0);
                 CorrectWords:=WordsTotal-WordsWrong;
                 if CorrectWords<0 then CorrectWords:=0;
+                TigerLog.WriteLog(etDebug,'TImageCleaner.CheckRecognition: found '+inttostr(CorrectWords)+' correct, '+
+                  inttostr(WordsWrong)+' wrong words.');
                 Result:=CorrectWords div WordsTotal;
               except
                 // keep result at -1
