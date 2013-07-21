@@ -83,7 +83,7 @@ uses processutils;
 
 procedure TScanner.FixSaneBug313851(TIFFile: string);
 const
-  BuggyText='Failed cupsGetDevices'+Chr($0A); //linefeed
+  BuggyText='Failed cupsGetDevices'; //+Chr($0A); //linefeed
 var
   ScanFileText: TStringList;
 begin
@@ -97,8 +97,8 @@ begin
     if pos(BuggyText, ScanFileText[0])=1 then
     begin
       TigerLog.WriteLog(etDebug,'TScanner.FixSaneBug313851: found bug in file '+TIFFile);
-      ScanFileText[0]:=copy(ScanFileText[0], length(BuggyText)+1, Length(
-        ScanFileText[0]));
+      // Remove text and following linefeed
+      ScanFileText.Delete(0);
       ScanFileText.SaveToFile(TIFFile);
     end;
   finally
