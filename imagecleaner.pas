@@ -102,7 +102,9 @@ begin
     TempOCR.RecognizeText(sofPlainText);
 
     // Now run a spell check and open the result text file to check effectiveness
-    if ExecuteCommand(TextDetectCommand+' "'+TempOCR.OCRFile+'"',false)<>0 then
+    //todo: set LANG variable or use something else than hunspell because we're probably
+    // using the wrong dictionary
+    if ExecuteCommand(TextDetectCommand+' "'+TempOCR.OCRFile+'"',false)=0 then
     begin
       // hardcoded results in /tmp/detectlog.txt
       ResList.LoadFromFile(DetectLog);
@@ -148,6 +150,10 @@ begin
           end;
         end;
       end;
+    end
+    else
+    begin
+      TigerLog.WriteLog(etError,'TImageCleaner.CheckRecognition: '+TextDetectCommand+' exited with non-zero result code.');
     end;
   finally
     TempOCR.Free;
