@@ -189,15 +189,15 @@ begin
     MemStream := TMemoryStream.Create;
     try
       try
-        // Fix sane bug
-        if FindInStream(ImageData,0,SaneBuggyText)=0 then
-        begin
-          DeleteFromStream(ImageData,0,length(SaneBuggyText));
-          TigerLog.WriteLog(etDebug,'TTigerServerCore.AddImage: fixed sane bug 313851 for file '+ImageName);
-        end;
         ImageData.Position := 0;
         MemStream.CopyFrom(ImageData, ImageData.Size);
-        //todo: do sane bug detection
+        // Fix sane bug (we can write to MemStream, not to ImageStream)
+        if FindInStream(MemStream,0,SaneBuggyText)=0 then
+        begin
+          DeleteFromStream(MemStream,0,length(SaneBuggyText));
+          TigerLog.WriteLog(etDebug,'TTigerServerCore.AddImage: fixed sane bug 313851 for file '+ImageName);
+        end;
+        MemStream.Position := 0;
         MemStream.SaveToFile(ImagePath);
         MemStream.Position := 0;
         ImageHash := MD5Print(MD5Buffer(MemStream.Memory^, MemStream.Size));
