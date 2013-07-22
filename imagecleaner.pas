@@ -97,6 +97,7 @@ begin
   TempOCR:=TOCR.Create;
   ResList:=TStringList.Create;
   try
+    TigerLog.WriteLog(etDebug,'CheckRecognition: going to call ocr for file '+ImageFile);
     TempOCR.ImageFile:=ImageFile;
     TempOCR.Language:=FLanguage;
     TempOCR.RecognizeText(sofPlainText);
