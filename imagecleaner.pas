@@ -118,6 +118,7 @@ begin
 
       for i:=0 to ResList.Count-1 do
       begin
+        tigerlog.writelog(etdebug,'line '+inttostr(i)+' equals '+ResList[i]);
         // Ignore comments starting with #
         if pos('#',trim(Reslist[i]))<>1 then
         begin
@@ -169,8 +170,8 @@ const
 var
   DetectedRotation: integer=0;
   RotatedImage: string;
-  Rotation: integer;
-  Score: integer;
+  Rotation: integer=0;
+  Score: integer=0;
   TopScore: integer=0;
   CorrectWords: integer=0;
 begin
