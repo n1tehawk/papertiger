@@ -54,7 +54,12 @@ type
 
 {todo: need translation array:
 - tesseract language code (nld, eng...)
-- cuneiform language code (=ISO x letter code)
+- cuneiform language code (=ISO x letter code):
+cuneiform -l
+Cuneiform for Linux 1.1.0
+...
+eng ger fra rus swe spa ita ruseng ukr srp hrv pol
+dan por dut cze rum hun bul slv lav lit est tur
 - LANG code for Linux environment for Hunspell
 and lookup/translation
 }
