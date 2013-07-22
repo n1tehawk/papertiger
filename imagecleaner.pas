@@ -167,14 +167,14 @@ function TImageCleaner.DetectRotation(Source: string): integer;
 const
   MinWords = 10; //Below this number, the image probably has no valid text
 var
-  DetectedRotation: integer;
+  DetectedRotation: integer=0;
   RotatedImage: string;
   Rotation: integer;
   Score: integer;
   TopScore: integer=0;
   CorrectWords: integer=0;
 begin
-  Result := 0;
+  Result:=0;
   Rotation:=0;
   while Rotation <= 270 do
   begin
@@ -302,7 +302,7 @@ end;
 function TImageCleaner.Clean(Source, Destination: string): integer;
 var
   TempImage: string;
-  Degrees:integer;
+  Degrees:integer=0;
 begin
   Result:=INVALIDID;
   TempImage:=GetTempFileName('','BW');
