@@ -87,13 +87,9 @@ const
 var
   ScanFileText: TStringList;
 begin
-  writeln('debug: looking for:');
-  writeln('*'+BuggyText+'*');
   ScanFileText:=TStringList.Create;
   try
     ScanFileText.LoadFromFile(TIFFile);
-    writeln('debug: position:');
-    writeln(pos(BuggyText, ScanFileText[0]));
     if pos(BuggyText, ScanFileText[0])=1 then
     begin
       TigerLog.WriteLog(etDebug,'TScanner.FixSaneBug313851: found bug in file '+TIFFile);
