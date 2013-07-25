@@ -280,7 +280,8 @@ begin
   if (result) and (ExpandFileName(SourceFile)=ExpandFileName(DestinationFile)) then
   begin
     // Copy over original file as requested
-    result:=RenameFile(TempFile,DestinationFile);
+    DeleteFile(DestinationFile);
+    result:=Sysutils.RenameFile(TempFile,DestinationFile);
   end;
 end;
 
@@ -338,7 +339,8 @@ begin
   if (result) and (ExpandFileName(SourceFile)=ExpandFileName(DestinationFile)) then
   begin
     // Copy over original file as requested
-    result:=RenameFile(TempFile,DestinationFile);
+    DeleteFile(DestinationFile);
+    result:=Sysutils.RenameFile(TempFile,DestinationFile);
   end;
 end;
 

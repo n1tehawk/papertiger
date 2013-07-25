@@ -262,7 +262,6 @@ type
         writeln('Error while scanning')
       else
         writeln('Scanning complete.');
-
     end;
 
     // stop program loop
@@ -307,7 +306,7 @@ type
     writeln(' language codes (e.g. man tesseract)');
     writeln('--list');
     writeln(' list already scanned documents');
-    writeln('-r <d> --rotate <d>');
+    writeln('-r <d> --rotate=<d>');
     writeln(' rotate image or scan d degrees clockwise before processing');
     writeln('-s --scan');
     writeln(' Scan document, process.');
