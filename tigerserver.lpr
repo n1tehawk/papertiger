@@ -288,8 +288,17 @@ type
   procedure TTigerServer.WriteHelp;
   begin
     writeln('Usage: ', ExeName, ' -h');
+    writeln('--blackwhite, --lineart');
+    writeln(' Scan/PDF in black & white. Useful for text only documents such as');
+    writeln(' letters.');
+    writeln('--color, --colour');
+    writeln(' Scan/PDF in color (text detection internally still in black/white');
+    writeln(' for better performance). Useful for photos, graphics etc.');
     writeln('-d <device> --device=<device>');
     writeln(' Scanning device (use sane notation) - empty to select default.');
+    writeln('--gray, --grayscale');
+    writeln(' Scan/PDF in grayscale (text detection internally still in black/white');
+    writeln(' for better performance)');
     writeln('-i <image> --image=<image>');
     writeln(' Process image.');
     writeln('-l <lang> --language=<language>');
