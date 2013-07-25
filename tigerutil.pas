@@ -83,45 +83,26 @@ implementation
 uses math;
 
 function FileCopy(Source, Target: string): boolean;
-const
-   ChunkSize  : Longint = 8192; { copy in 8K chunks }
+// Copies source to target; overwrites target.
+// Caches entire file content in memory.
+// Returns true if succeeded; false if failed
 var
-   CopyBuffer   : Pointer; { buffer for copying }
-   BytesCopied  : Longint;
-   SourceHdl, DestinationHdl : Integer; { handles }
-   TargetTF  : TFileName; { holder for expanded target name }
-
+  MemBuffer: TMemoryStream;
 begin
   result:=false;
-  TargetTF := Target;
-  GetMem(CopyBuffer, ChunkSize); { allocate the buffer }
+  MemBuffer:=TMemoryStream.Create;
   try
-   SourceHdl := FileOpen(Source, fmShareDenyWrite); { open source file }
-   if SourceHdl < 0 then
-     //raise EFOpenError.CreateFmt('Error: Can''t open file!', [SourceHdl]);
-     exit;
-
-   try
-     DestinationHdl := FileCreate(TargetTF); { create output file; overwrite existing }
-     if DestinationHdl < 0 then
-       //raise EFCreateError.CreateFmt('Error: Can''t create file!', [TargetTF]);
-       exit;
-     try
-       repeat
-         BytesCopied := FileRead(SourceHdl, CopyBuffer^, ChunkSize); { read chunk }
-         if BytesCopied > 0  {if we read anything... }
-            then FileWrite(DestinationHdl, CopyBuffer^, BytesCopied); { ...write chunk }
-       until BytesCopied < ChunkSize; { until we run out of chunks }
-     finally
-       FileClose(DestinationHdl); { close the TargetTF file }
-     end;
-   finally
-     FileClose(SourceHdl); { close the source file }
-   end;
+    try
+      MemBuffer.LoadFromFile(Source);
+      MemBuffer.Position:=0;
+      MemBuffer.SaveToFile(Target);
+      result:=true;
+    except
+      result:=false; //swallow exception; convert to error code
+    end;
   finally
-   FreeMem(CopyBuffer, ChunkSize); { free the buffer }
+    MemBuffer.Free;
   end;
-  result:=true;
 end;
 
 procedure DeleteFromStream(Stream: TStream; Start, Length: Int64);
