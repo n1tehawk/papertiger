@@ -90,6 +90,12 @@ var
   MemBuffer: TMemoryStream;
 begin
   result:=false;
+  if not(FileExists(Source)) then
+  begin
+    TigerLog.WriteLog(etDebug,'FileCopy: source file '+Source+' does not exist. Arborting');
+    exit;
+  end;
+
   MemBuffer:=TMemoryStream.Create;
   try
     try
@@ -98,7 +104,10 @@ begin
       MemBuffer.SaveToFile(Target);
       result:=true;
     except
-      result:=false; //swallow exception; convert to error code
+      on E: Exception do begin
+        TigerLog.WriteLog(etDebug,'FileCopy: error '+E.Message);
+        result:=false; //swallow exception; convert to error code
+      end;
     end;
   finally
     MemBuffer.Free;
