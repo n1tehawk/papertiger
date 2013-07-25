@@ -71,6 +71,7 @@ const
   ISO8601FullDateFormat = tigerdb.ISO8601FullDateFormat;
 
 type
+  ScanType = scan.ScanType;
 
   { TTigerServerCore }
 
@@ -562,7 +563,7 @@ begin
   Scanner := TScanner.Create;
   try
     Scanner.Resolution := Resolution;
-    Scanner.ColorType := stLineArt;
+    Scanner.ColorType := FColorType;
     Scanner.ScanDevice := FScanDevice;
     StartDate := Now(); //local time
     StartDateString := FormatDateTime('yyyymmddhhnnss', StartDate);
@@ -672,7 +673,7 @@ begin
   TigerLog.WriteLog(etDebug, 'TTigerServerCore: starting.');
   TigerLog.WriteLog(etDebug, Self.ServerInfo);
   FSettings := TTigerSettings.Create;
-  FColorType := stLineArt; //todo: save into settings
+  FColorType := stLineArt; //todo: save to settings/restore from settings as text string
   //read language from settings; can be overridden by command line option
   FCurrentOCRLanguage := FSettings.Language;
   FDesiredRotation:=0;
