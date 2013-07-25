@@ -44,14 +44,11 @@ type
   // clockwise to get the correct orientation
   Orientation=(orNormal,orUpsideDown,orTurnedClock,orTurnedAntiClock,orUnknown);
 
-  // Output format of scan - plain text or HOCR (HTML with OCR info)
-  ScanOutputFormat=(sofHOCR, sofPlainText);
-
   { TOCR }
 
   TOCR = class(TObject)
   private
-    FOCRFile: string;
+    FHOCRFile: string;
     FImageFile: string;
     FLanguage: string;
     FOrientation: Orientation;
@@ -59,11 +56,10 @@ type
     FText: string;
   public
     // Perform the actual OCR
-    function RecognizeText(Format: ScanOutputFormat): boolean;
+    function RecognizeText: boolean;
     // Scan results file containing
-    // hOCR (position and text in image) or plain text depending on
-    // output format set
-    property OCRFile: string read FOCRFile;
+    // hOCR (position and text in image)
+    property HOCRFile: string read FHOCRFile;
     // Input image
     property ImageFile: string write FImageFile;
     // Language to use for OCR, e.g. eng for English, nld for Dutch
@@ -71,7 +67,6 @@ type
     // Rotation (if any) of scanned image versus reality
     property Orientation: Orientation read FOrientation write FOrientation;
     // Text recognized in image
-    //todo: add outputfile property?!?!!
     property Text: string read FText write FText;
     constructor Create;
     destructor Destroy; override;
@@ -82,7 +77,7 @@ uses processutils;
 
 { TOCR }
 
-function TOCR.RecognizeText(Format: ScanOutputFormat): boolean;
+function TOCR.RecognizeText: boolean;
 const
   OCRCommand='tesseract';
 var
@@ -101,11 +96,11 @@ begin
   end;
 
   OutputFile:=GetTempFileName;
+  FHOCRFile:='';
   FText:='';
-  FOCRFile:='';
-  //todo: upside down detection? OCR 2x, higher detection rate is right orientation
-  //=> we can use tesseract 3 -pam parameter perhaps?
+
   // tesseract sticks results in outputfile+.txt
+  // Plain text detection
   Command:=OCRCommand+' "'+FImageFile+'" "'+OutputFile+'" -l '+FLanguage;
   TigerLog.WriteLog(etDebug,'TOCR.RecognizeText: going to run '+Command);
   TessResult:=ExecuteCommand(Command,false);
@@ -121,26 +116,21 @@ begin
     finally
       Results.Free;
     end;
+
     // Output position & word text in hocr format:
     Command:=OCRCommand+' "'+FImageFile+'" "'+OutputFile+'" -l '+FLanguage+' hocr';
     HOCRResult:=ExecuteCommand(Command,false);
     case HOCRResult of
       0:
       begin
-        if Format=sofHOCR then
-          FOCRFile:=OutputFile+'.html'
-        else
-          FOCRFile:=OutputFile+'.txt';
-        TigerLog.WriteLog(etDebug,'Result: hocr done: '+FOCRFile);
+        FHOCRFile:=OutputFile+'.html';
+        TigerLog.WriteLog(etDebug,'Result: hocr done: '+FHOCRFile);
         result:=true;
       end;
       1:  //OCR error, need not be a problem
       begin
-        if Format=sofHOCR then
-          FOCRFile:=OutputFile+'.html'
-        else
-          FOCRFile:=OutputFile+'.txt';
-        TigerLog.WriteLog(etDebug,'Result: hocr found no text for: '+FOCRFile);
+        FHOCRFile:=OutputFile+'.html';
+        TigerLog.WriteLog(etDebug,'Result: hocr found no text for: '+FHOCRFile);
         result:=true;
       end;
       else
@@ -160,7 +150,7 @@ end;
 constructor TOCR.Create;
 begin
   inherited Create;
-  FOCRFile:='';
+  FHOCRFile:='';
   FLanguage:='eng'; //default to English; tesseract format
   FOrientation:=orUnknown;
 end;
