@@ -90,6 +90,7 @@ const
 var
   i, LinesRead: integer;
   ImageTextFile: string;
+  Proc: TProcessEx;
   TempOCR: TOCR;
   ResList: TStringList;
   WordsTotal, WordsWrong: integer;
@@ -112,7 +113,35 @@ begin
 
     //todo: set LANG variable or use something else than hunspell because we're probably
     // using the wrong dictionary
-    if ExecuteCommand(TextDetectCommand+' "'+ImageTextFile+'"',false)=0 then
+    Proc:=TProcessEx.Create(nil);
+    try
+      try
+        Proc.CommandLine:=TextDetectCommand+' "'+ImageTextFile+'"';
+        //todo: temporary solution pending lookup table
+        // Convert tesseract style language codes to LANG variables
+        case FLanguage of
+          'eng': Proc.Environment.SetVar('LANG','en_US.UTF-8');
+          'fra': Proc.Environment.SetVar('LANG','fr_FR.UTF-8');
+          'nld': Proc.Environment.SetVar('LANG','nl_NL.UTF-8');
+          else
+          begin
+            Proc.Environment.SetVar('LANG','en_US.UTF-8');
+            TigerLog.WriteLog(etWarning,'TImageCleaner.CheckRecognition: Unknown detction language '+FLanguage+'; defaulting to English. Detection scores may be invalid.');
+          end;
+        end;
+        Proc.Execute;
+        if (Proc.ExitStatus=0) then
+          result:=0
+        else
+          result:=-1;
+      except
+        result:=-1;
+      end;
+    finally
+      Proc.Free;
+    end;
+
+    if result=0 then
     begin
       // hardcoded results in /tmp/detectlog.txt
       ResList.LoadFromFile(DetectLog);

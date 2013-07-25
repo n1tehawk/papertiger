@@ -53,7 +53,7 @@ type
   end;
 
 {todo: need translation array:
-- tesseract language code (nld, eng...)
+- tesseract language code (nld, eng, fra...)
 - cuneiform language code (=ISO x letter code):
 cuneiform -l
 Cuneiform for Linux 1.1.0
