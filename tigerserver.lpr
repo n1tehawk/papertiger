@@ -134,7 +134,7 @@ type
     PDF: string;
   begin
     // quick check parameters
-    ErrorMsg := CheckOptions('d:hi:l:p:r:sv', 'blackwhite color colour device: grayscale help image: language: lineart list pages: rotate: scan version');
+    ErrorMsg := CheckOptions('d:hi:l:p:r:sv', 'blackwhite color colour device: gray grayscale help image: language: lineart list pages: rotate: scan version');
     if ErrorMsg <> '' then
     begin
       ShowException(Exception.Create(ErrorMsg));
@@ -161,9 +161,20 @@ type
       FTigerCore.ScanDevice:='';
     end;
 
+    if HasOption('color') or HasOption('colour') then
+    begin
+      FTigerCore.ColorType:=ScanType.stColor;
+    end;
+
+    if HasOption('gray') or HasOption('grayscale') then
+    begin
+      FTigerCore.ColorType:=ScanType.stGray;
+    end;
+
+    // Put black and white last so it trumps the other settings
     if HasOption('blackwhite') or HasOption('lineart') then
     begin
-      FTigerCore.ColorType:=stLineArt;
+      FTigerCore.ColorType:=ScanType.stLineArt;
     end;
 
     if HasOption('list') then
