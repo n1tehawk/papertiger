@@ -292,6 +292,7 @@ function TImageCleaner.Rotate(Degrees: integer; SourceFile,
 // an exactimage dependency anyway for hocr2pdf
 var
   ErrorCode: integer;
+  Overwrite: boolean;
   TempFile: string;
 begin
   result:=false;
@@ -299,7 +300,8 @@ begin
     'TImageCleaner.Rotate: going to rotate '+SourceFile+' to '+
     DestinationFile+' over '+inttostr(Degrees)+' degrees');
 
-  if ExpandFileName(SourceFile)=ExpandFileName(DestinationFile) then
+  Overwrite:=(ExpandFileName(SourceFile)=ExpandFileName(DestinationFile));
+  if Overwrite then
     TempFile:=GetTempFileName('','TIFR')
   else
     TempFile:=DestinationFile;
@@ -326,21 +328,22 @@ begin
     ' -rotate '+inttostr(Degrees)+
     ' "'+TempFile+'" ', false);
   {$ENDIF}
-  if ErrorCode=0 then
-  begin
-    result:=true;
-  end
-  else
-  begin
+
+  result:=(ErrorCode=0);
+  if not(result) then
     TigerLog.WriteLog(etWarning,
       'TImageCleaner.Rotate: got result code '+inttostr(ErrorCode)+
-      ' when calling '+ConvertCommand+' for rotation '+inttostr(Degrees));
-  end;
-  if (result) and (ExpandFileName(SourceFile)=ExpandFileName(DestinationFile)) then
+      ' when calling '+ConvertCommand+' for rotation '+inttostr(Degrees))
+  else
+  if Overwrite then
   begin
     // Copy over original file as requested
-    DeleteFile(DestinationFile);
+    result:=DeleteFile(DestinationFile);
+    if result=false then
+      TigerLog.WriteLog(etError,'TImageCleaner.Rotate: error '+SysErrorMessage(GetLastOSError)+' trying to delete old file '+DestinationFile);
     result:=Sysutils.RenameFile(TempFile,DestinationFile);
+    if result=false then
+      TigerLog.WriteLog(etError,'TImageCleaner.Rotate: error '+SysErrorMessage(GetLastOSError)+' trying to copy rotated file to '+DestinationFile);
   end;
 end;
 
