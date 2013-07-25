@@ -432,8 +432,8 @@ begin
         try
           OCR.ImageFile := CleanImage;
           OCR.Language := FCurrentOCRLanguage;
-          Success := OCR.RecognizeText(sofHOCR);
-          HOCRFile := OCR.OCRFile;
+          Success := OCR.RecognizeText;
+          HOCRFile := OCR.HOCRFile;
           TigerLog.WriteLog(etDebug, 'ProcessImages: Got this text:' + OCR.Text);
         finally
           OCR.Free;

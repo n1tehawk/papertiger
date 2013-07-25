@@ -89,6 +89,7 @@ const
   DetectLog = '/tmp/detectlog.txt';
 var
   i, LinesRead: integer;
+  ImageTextFile: string;
   TempOCR: TOCR;
   ResList: TStringList;
   WordsTotal, WordsWrong: integer;
@@ -100,12 +101,18 @@ begin
     TigerLog.WriteLog(etDebug,'CheckRecognition: going to call ocr for file '+ImageFile);
     TempOCR.ImageFile:=ImageFile;
     TempOCR.Language:=FLanguage;
-    TempOCR.RecognizeText(sofPlainText);
+    TempOCR.RecognizeText;
 
     // Now run a spell check and open the result text file to check effectiveness
+    ImageTextFile:=GetTempFileName('','OCT');
+    ResList.Clear;
+    ResList.Add(TempOCR.Text);
+    ResList.SaveToFile(ImageTextFile);
+    ResList.Clear;
+
     //todo: set LANG variable or use something else than hunspell because we're probably
     // using the wrong dictionary
-    if ExecuteCommand(TextDetectCommand+' "'+TempOCR.OCRFile+'"',false)=0 then
+    if ExecuteCommand(TextDetectCommand+' "'+ImageTextFile+'"',false)=0 then
     begin
       // hardcoded results in /tmp/detectlog.txt
       ResList.LoadFromFile(DetectLog);
@@ -118,6 +125,7 @@ begin
 
       for i:=0 to ResList.Count-1 do
       begin
+        //todo: debug: remove
         tigerlog.writelog(etdebug,'line '+inttostr(i)+' equals '+ResList[i]);
         // Ignore comments starting with #
         if pos('#',trim(Reslist[i]))<>1 then
