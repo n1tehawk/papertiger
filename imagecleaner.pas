@@ -114,8 +114,6 @@ begin
     DeleteFile(ImageTextFile);
     {$ENDIF}
 
-    //todo: set LANG variable or use something else than hunspell because we're probably
-    // using the wrong dictionary
     Proc:=TProcessEx.Create(nil);
     try
       try
@@ -148,6 +146,11 @@ begin
     begin
       // hardcoded results in /tmp/detectlog.txt
       ResList.LoadFromFile(DetectLog);
+      {$IFDEF DEBUG}
+      SysUtils.RenameFile(DetectLog,DetectLog+'_'+ImageFile);
+      {$ELSE}
+      sysutils.DeleteFile(DetectLog);
+      {$ENDIF}
       LinesRead:=0;
       if ResList.Count=0 then
       begin
