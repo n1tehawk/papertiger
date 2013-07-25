@@ -264,8 +264,14 @@ begin
     Cleaner.Language:=FCurrentOCRLanguage;
     // If user wanted to, rotate and overwrite existing image
     if FDesiredRotation<>0 then
+    begin
       Cleaner.Rotate(FDesiredRotation,Source,Source);
-    Cleaner.Clean(Source, Destination); //result in destination
+      Cleaner.Clean(Source, Destination, false); //result in destination
+    end
+    else
+    begin
+      Cleaner.Clean(Source, Destination, true); //result in destination
+    end;
     Result := True;
   finally
     Cleaner.Free;

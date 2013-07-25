@@ -58,7 +58,7 @@ type
     // Returns number of degrees the image has been turned,
     // e.g. 90: image rotated counterclockwise 90 degrees
     // Returns INVALIDID if function failed.
-    function Clean(Source, Destination: string): integer;
+    function Clean(Source, Destination: string; AutoRotate: boolean): integer;
     // Rotates source image to destination image over specified number of degrees clockwise
     // Returns true if succesful
     function Rotate(Degrees: integer; SourceFile, DestinationFile: string): boolean;
@@ -342,7 +342,7 @@ begin
   end;
 end;
 
-function TImageCleaner.Clean(Source, Destination: string): integer;
+function TImageCleaner.Clean(Source, Destination: string; AutoRotate: boolean): integer;
 var
   TempImage: string;
   Degrees:integer=0;
@@ -350,9 +350,16 @@ begin
   Result:=INVALIDID;
   TempImage:=GetTempFileName('','BW');
   ToBlackWhiteTIFF(Source,TempImage);
-  Degrees:=DetectRotation(TempImage);
-  if Rotate(Degrees,TempImage,Destination) then
-    result:=Degrees;
+  if AutoRotate then
+  begin
+    Degrees:=DetectRotation(TempImage);
+    if Rotate(Degrees,TempImage,Destination) then
+      result:=Degrees;
+  end
+  else
+  begin
+    result:=0;
+  end;
   {$IFNDEF DEBUG}
   DeleteFile(TempImage);
   {$ENDIF}
