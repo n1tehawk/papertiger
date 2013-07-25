@@ -76,7 +76,9 @@ type
 
   TTigerServerCore = class(TObject)
   private
+    FColorType: ScanType;
     FCurrentOCRLanguage: string;
+    // Any rotation specified by user; FUserSpecifiedRotation must be true, too
     FDesiredRotation: integer;
     //effective language (from settings file, possibly overridden by e.g. command-line options)
     FPages: integer;
@@ -85,7 +87,9 @@ type
     // Use >1 for batch (e.g. multipage documents)
     //todo: think about multipage tiff
     FSettings: TTigerSettings;
+    FUserSpecifiedRotation: boolean;
     FTigerDB: TTigerDB;
+    procedure SetDesiredRotation(AValue: integer);
   protected
   public
     // Adds new, empty document (with name if specified), returns document ID
@@ -98,6 +102,8 @@ type
     // Add at end of any existing images, unless ImageOrder>0. Returns image ID or INVALIDID when failed.
     function AddImage(ImageFile: string; DocumentID: integer;
       ImageOrder: integer): integer;
+    // Whether to scan in black and white, gray or colo(u)r.
+    property ColorType: ScanType read FColorType write FColorType;
     // Language to be used for OCR. Will not be saved in settings
     property CurrentOCRLanguage: string read FCurrentOCRLanguage
       write FCurrentOCRLanguage;
@@ -137,7 +143,7 @@ type
     class function TryParseDate(DateString: string; out ParseDate: TDateTime): boolean;
     // Desired rotation of image in degrees, e.g.:
     // 90 means: rotate the image 90 degrees clockwise
-    property DesiredRotation: integer read FDesiredRotation write FDesiredRotation;
+    property DesiredRotation: integer read FDesiredRotation write SetDesiredRotation;
     constructor Create;
     destructor Destroy; override;
   end;
@@ -149,6 +155,13 @@ implementation
 // Get revision from our source code repository:
 // If you have a file not found error for revision.inc, please make sure you compile hgversion.pas before compiling this project.
 {$i revision.inc}
+
+procedure TTigerServerCore.SetDesiredRotation(AValue: integer);
+begin
+  FUserSpecifiedRotation:=true;
+  if FDesiredRotation=AValue then Exit;
+  FDesiredRotation:=AValue;
+end;
 
 function TTigerServerCore.AddDocument(DocumentName: string = ''): integer;
 begin
@@ -230,7 +243,7 @@ begin
   result:=0;
 
   // Rotate image first if user had requested it
-  if FDesiredRotation<>0 then
+  if (FUserSpecifiedRotation) and (FDesiredRotation<>0) then
   begin
     Clean:=TImageCleaner.Create;
     try
@@ -263,9 +276,9 @@ begin
   try
     Cleaner.Language:=FCurrentOCRLanguage;
     // If user wanted to, rotate and overwrite existing image
-    if FDesiredRotation<>0 then
+    if (FUserSpecifiedRotation) then
     begin
-      Cleaner.Rotate(FDesiredRotation,Source,Source);
+      if (FDesiredRotation<>0) then Cleaner.Rotate(FDesiredRotation,Source,Source);
       Cleaner.Clean(Source, Destination, false); //result in destination
     end
     else
@@ -659,9 +672,11 @@ begin
   TigerLog.WriteLog(etDebug, 'TTigerServerCore: starting.');
   TigerLog.WriteLog(etDebug, Self.ServerInfo);
   FSettings := TTigerSettings.Create;
+  FColorType := stLineArt; //todo: save into settings
   //read language from settings; can be overridden by command line option
   FCurrentOCRLanguage := FSettings.Language;
   FDesiredRotation:=0;
+  FUserSpecifiedRotation:=false;
   FPages := 1; //Assume single scan, not batch
   FTigerDB := TTigerDB.Create;
 end;
