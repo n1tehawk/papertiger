@@ -110,6 +110,9 @@ begin
     ResList.Add(TempOCR.Text);
     ResList.SaveToFile(ImageTextFile);
     ResList.Clear;
+    {$IFNDEF DEBUG}
+    DeleteFile(ImageTextFile);
+    {$ENDIF}
 
     //todo: set LANG variable or use something else than hunspell because we're probably
     // using the wrong dictionary
@@ -162,7 +165,6 @@ begin
             begin
               // Total wordcount
               WordsTotal:=strtointdef(Trim(ResList[i]),-1);
-              TigerLog.WriteLog(etDebug,'TImageCleaner.CheckRecognition: found '+inttostr(WordsTotal)+' total words.');
               LinesRead:=LinesRead+1;
             end;
           1:
@@ -172,8 +174,10 @@ begin
                 WordsWrong:=strtointdef(Trim(ResList[i]),0);
                 CorrectWords:=WordsTotal-WordsWrong;
                 if CorrectWords<0 then CorrectWords:=0;
-                TigerLog.WriteLog(etDebug,'TImageCleaner.CheckRecognition: found '+inttostr(CorrectWords)+' correct, '+
-                  inttostr(WordsWrong)+' wrong words.');
+                TigerLog.WriteLog(etDebug,'TImageCleaner.CheckRecognition: found '+
+                  inttostr(WordsTotal)+' total words: '+
+                  inttostr(CorrectWords)+' correct; '+
+                  inttostr(WordsWrong)+' wrong.');
                 Result:=Round(100*CorrectWords/WordsTotal);
               except
                 // keep result at -1
