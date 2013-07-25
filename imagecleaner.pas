@@ -45,7 +45,7 @@ type
   private
     FLanguage: string;
     // Tests page layout by running a scan.
-    // Returns OCR recognition score (percentage) as well as the
+    // Returns OCR recognition score (percentage: correct/total words) as well as the
     // approximate number of correctly-spelled words found
     function CheckRecognition(ImageFile: string; var CorrectWords: integer): integer;
     // Returns degrees image needs to be turned to end right-side-up
@@ -125,8 +125,6 @@ begin
 
       for i:=0 to ResList.Count-1 do
       begin
-        //todo: debug: remove
-        tigerlog.writelog(etdebug,'line '+inttostr(i)+' equals '+ResList[i]);
         // Ignore comments starting with #
         if pos('#',trim(Reslist[i]))<>1 then
         begin
@@ -147,7 +145,7 @@ begin
                 if CorrectWords<0 then CorrectWords:=0;
                 TigerLog.WriteLog(etDebug,'TImageCleaner.CheckRecognition: found '+inttostr(CorrectWords)+' correct, '+
                   inttostr(WordsWrong)+' wrong words.');
-                Result:=CorrectWords div WordsTotal;
+                Result:=Round(100*CorrectWords/WordsTotal);
               except
                 // keep result at -1
               end;
