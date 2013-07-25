@@ -280,8 +280,7 @@ begin
   if (result) and (ExpandFileName(SourceFile)=ExpandFileName(DestinationFile)) then
   begin
     // Copy over original file as requested
-    DeleteFile(DestinationFile);
-    result:=Sysutils.RenameFile(TempFile,DestinationFile);
+    result:=FileCopy(TempFile,DestinationFile);
   end;
 end;
 
@@ -338,12 +337,7 @@ begin
   if Overwrite then
   begin
     // Copy over original file as requested
-    result:=DeleteFile(DestinationFile);
-    if result=false then
-      TigerLog.WriteLog(etError,'TImageCleaner.Rotate: error '+SysErrorMessage(GetLastOSError)+' trying to delete old file '+DestinationFile);
-    result:=Sysutils.RenameFile(TempFile,DestinationFile);
-    if result=false then
-      TigerLog.WriteLog(etError,'TImageCleaner.Rotate: error '+SysErrorMessage(GetLastOSError)+' trying to copy rotated file to '+DestinationFile);
+    result:=FileCopy(TempFile,DestinationFile);
   end;
 end;
 
