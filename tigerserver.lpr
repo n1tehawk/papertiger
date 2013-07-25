@@ -126,7 +126,6 @@ type
     writeln();
   end;
 
-
   procedure TTigerServer.DoRun;
   var
     DocumentID: integer;
@@ -135,7 +134,7 @@ type
     PDF: string;
   begin
     // quick check parameters
-    ErrorMsg := CheckOptions('d:hi:l:p:r:sv', 'device: help image: language: list pages: rotate: scan version');
+    ErrorMsg := CheckOptions('d:hi:l:p:r:sv', 'blackwhite color colour device: grayscale help image: language: lineart list pages: rotate: scan version');
     if ErrorMsg <> '' then
     begin
       ShowException(Exception.Create(ErrorMsg));
@@ -160,6 +159,11 @@ type
     else
     begin
       FTigerCore.ScanDevice:='';
+    end;
+
+    if HasOption('blackwhite') or HasOption('lineart') then
+    begin
+      FTigerCore.ColorType:=stLineArt;
     end;
 
     if HasOption('list') then

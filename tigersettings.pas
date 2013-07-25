@@ -49,13 +49,15 @@ type
     FSettings: TINIFile;
     FSettingsFileName: string; //name part only of the required settings file
   public
-    property CGIURL: string read FCGIURL write FCGIURL; //Client config: the URL that points to the tiger server
-    property ImageDirectory: string read FImageDirectory write FImageDirectory;
+    // Client config: the URL that points to the tiger server
+    property CGIURL: string read FCGIURL write FCGIURL;
     // Directory where scanned images must be/are stored; Has trailing path delimiter.
-    property Language: string read FLanguage write FLanguage;
+    property ImageDirectory: string read FImageDirectory write FImageDirectory;
     //Language used for text recognition. Use Tesseract notation. Default English.
-    property PDFDirectory: string read FPDFDirectory write FPDFDirectory;
+    property Language: string read FLanguage write FLanguage;
     // Directory where resulting PDFs must be stored; Has trailing path delimiter.
+    property PDFDirectory: string read FPDFDirectory write FPDFDirectory;
+    // Device ID for scanner
     property ScanDevice: string read FScanDevice write FScanDevice; //Device to be used for scanning (in SANE notation)
     constructor Create;
     constructor Create(SettingsFileName: string);
