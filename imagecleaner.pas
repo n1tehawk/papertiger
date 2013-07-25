@@ -357,6 +357,7 @@ begin
   end
   else
   begin
+    FileCopy(TempImage,Destination);
     result:=0;
   end;
   {$IFNDEF DEBUG}
