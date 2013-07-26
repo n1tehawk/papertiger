@@ -242,23 +242,6 @@ var
   ImageStream: TFileStream;
 begin
   result:=0;
-
-  // Rotate image first if user had requested it
-  if (FUserSpecifiedRotation) and (FDesiredRotation<>0) then
-  begin
-    Clean:=TImageCleaner.Create;
-    try
-      if not(Clean.Rotate(FDesiredRotation,ImageFile,ImageFile)) then
-      begin
-        result:=INVALIDID;
-        TigerLog.WriteLog(etError,'TTigerServerCore.AddImage: error rotating image '+ImageFile+'. Aborting.');
-        exit;
-      end;
-    finally
-      Clean.Free;
-    end;
-  end;
-
   ImageStream := TFileStream.Create(ImageFile, fmOpenRead);
   try
     Result := AddImage(ImageStream, ExtractFileName(ImageFile), DocumentID, ImageOrder)
