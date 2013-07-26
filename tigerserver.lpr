@@ -134,7 +134,7 @@ type
     PDF: string;
   begin
     // quick check parameters
-    ErrorMsg := CheckOptions('d:hi:l:p:r:sv', 'blackwhite color colour device: gray grayscale help image: language: lineart list pages: rotate: scan version');
+    ErrorMsg := CheckOptions('d:hi:l:p:r:sv', 'blackwhite color colour device: gray grayscale help image: language: lineart list pages: rotate: scan scanonly version');
     if ErrorMsg <> '' then
     begin
       ShowException(Exception.Create(ErrorMsg));
@@ -190,7 +190,6 @@ type
       Terminate;
       Exit;
     end;
-
 
     if HasOption('l', 'language') then
     begin
@@ -252,17 +251,44 @@ type
           end;
           PDF := FTigerCore.ProcessImages(DocumentID, 0);
         end;
+        if PDF = '' then
+          writeln('Error while scanning')
+        else
+          writeln('Scanning complete.');
       except
         on E: Exception do
         begin
           writeln('Exception: ' + E.Message);
         end;
       end;
-      if PDF = '' then
-        writeln('Error while scanning')
-      else
-        writeln('Scanning complete.');
     end;
+
+    if HasOption('scanonly') then
+    begin
+      DocumentID := INVALIDID;
+      try
+        DocumentID := FTigerCore.AddDocument('Document ' + FormatDateTime('yyyymmddhhnnss', Now));
+        if DocumentID <> INVALIDID then
+        begin
+          for i := 1 to FTigerCore.Pages do
+          begin
+            FTigerCore.ScanSinglePage(DocumentID);
+            if (FTigerCore.Pages > 1) and (i < FTigerCore.Pages) then
+            begin
+              writeln('Please put page ' + IntToStr(i + 1) + ' in the scanner and press enter to continue.');
+              readln;
+            end;
+          end;
+          writeln('Scanning complete.');
+        end;
+      except
+        on E: Exception do
+        begin
+          writeln('Exception: ' + E.Message);
+        end;
+      end;
+    end;
+
 
     // stop program loop
     Terminate;
@@ -309,7 +335,9 @@ type
     writeln('-r <d> --rotate=<d>');
     writeln(' rotate image or scan d degrees clockwise before processing');
     writeln('-s --scan');
-    writeln(' Scan document, process.');
+    writeln(' Scan document, process (perform OCR, create PDF).');
+    writeln('--scanonly');
+    writeln(' Scan document but do not process further.');
     writeln('-p <n> --pages=<n>');
     writeln(' Specify number of pages for processing/scanning multi page docs.');
     writeln('-v --version');
