@@ -16,7 +16,7 @@ Planned architecture/functionality:
 
 Further possible refinements:
 - support for other databases (sqlite, PostgreSQL, MS SQL Server)
-- using image cleanup tools such as unpaper
+- using image cleanup tools such as scantailor and unpaper
 - using WIA etc on Windows to support Windows scanners
 - write .deb install pacakge for easy installation on Debian servers
 - batch import of images/pdfs
@@ -149,15 +149,17 @@ Notes for Debian below.
 # compilers and dependencies
 aptitude install build-essential cmake libqt4-dev libjpeg-dev zlib1g-dev libpng-dev libtiff-dev libboost-dev libxrender-dev 
 
-Get source from
+Get source from git repository:
 cd ~
-wget http://sourceforge.net/projects/scantailor/files/scantailor-devel/enhanced/scantailor-enhanced-20120914-pre.tar.bz2/download
-mv download scantailor-enhanced-20120914-pre.tar.bz2
-tar xvjf scantailor-enhanced-20120914-pre.tar.bz2
-rm scantailor-enhanced-20120914-pre.tar.bz2
-cd scantailor-enhanced-20120914-pre
+git clone git://git.code.sf.net/p/scantailor/code scantailor
+cd scantailor
+git checkout enhanced #check out branch called "enhanced"
 cmake .
-=> gives problems with boost?!?
+make
+su - #switch to root
+cd /home/pascaldev/scantailor #or wherever the files are located
+make install
+exit #out of root
 
 Miscellaneous notes
 ===================
