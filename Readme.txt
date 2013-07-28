@@ -61,7 +61,7 @@ Installation instructions
   Note: we need version 3 because of hOCR support needed for getting searchable PDFs.
 - prerequisites: have exactimage installed (for hocr2pdf), e.g.:
   aptitude install exactimage
-- prerequirisites: have scantailor installed (for aligning/cleaning up the tiff images before OCR)
+- nice to have: have scantailor installed (for aligning/cleaning up the tiff images before OCR)
   see installation notes below
 - Tesseract must/can then be configured to output hocr, e.g.:
   check you have this file present (adjust config directory to your situation):
@@ -146,8 +146,8 @@ https://sourceforge.net/apps/mediawiki/scantailor/index.php?title=Building_from_
 
 Notes for Debian below.
 
-# compilers and dependencies
-aptitude install build-essential cmake libqt4-dev libjpeg-dev zlib1g-dev libpng-dev libtiff-dev libboost-dev libxrender-dev 
+# get compilers and dependencies
+aptitude install build-essential cmake libqt4-dev libjpeg-dev zlib1g-dev libpng-dev libtiff-dev libtiff5-alt-dev  libboost-dev libxrender-dev #libtiff5-alt-dev for good measure; hope it improves tiff support
 
 Get source from git repository:
 cd ~
