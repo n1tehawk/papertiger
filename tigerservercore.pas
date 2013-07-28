@@ -95,7 +95,9 @@ type
   public
     // Adds new, empty document (with name if specified), returns document ID
     function AddDocument(DocumentName: string = ''): integer;
-    // Adds the tiff image to given documentID. Add at end of any existing images, unless ImageOrder>0. Returns image ID or INVALIDID when failed.
+    // Adds the tiff image to given documentID.
+    // Add at end of any existing images, unless ImageOrder>0.
+    // Returns either image ID or INVALIDID (when failed).
     function AddImage(ImageData: TStream; ImageName: string;
       DocumentID: integer; ImageOrder: integer): integer;
     // Adds the tiff image to given documentID.
@@ -165,13 +167,9 @@ begin
 end;
 
 function TTigerServerCore.AddDocument(DocumentName: string = ''): integer;
+// DocumentName is a real name, not necessarily a file name. So no use checking for file existence.
 begin
   Result := INVALIDID;
-  if not(FileExists(DocumentName)) then
-  begin
-    TigerLog.WriteLog(etError, 'AddDocument: document file ' + DocumentName + ' does not exist. Aborting.');
-    exit;
-  end;
   try
     {$IF FPC_FULLVERSION>=20602}
     Result := FTigerDB.InsertDocument(DocumentName, '', '', LocalTimeToUniversal(Now));
@@ -215,7 +213,7 @@ begin
       try
         ImageData.Position := 0;
         MemStream.CopyFrom(ImageData, ImageData.Size);
-        // Fix sane bug (we can write to MemStream, not to ImageStream)
+        // Fix sane bug (use MemStream as we can write to it; not to ImageStream)
         if FindInStream(MemStream,0,SaneBuggyText)=0 then
         begin
           DeleteFromStream(MemStream,0,length(SaneBuggyText));
