@@ -167,6 +167,11 @@ end;
 function TTigerServerCore.AddDocument(DocumentName: string = ''): integer;
 begin
   Result := INVALIDID;
+  if not(FileExists(DocumentName)) then
+  begin
+    TigerLog.WriteLog(etError, 'AddDocument: document file ' + DocumentName + ' does not exist. Aborting.');
+    exit;
+  end;
   try
     {$IF FPC_FULLVERSION>=20602}
     Result := FTigerDB.InsertDocument(DocumentName, '', '', LocalTimeToUniversal(Now));
@@ -196,6 +201,11 @@ begin
     if not (assigned(ImageData)) then
     begin
       TigerLog.WriteLog(etError,'AddImage: no valid stream with image data.');
+      exit;
+    end;
+    if ImageData.Size=0 then
+    begin
+      TigerLog.WriteLog(etError,'AddImage: empty image data stream.');
       exit;
     end;
     // Extract only filename part from image name and add to storage path
@@ -242,9 +252,22 @@ var
   ImageStream: TFileStream;
 begin
   result:=0;
-  ImageStream := TFileStream.Create(ImageFile, fmOpenRead);
+  if not(FileExists(ImageFile)) then
+  begin
+    TigerLog.WriteLog(etError,'AddImage: '+ImageFile+' is no valid image file.');
+    exit;
+  end;
+
   try
-    Result := AddImage(ImageStream, ExtractFileName(ImageFile), DocumentID, ImageOrder)
+    ImageStream := TFileStream.Create(ImageFile, fmOpenRead);
+    try
+      Result := AddImage(ImageStream, ExtractFileName(ImageFile), DocumentID, ImageOrder)
+    except
+      on E: Exception do
+      begin
+        TigerLog.WriteLog(etError, 'AddImage: error adding new image file ' + ImageFile + '. ' + E.Message);
+      end;
+    end;
   finally
     ImageStream.Free;
   end;
@@ -256,6 +279,12 @@ var
   Cleaner: TImageCleaner;
 begin
   Result := False;
+  if not(FileExists(Source)) then
+  begin
+    TigerLog.WriteLog(etError,'CleanUpImage: '+Source+' is no valid image file.');
+    exit;
+  end;
+
   Cleaner := TImageCleaner.Create;
   try
     Cleaner.Language:=FCurrentOCRLanguage;
@@ -395,10 +424,6 @@ var
   PDF: TPDF;
   Success: boolean;
 begin
-  {todo: add preprocess code to CleanUpImage despeckle, deskew etc? ScanTailor?
-  Scantailor: more for letters/documents; unpaper more for books
-  scantailor new version: https://sourceforge.net/projects/scantailor/files/scantailor-devel/enhanced/
-  unpaper input.ppm output.ppm => perhaps more formats than ppm? use eg. exactimage's econvert for format conversion}
   Result := '';
   Success := False;
   if not (ForceDirectories(FSettings.PDFDirectory)) then

@@ -24,6 +24,10 @@ unit imagecleaner;
   IN THE SOFTWARE.
 }
 
+{todo: add preprocess code to CleanUpImage despeckle, deskew etc? ScanTailor?
+Scantailor: more for letters/documents; unpaper more for books
+scantailor new version: https://sourceforge.net/projects/scantailor/files/scantailor-devel/enhanced/
+unpaper input.ppm output.ppm => perhaps more formats than ppm? use eg. exactimage's econvert for format conversion}
 
 
 {$i tigerserver.inc}
