@@ -191,11 +191,11 @@ const
   SaneBuggyText='Failed cupsGetDevices'+Chr($0A); //linefeed
 var
   MemStream: TMemoryStream;
-  ImagePath, ImageHash: string;
+  ImageFile, ImageHash: string;
 begin
   Result := INVALIDID;
   try
-    // First get image into file system
+    // Sanity checks:
     if not (assigned(ImageData)) then
     begin
       TigerLog.WriteLog(etError,'AddImage: no valid stream with image data.');
@@ -206,35 +206,48 @@ begin
       TigerLog.WriteLog(etError,'AddImage: empty image data stream.');
       exit;
     end;
+    //todo: overwrite detection here or in calling code.
+    //todo: detect replacing existing image with same path in calling code.
+
+    // Get image into file system
     // Extract only filename part from image name and add to storage path
-    ImagePath := FSettings.ImageDirectory + ExtractFileName(ImageName);
-    MemStream := TMemoryStream.Create;
-    try
+    ImageFile := ExpandFileName(FSettings.ImageDirectory + ExtractFileName(ImageName));
+
+    // Copy image and fix sane bug unless image is already in the destination file
+    if (not(ImageData is TFileStream)) or
+      (
+      (ImageData is TFileStream) and
+      (ExpandFileName((ImageData as TFileStream).FileName)<>ImageFile)
+      ) then
+    begin
+      MemStream := TMemoryStream.Create;
       try
-        ImageData.Position := 0;
-        MemStream.CopyFrom(ImageData, ImageData.Size);
-        // Fix sane bug (use MemStream as we can write to it; not to ImageStream)
-        if FindInStream(MemStream,0,SaneBuggyText)=0 then
-        begin
-          DeleteFromStream(MemStream,0,length(SaneBuggyText));
-          TigerLog.WriteLog(etDebug,'TTigerServerCore.AddImage: fixed sane bug 313851 for file '+ImageName);
+        try
+          ImageData.Position := 0;
+          MemStream.CopyFrom(ImageData, ImageData.Size);
+          // Fix sane bug (use MemStream as we can write to it; not to ImageStream)
+          if FindInStream(MemStream,0,SaneBuggyText)=0 then
+          begin
+            DeleteFromStream(MemStream,0,length(SaneBuggyText));
+            TigerLog.WriteLog(etDebug,'TTigerServerCore.AddImage: fixed sane bug 313851 for file '+ImageName);
+          end;
+          MemStream.Position := 0;
+          MemStream.SaveToFile(ImageFile);
+          MemStream.Position := 0;
+          ImageHash := MD5Print(MD5Buffer(MemStream.Memory^, MemStream.Size));
+        except
+          on E: Exception do
+          begin
+            TigerLog.WriteLog(etError,'AddImage: exception copying image file: '+E.Message);
+          end;
         end;
-        MemStream.Position := 0;
-        MemStream.SaveToFile(ImagePath);
-        MemStream.Position := 0;
-        ImageHash := MD5Print(MD5Buffer(MemStream.Memory^, MemStream.Size));
-      except
-        on E: Exception do
-        begin
-          TigerLog.WriteLog(etError,'AddImage: exception copying image file: '+E.Message);
-        end;
+      finally
+        MemStream.Free;
       end;
-    finally
-      MemStream.Free;
     end;
 
     // Insert image reference into database
-    Result := FTigerDB.InsertImage(DocumentID, ImageOrder, ImagePath, ImageHash);
+    Result := FTigerDB.InsertImage(DocumentID, ImageOrder, ImageFile, ImageHash);
   except
     on E: Exception do
     begin
