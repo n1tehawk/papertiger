@@ -213,37 +213,39 @@ begin
     // Extract only filename part from image name and add to storage path
     ImageFile := ExpandFileName(FSettings.ImageDirectory + ExtractFileName(ImageName));
 
-    // Copy image and fix sane bug unless image is already in the destination file
-    if (not(ImageData is TFileStream)) or
-      (
-      (ImageData is TFileStream) and
-      (ExpandFileName((ImageData as TFileStream).FileName)<>ImageFile)
-      ) then
-    begin
-      MemStream := TMemoryStream.Create;
+    // Copy image and fix sane bug if possible; then calculate image hash
+    MemStream := TMemoryStream.Create;
+    try
       try
-        try
-          ImageData.Position := 0;
-          MemStream.CopyFrom(ImageData, ImageData.Size);
-          // Fix sane bug (use MemStream as we can write to it; not to ImageStream)
-          if FindInStream(MemStream,0,SaneBuggyText)=0 then
-          begin
-            DeleteFromStream(MemStream,0,length(SaneBuggyText));
-            TigerLog.WriteLog(etDebug,'TTigerServerCore.AddImage: fixed sane bug 313851 for file '+ImageName);
-          end;
+        ImageData.Position := 0;
+        MemStream.CopyFrom(ImageData, ImageData.Size);
+        // Fix sane bug (use MemStream as we can write to it; not to ImageStream)
+        if FindInStream(MemStream,0,SaneBuggyText)=0 then
+        begin
+          DeleteFromStream(MemStream,0,length(SaneBuggyText));
+          TigerLog.WriteLog(etDebug,'TTigerServerCore.AddImage: fixed sane bug 313851 for file '+ImageName);
+        end;
+
+        // Don't overwrite existing images:
+        if (not(ImageData is TFileStream)) or
+          (
+          (ImageData is TFileStream) and
+          (ExpandFileName((ImageData as TFileStream).FileName)<>ImageFile)
+          ) then
+        begin
           MemStream.Position := 0;
           MemStream.SaveToFile(ImageFile);
-          MemStream.Position := 0;
-          ImageHash := MD5Print(MD5Buffer(MemStream.Memory^, MemStream.Size));
-        except
-          on E: Exception do
-          begin
-            TigerLog.WriteLog(etError,'AddImage: exception copying image file: '+E.Message);
-          end;
         end;
-      finally
-        MemStream.Free;
+        MemStream.Position := 0;
+        ImageHash := MD5Print(MD5Buffer(MemStream.Memory^, MemStream.Size));
+      except
+        on E: Exception do
+        begin
+          TigerLog.WriteLog(etError,'AddImage: exception copying image file: '+E.Message);
+        end;
       end;
+    finally
+      MemStream.Free;
     end;
 
     // Insert image reference into database
