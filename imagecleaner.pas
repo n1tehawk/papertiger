@@ -91,6 +91,10 @@ const
   NormalizeCommand='optimize2bw'; //exactimage's => black&white TIFF conversion tool
 
 function TImageCleaner.CheckRecognition(ImageFile: string; var CorrectWords: integer): integer;
+{todo:  tesseract tries to output valid words in the selected language and
+will often falsely detect numbers instead of gibberish when scanning rotated text.
+Therefore remove all words containing only numbers before calculating statistics
+}
 const
   DetectLog = '/tmp/detectlog.txt';
 var
