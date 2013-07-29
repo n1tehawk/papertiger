@@ -219,7 +219,7 @@ type
           if PDF = '' then
             writeln('Error creating PDF. Stopping.')
           else
-            writeln('Finished adding image.');
+            writeln('Finished adding image; created PDF '+PDF);
         end
         else
         begin
@@ -259,7 +259,7 @@ type
         if PDF = '' then
           writeln('Error while scanning')
         else
-          writeln('Scanning complete.');
+          writeln('Scanning complete; created PDF '+PDF);
       except
         on E: Exception do
         begin
@@ -277,7 +277,12 @@ type
         begin
           for i := 1 to FTigerCore.Pages do
           begin
-            FTigerCore.ScanSinglePage(DocumentID);
+            if FTigerCore.ScanSinglePage(DocumentID)=INVALIDID then
+            begin
+              writeln('Error scanning page '+inttostr(i)+'. Aborting.');
+              Terminate;
+              exit;
+            end;
             if (FTigerCore.Pages > 1) and (i < FTigerCore.Pages) then
             begin
               writeln('Please put page ' + IntToStr(i + 1) + ' in the scanner and press enter to continue.');
