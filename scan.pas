@@ -159,7 +159,8 @@ begin
     ScanDevicePart := '--device-name=' + FScanDevice;
 
   //todo: remove deskew, replace by unpaper/scantailor; implement crop
-  // note: previously supplied --swcrop parameter but that didn't always work correctly; it cropped off too much
+  // note: previously supplied --swcrop parameter but that didn't always work correctly;
+  // it cropped off too much, and corrupted colours
   Options := ' "' + FFileName + '" ' + ScanDevicePart + ' --mode=' + ScanType + ' --resolution=' +
     IntToStr(FResolution) + ' --swdeskew=yes --format=tiff';
   TigerLog.WriteLog(etDebug, 'Executing: ' + ScanCommand + Options);
