@@ -242,7 +242,12 @@ type
         begin
           for i := 1 to FTigerCore.Pages do
           begin
-            FTigerCore.ScanSinglePage(DocumentID);
+            if FTigerCore.ScanSinglePage(DocumentID)=INVALIDID then
+            begin
+              writeln('Error scanning page '+inttostr(i)+'. Aborting.');
+              Terminate;
+              exit;
+            end;
             if (FTigerCore.Pages > 1) and (i < FTigerCore.Pages) then
             begin
               writeln('Please put page ' + IntToStr(i + 1) + ' in the scanner and press enter to continue.');
