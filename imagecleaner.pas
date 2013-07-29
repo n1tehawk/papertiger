@@ -32,6 +32,8 @@ unpaper input.ppm output.ppm => perhaps more formats than ppm? use eg. exactimag
 
 {$i tigerserver.inc}
 {$DEFINE USE_IMAGEMAGICK}
+// Don't use exactimage; its parameter handling plain sucks, even using bash.
+// e.g. try running --crop
 {.$DEFINE USE_EXACTIMAGE}
 
 interface
