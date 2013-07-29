@@ -1,18 +1,22 @@
 Paper Tiger
 ===========
-Scanning, text recognition and archiving of paper documents... with GUI clients but from the command line if necessary 
+Scanning, text recognition and archiving of paper documents... 
+with GUI clients but from the command line if necessary 
 
 The Paper Tiger code has a liberal MIT license. It uses various other open-source programs.
 
 Functionality
 =============
-Planned architecture/functionality:
+Architecture/functionality:
 - scanning documents using sane into TIFF documents
 - OCR/text recognition using Tesseract
 - storage of documents as PDF file (image file+OCR text) e.g. on a Samba share
 - index of documents+notes+full text in Firebird database
-- GUI viewer/scanner controls written in Lazarus+FreePascal
-- server component written in FreePascal, so no X Windows required
+- server component written in FreePascal, so no X Windows required.
+- command line control on server
+- CGI REST server component
+- GUI viewer/scanner controls written in Lazarus+FreePascal; communicates using REST
+
 
 Further possible refinements:
 - support for other databases (sqlite, PostgreSQL, MS SQL Server)
@@ -23,13 +27,22 @@ Further possible refinements:
 
 Architecture and development principles
 - use other people's work if possible - the Unix way...
-- if possible, build using modules: e.g. allow use of multiple OCR engines etc
-- store OCR text in the PDF, and store the image tiff to enable external tools to work with the PDFs, use the PDFs in other applications etc.
-- save all OCR text in database or file (e.g. a Lucene index) in order to allow fast search across all documents
+- if possible, build using modules: 
+  e.g. allow use of multiple OCR engines etc
+- store OCR text in the PDF, and store the image tiff.
+  This enables external tools to work with the PDFs, 
+	use the PDFs in other applications etc.
+- save all OCR text in database or file 
+  (e.g. a Lucene index) in order to allow fast search across all documents
 - this means synchronizing PDF text with the full text archive may be required
-- develop towards a single point of control: tigerserver, which may speak multiple protocols, e.g. via plugins
-- however, use standard methods of storing data (e.g. full text search components), normalized database schema in order to allow programs/tools that don't speak the protocols mentioned above to get data easily
-- these 2 principles clash; the code will need to stabilize until it is wise to directly try to access e.g. the databsse. Even then, breaking changes will not be avoided if e.g. cleanness of design would be compromised
+- develop towards a single point of control: 
+  tigerservercore, which may speak multiple protocols, e.g. via plugins
+- however, use standard methods of storing data (e.g. full text search components), 
+  normalized database schema in order to allow programs/tools that don't speak 
+	the protocols mentioned above to get data easily
+- these 2 principles clash; the code will need to stabilize until it is wise to 
+  directly try to access e.g. the database.
+	Even then, breaking changes will not be avoided if e.g. cleanness of design would be compromised
 
 Compilation instructions
 ========================
@@ -61,8 +74,6 @@ Installation instructions
   Note: we need version 3 because of hOCR support needed for getting searchable PDFs.
 - prerequisites: have exactimage installed (for hocr2pdf), e.g.:
   aptitude install exactimage
-- nice to have: have scantailor installed (for aligning/cleaning up the tiff images before OCR)
-  see installation notes below
 - Tesseract must/can then be configured to output hocr, e.g.:
   check you have this file present (adjust config directory to your situation):
   cat /usr/local/share/tessdata/configs/hocr
@@ -70,6 +81,9 @@ Installation instructions
   cat >> /usr/local/share/tessdata/configs/hocr << "EOF_DOCUMENT"
   tessedit_create_hocr 1
   EOF_DOCUMENT
+- nice to have: have scantailor installed (for aligning/cleaning up the tiff images before OCR)
+  see installation notes below
+	
   
 Installing the command line server:
 - copy hocrwrap.sh to server directory (e.g. /opt/tigerserver/)
@@ -87,7 +101,7 @@ Test by running ./tigerserver --help
 Installing the cgi application:
 - prerequisites: apache2 or another HTTP server that supports cgi
   aptitude install apache2
-	copy tigercgi to cgi directory (e.g. /usr/lib/cgi-bin). 
+-	copy tigercgi to cgi directory (e.g. /usr/lib/cgi-bin). 
 	Make sure the user Apache runs under may read and execute the file (e.g. chmod ugo+rx tigercgi)
 - copy hocrwrap.sh to cgi directory (e.g. /usr/lib/cgi-bin/)
 - copy scanwrap.sh to cgi directory
