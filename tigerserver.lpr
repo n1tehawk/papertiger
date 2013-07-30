@@ -63,8 +63,8 @@ type
     DocumentsArray: TJSONArray;
     ImagesArray: TJSONArray;
     Image: TJSONObject;
-    i, Col: integer;
-    ImCount, ImCol: integer;
+    DocCol,DocNo: integer;
+    ImCol,ImNo: integer;
   begin
     writeln('Existing documents on server:');
     DocumentsArray := TJSONArray.Create;
@@ -91,23 +91,23 @@ type
       exit;
     end;
 
-    for i := 0 to DocumentsArray.Count - 1 do
+    for DocNo := 0 to DocumentsArray.Count - 1 do
     begin
-      Document := (DocumentsArray[i] as TJSONObject);
+      Document := (DocumentsArray[DocNo] as TJSONObject);
       // Write column headers:
-      if i = 0 then
+      if DocNo = 0 then
       begin
-        for Col := 0 to Document.Count - 1 do
+        for DocCol := 0 to Document.Count - 1 do
         begin
-          Write(Document.Names[Col]);
-          if Col<Document.Count -1 then
+          Write(Document.Names[DocCol]);
+          if DocCol<Document.Count -1 then
             Write(';');
         end;
         writeln();
       end;
 
       // Write column data for each record:
-      for Col := 0 to Document.Count - 1 do
+      for DocCol := 0 to Document.Count - 1 do
       begin
         try
           DocumentID := Document.Items[0].AsInteger; //document ID is first returned item
@@ -118,11 +118,11 @@ type
 
         //todo: for date, we get a number instead of a date. fix this
         try
-          Cell := Document.Items[Col].AsString;
+          Cell := Document.Items[DocCol].AsString;
         except
           Cell := '[INVALID]';
         end;
-        case Document.Items[Col].JSONType of
+        case Document.Items[DocCol].JSONType of
           jtUnknown: Write('[UNKNOWN]');
           jtNumber: Write(Cell);
           jtString:
@@ -137,7 +137,7 @@ type
           jtArray: Write('[ARRAY]');
           jtObject: Write('[OBJECT]');
         end;
-        if Col<Document.Count - 1 then
+        if DocCol<Document.Count - 1 then
           Write(';');
       end;
       writeln;
@@ -162,11 +162,11 @@ type
         continue; //skip to next document
       end;
 
-      for ImCount := 0 to ImagesArray.Count - 1 do
+      for ImNo := 0 to ImagesArray.Count - 1 do
       begin
-        Image := (ImagesArray[ImCount] as TJSONObject);
+        Image := (ImagesArray[ImNo] as TJSONObject);
         // Write column headers:
-        if ImCount = 0 then
+        if ImNo = 0 then
         begin
           Write('- '); //indent
           for ImCol := 0 to Image.Count - 1 do
