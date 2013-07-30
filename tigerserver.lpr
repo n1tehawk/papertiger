@@ -100,9 +100,9 @@ type
         for Col := 0 to Document.Count - 1 do
         begin
           Write(Document.Names[Col]);
+          if Col<Document.Count -1 then
+            Write(';');
         end;
-        if Col<Document.Count -1 then
-          Write(';');
         writeln();
       end;
 
@@ -149,6 +149,7 @@ type
       if ImagesArray.Count < 1 then
       begin
         writeln('- no images');
+        writeln();
         continue; //skip to next document
       end;
 
@@ -157,6 +158,7 @@ type
       if Image.JSONType <> jtObject then
       begin
         writeln('- no images (technical note: invalid object)');
+        writeln();
         continue; //skip to next document
       end;
 
@@ -204,7 +206,8 @@ type
           if ImCol<Image.Count - 1 then
             Write(';');
         end;
-        writeln;
+        writeln();
+        writeln();
       end;
     end;
     writeln();
@@ -218,7 +221,7 @@ type
     PDF: string;
   begin
     // quick check parameters
-    ErrorMsg := CheckOptions('d:hi:l:p:r:sv', 'blackwhite color colour device: gray grayscale help image: language: lineart list pages: rotate: scan scanonly version');
+    ErrorMsg := CheckOptions('d:hi:l:p:r:sv', 'blackwhite color colour deletedocument: device: gray grayscale help image: language: lineart list pages: rotate: scan scanonly version');
     if ErrorMsg <> '' then
     begin
       ShowException(Exception.Create(ErrorMsg));
@@ -291,6 +294,20 @@ type
     end;
 
     // Branching off into processing starts here
+    if HasOption('deletedocument') then
+    begin
+      DocumentID:=strtointdef(GetOptionValue('deletedocument'),INVALIDID);
+      if DocumentID<>INVALIDID then
+      begin
+        if not(FTigerCore.DeleteDocument(DocumentID,true)) then
+          writeln('Error trying to delete document '+inttostr(DocumentID));
+      end
+      else
+      begin
+        writeln('Invalid document ID specified. Stopping.');
+      end;
+    end;
+
     if HasOption('i', 'image') then
     begin
       //todo: add support for ; or , separated image names when pages>1
@@ -415,6 +432,9 @@ type
     writeln(' for better performance). Useful for photos, graphics etc.');
     writeln('-d <device> --device=<device>');
     writeln(' Scanning device (use sane notation) - empty to select default.');
+    writeln('--deletedocument=<documentid>');
+    writeln(' Deletes scanned document and associated images from database and ');
+    writeln(' filesystem.');
     writeln('--gray, --grayscale');
     writeln(' Scan/PDF in grayscale (text detection internally still in black/white');
     writeln(' for better performance)');
@@ -425,7 +445,7 @@ type
     writeln(' eng (English) by default. See the OCR documentation for ');
     writeln(' language codes (e.g. man tesseract)');
     writeln('--list');
-    writeln(' list already scanned documents');
+    writeln(' list already scanned documents, including document IDs and images');
     writeln('-r <d> --rotate=<d>');
     writeln(' rotate image or scan d degrees clockwise before processing');
     writeln('-s --scan');
