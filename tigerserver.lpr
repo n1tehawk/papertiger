@@ -148,7 +148,7 @@ type
       // Check for empty array
       if ImagesArray.Count < 1 then
       begin
-        writeln('*** no images available for document '+inttostr(DocumentID)+' ***');
+        writeln('- no images');
         continue; //skip to next document
       end;
 
@@ -156,7 +156,7 @@ type
       Image := TJSONObject(ImagesArray.Items[0]);
       if Image.JSONType <> jtObject then
       begin
-        writeln('*** no images available for document '+inttostr(DocumentID)+' ***');
+        writeln('- no images (technical note: invalid object)');
         continue; //skip to next document
       end;
 
@@ -166,16 +166,18 @@ type
         // Write column headers:
         if ImCount = 0 then
         begin
-          for Col := 0 to Image.Count - 1 do
+          Write('- '); //indent
+          for ImCol := 0 to Image.Count - 1 do
           begin
-            Write(Image.Names[Col]);
+            Write(Image.Names[ImCol]);
           end;
-          if Col<Image.Count -1 then
+          if ImCol<Image.Count -1 then
             Write(';');
           writeln();
         end;
 
         // Write column data for each record:
+        Write('- '); //indent
         for ImCol := 0 to Image.Count - 1 do
         begin
           //todo: for date, we get a number instead of a date. fix this
