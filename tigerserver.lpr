@@ -170,9 +170,9 @@ type
           for ImCol := 0 to Image.Count - 1 do
           begin
             Write(Image.Names[ImCol]);
+            if ImCol<Image.Count -1 then
+              Write(';');
           end;
-          if ImCol<Image.Count -1 then
-            Write(';');
           writeln();
         end;
 
