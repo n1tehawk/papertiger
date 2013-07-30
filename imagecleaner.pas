@@ -103,7 +103,7 @@ var
   ResList: TStringList;
   WordsTotal, WordsWrong: integer;
 begin
-  result:=-1; //Negative(!) recognition rate: fail by default
+  result:=-1; //Negative recognition rate: fail by default
   TempOCR:=TOCR.Create;
   ResList:=TStringList.Create;
   try
@@ -113,6 +113,10 @@ begin
     TempOCR.RecognizeText;
 
     // Now run a spell check and open the result text file to check effectiveness
+    // todo:
+    // - get rid of spell check;
+    // - strip out "words" consisting of only numbers
+    // - count total number of remaining words and score on that
     ImageTextFile:=GetTempFileName('','OCT');
     ResList.Clear;
     ResList.Add(TempOCR.Text);

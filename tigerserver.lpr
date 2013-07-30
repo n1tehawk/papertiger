@@ -122,6 +122,7 @@ type
           jtObject: Write('[OBJECT];');
         end;
       end;
+      write(LineEnding);
     end;
     writeln();
   end;

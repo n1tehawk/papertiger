@@ -26,16 +26,14 @@ unit tigerservercore;
 
 {
 //todo:
-- use unpaper/scantailor for deskewing/despeckling instead of device/driver dependent sane functionality
+- use unpaper/scantailor for cropping/deskewing/despeckling instead of device/driver dependent sane functionality
 - orientation detection (e.g. upside down) with new tesseract using API (option -psd)
   (or by doing OCR on all orientations, picking highestg confidence level)
-- look at ocropus 0.6 which apparently has tesseract as line recognizer
 - look at getting ocrfeeder (text mode) instead of the scan/ocr/pdf processes
 http://git.gnome.org/browse/ocrfeeder
 - run multiple scan engines, compare results. Differences should be marked for manual intervention
 - run multiple scan engines, output text output of all of them to PDF to improve searching on keywords
 - get confidence output from tesseract (e.g. in the hocr)=>also assign manual intervention score
-- run through dictionary (e.g. aspell -l en -c file.txt ...) and calculate confidence level there?
 - trigram analysis?!?!
 - address (to, from), date detection in letters=>requires heuristics/processing text blocks (search term: data capture)
 - if we can find out where logos are: extract embedded text using e.g. groundtruth =>

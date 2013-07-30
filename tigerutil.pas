@@ -27,7 +27,7 @@ unit tigerutil;
 
 {$i tigerserver.inc}
 {$IFDEF MSWINDOWS}
-{$R fclel.res}//needed for message files to get Windows to display event log contents correctly
+{$R fclel.res} //needed for message files to get Windows to display event log contents correctly
 // Not needed for *nix
 {$ENDIF}
 
@@ -60,7 +60,7 @@ Cuneiform for Linux 1.1.0
 ...
 eng ger fra rus swe spa ita ruseng ukr srp hrv pol
 dan por dut cze rum hun bul slv lav lit est tur
-- LANG code for Linux environment for Hunspell
+- possibly LANG code for Linux environment for Hunspell
 and lookup/translation
 }
 var
