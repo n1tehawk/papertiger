@@ -64,6 +64,12 @@ type
     FReadWriteTransaction: TSQLTransaction; //Transaction for read/write access
     FWriteQuery: TSQLQuery; //Query used for writing misc data.
   public
+    // Deletes document record from database (but leaves any PDF files intact)
+    // Returns success value
+    function DeleteDocumentRecord(const DocumentID: integer): boolean;
+    // Deletes image record from database (but leaves any image files intact)
+    // Returns success value
+    function DeleteImageRecord(const ImageID: integer): boolean;
     // Returns highest existing imageorder for images or 0 if error
     function GetHighestImageOrder(DocumentID: integer): integer;
     // Returns path+filename for requested image - imageorder gives the sort order/image number
@@ -99,6 +105,74 @@ const
 
 
 { TTigerDB }
+
+function TTigerDB.DeleteDocumentRecord(const DocumentID: integer): boolean;
+begin
+  Result := false;
+  if DocumentID = INVALIDID then
+  begin
+    TigerLog.WriteLog(etWarning, 'DeleteDocumentRecord: invalid document ID requested.');
+    exit;
+  end;
+  try
+  	if FReadWriteTransaction.Active = False then
+  		FReadWriteTransaction.StartTransaction;
+  	FWriteQuery.Close;
+  	FWriteQuery.SQL.Text := 'DELETE DOCUMENTS WHERE ID=' +
+  		IntToStr(DocumentID);
+  	FWriteQuery.ExecSQL;
+  	FWriteQuery.Close;
+  	FReadWriteTransaction.Commit;
+    result:=true;
+  except
+  	on E: EDatabaseError do
+  	begin
+  		if FReadWriteTransaction.Active then
+  			FReadWriteTransaction.Rollback;
+  		TigerLog.WriteLog(etError, 'DeleteDocumentRecord: Database error: ' + E.Message, True);
+  	end;
+  	on F: Exception do
+  	begin
+  		if FReadWriteTransaction.Active then
+  			FReadWriteTransaction.Rollback;
+  		TigerLog.WriteLog(etError, 'DeleteDocumentRecord: Exception: ' + F.Message, True);
+  	end;
+  end;
+end;
+
+function TTigerDB.DeleteImageRecord(const ImageID: integer): boolean;
+begin
+  Result := false;
+  if ImageID = INVALIDID then
+  begin
+    TigerLog.WriteLog(etWarning, 'DeleteImageRecord: invalid image ID requested.');
+    exit;
+  end;
+  try
+  	if FReadWriteTransaction.Active = False then
+  		FReadWriteTransaction.StartTransaction;
+  	FWriteQuery.Close;
+  	FWriteQuery.SQL.Text := 'DELETE IMAGES WHERE ID=' +
+  		IntToStr(ImageID);
+  	FWriteQuery.ExecSQL;
+  	FWriteQuery.Close;
+  	FReadWriteTransaction.Commit;
+    result:=true;
+  except
+  	on E: EDatabaseError do
+  	begin
+  		if FReadWriteTransaction.Active then
+  			FReadWriteTransaction.Rollback;
+  		TigerLog.WriteLog(etError, 'DeleteImageRecord: Database error: ' + E.Message, True);
+  	end;
+  	on F: Exception do
+  	begin
+  		if FReadWriteTransaction.Active then
+  			FReadWriteTransaction.Rollback;
+  		TigerLog.WriteLog(etError, 'DeleteImageRecord: Exception: ' + F.Message, True);
+  	end;
+  end;
+end;
 
 function TTigerDB.GetHighestImageOrder(DocumentID: integer): integer;
 begin

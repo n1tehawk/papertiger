@@ -116,9 +116,12 @@ type
     property ScanDevice: string read FScanDevice write FScanDevice;
     // Cleans up image (postprocessing): straightens them up, despeckles etc. Returns true if succesful
     function CleanUpImage(const Source, Destination: string): boolean;
-    // Delete document and associated images from DB and filesystem
-    function DeleteDocument(const DocumentID: integer): boolean;
+    // Delete document and associated images from DB
+    // - if DeleteFromDisk, also delete from filesystem
+    // returns success or failure
+    function DeleteDocument(const DocumentID: integer; DeleteFromDisk: boolean): boolean;
     // Delete all document and associated images from DB and filesystem
+    // returns success or failure
     function DeleteDocuments: boolean;
     // Get image identified by documentID and image number/imageorder (starting with 1)
     function GetImage(DocumentID, ImageOrder: integer;
@@ -204,8 +207,6 @@ begin
       TigerLog.WriteLog(etError,'AddImage: empty image data stream.');
       exit;
     end;
-    //todo: overwrite detection here or in calling code.
-    //todo: detect replacing existing image with same path in calling code.
 
     // Get image into file system
     // Extract only filename part from image name and add to storage path
@@ -315,11 +316,64 @@ begin
   end;
 end;
 
-function TTigerServerCore.DeleteDocument(const DocumentID: integer): boolean;
+function TTigerServerCore.DeleteDocument(const DocumentID: integer; DeleteFromDisk: boolean): boolean;
+var
+  Cell: string;
+  DateCell: TDateTime;
+  Document: TJSONObject;
+  DocumentsArray: TJSONArray;
+  ImagesArray: TJSONArray;
+  Image: TJSONObject;
+  DocCount, DocCol: integer;
+  ImCount, ImCol: integer;
 begin
-  //todo: get all images, delete from fs
-  //todo: get pdf, delete from fs
-  //todo: delete document and images from db
+  //Get all images, delete from fs
+  ImagesArray := TJSONArray.Create;
+  ListImages(DocumentID, ImagesArray);
+  // Check for empty array
+  if ImagesArray.Count < 1 then
+    exit;
+
+  // Check for empty object=>empty recordset
+  Image := TJSONObject(ImagesArray.Items[0]);
+  if Image.JSONType <> jtObject then
+    exit;
+
+  for ImCount := 0 to ImagesArray.Count - 1 do
+  begin
+    Image := (ImagesArray[ImCount] as TJSONObject);
+    // Delete image
+    // image.items[3]: path database column
+    if DeleteFromDisk and (FileExists(Image.Items[3].AsString)) then
+      DeleteFile(Image.Items[3].AsString);
+    if not(FTigerDB.DeleteImageRecord(Image.Items[0].AsInteger)) then
+      TigerLog.WriteLog(etError,'DeleteDocument: could not delete image ID '+
+      inttostr(Image.Items[0].AsInteger)+' belonging to document ID '+inttostr(DocumentID));
+  end;
+  //Delete document PDF file and document record from db
+  DocumentsArray := TJSONArray.Create;
+  ListDocuments(DocumentID, DocumentsArray);
+  // Check for empty array
+  if DocumentsArray.Count < 1 then
+    exit;
+
+  // Check for empty object=>empty recordset
+  Document := TJSONObject(DocumentsArray.Items[0]);
+  if Document.JSONType <> jtObject then
+    exit;
+
+  // Even though we're just looking for one document, a bit of superfluous looping is not too bad
+  for DocCount := 0 to DocumentsArray.Count - 1 do
+  begin
+    Document := (DocumentsArray[DocCount] as TJSONObject);
+    // Delete document from disk & db
+    // item 2=pdfpath
+    if DeleteFromDisk and (FileExists(Document.Items[2].AsString)) then
+      DeleteFile(Document.Items[2].AsString);
+    if not(FTigerDB.DeleteDocumentRecord(Document.Items[0].AsInteger)) then
+      TigerLog.WriteLog(etError,'DeleteDocument: could not delete document ID '+inttostr(DocumentID));
+  end;
+  result:=true;
 end;
 
 function TTigerServerCore.DeleteDocuments: boolean;
