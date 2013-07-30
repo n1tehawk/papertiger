@@ -138,6 +138,9 @@ type
     // Specify 0 to leave alone and let hocr detect resolution or fallback to 300dpi
     // Returns resulting pdf file (including path) or empty if error
     function ProcessImages(DocumentID: integer; Resolution: integer): string;
+    // Cleans up database by removing empty image/document records and
+    // removing records with invalid files
+    function PurgeDB: boolean;
     // Scans a single page and adds it to an existing document.
     // Returns image ID or INVALIDID if failure
     function ScanSinglePage(DocumentID: integer): integer;
@@ -328,7 +331,8 @@ var
   ImCount, ImCol: integer;
 begin
   result:=false;
-  //Get all images, delete from fs
+
+  //Get any images belonging to document, delete from fs/db
   ImagesArray := TJSONArray.Create;
   ListImages(DocumentID, ImagesArray);
   // Empty (list of) images is no problem here; just don't delete them
@@ -351,7 +355,6 @@ begin
       end;
     end;
   end;
-
 
   //Delete document PDF file and document record from db
   DocumentsArray := TJSONArray.Create;
@@ -583,6 +586,11 @@ begin
   //todo: concatenate pdfs; we just add the last one for now
   if success=false then
     TigerLog.WriteLog(etDebug, 'ProcessImages failed.');
+end;
+
+function TTigerServerCore.PurgeDB: boolean;
+begin
+  result:=FTigerDB.Purge;
 end;
 
 {

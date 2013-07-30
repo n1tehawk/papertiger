@@ -461,13 +461,23 @@ function TTigerDB.Purge: boolean;
 begin
   result:=false;
   try
-    // Remove empty image paths
   	if FReadWriteTransaction.Active = False then
   		FReadWriteTransaction.StartTransaction;
   	FWriteQuery.Close;
+
+    // Remove empty image paths
   	FWriteQuery.SQL.Text := 'DELETE FROM IMAGES WHERE PATH IS NULL OR PATH='''' ';
   	FWriteQuery.ExecSQL;
   	FWriteQuery.Close;
+
+    // todo: go over remaining images and documents and delete if invalid paths
+
+    // Now remove empty documents that have no images
+    FWriteQuery.SQL.Text := 'DELETE FROM DOCUMENTS WHERE '+
+      '((documents.PDFPATH is null) or (documents.pdfpath='') AND (select count(ID) FROM IMAGES WHERE IMAGES.DOCUMENTID=DOCUMENTS.ID)=0) ';
+  	FWriteQuery.ExecSQL;
+  	FWriteQuery.Close;
+
   	FReadWriteTransaction.Commit;
     result:=true;
   except
