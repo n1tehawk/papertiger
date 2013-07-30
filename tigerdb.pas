@@ -465,19 +465,46 @@ begin
   		FReadWriteTransaction.StartTransaction;
   	FWriteQuery.Close;
 
-    // Remove empty image paths
+    // Find all invalid image paths and reset them so they can be deleted later
+    if FReadTransaction.Active = False then
+      FReadTransaction.StartTransaction;
+    FReadQuery.SQL.Text:='SELECT ID, PATH FROM IMAGES WHERE (PATH IS NOT NULL) AND (PATH<>'''') ORDER BY PATH ';
+    while not(FReadQuery.EOF) do
+    begin
+      if not(FileExists(FReadQuery.FieldByName('PATH').AsString)) then
+      begin
+        FWriteQuery.SQL.Text:='UPDATE IMAGES SET PATH=NULL WHERE ID='+FReadQuery.FieldByName('ID').AsString+' ORDER BY PDFPATH ';
+        FWriteQuery.ExecSQL;
+      end;
+      FReadQuery.Next;
+    end;
+    FWriteQuery.Close;
+    FReadTransaction.Commit;
+
+    // Find all invalid document paths and reset them
+    if FReadTransaction.Active = False then
+      FReadTransaction.StartTransaction;
+    FReadQuery.SQL.Text:='SELECT ID, PDFPATH FROM DOCUMENTS WHERE (PDFPATH IS NOT NULL) AND (PDFPATH<>'''') ';
+    while not(FReadQuery.EOF) do
+    begin
+      if not(FileExists(FReadQuery.FieldByName('PDFPATH').AsString)) then
+      begin
+        FWriteQuery.SQL.Text:='UPDATE DOCUMENTS SET PDFPATH=NULL WHERE ID='+FReadQuery.FieldByName('ID').AsString+' ';
+        FWriteQuery.ExecSQL;
+      end;
+      FReadQuery.Next;
+    end;
+    FWriteQuery.Close;
+    FReadTransaction.Commit;
+
+    // Remove empty image paths - both those we reset and those that already existed
   	FWriteQuery.SQL.Text := 'DELETE FROM IMAGES WHERE (PATH IS NULL) OR (PATH='''') ';
   	FWriteQuery.ExecSQL;
   	FWriteQuery.Close;
 
-    // todo: go over remaining images and documents and delete if invalid paths
-
-    // Now remove empty documents that have no images
+    // Now remove (recently) empty documents that have no images
     FWriteQuery.SQL.Text := 'DELETE FROM DOCUMENTS WHERE '+
       '((documents.PDFPATH is null) or (documents.pdfpath='''')) AND ((select count(ID) FROM IMAGES WHERE IMAGES.DOCUMENTID=DOCUMENTS.ID)=0) ';
-    //todo: debug
-    writeln(FWritequery.sql.text);
-
   	FWriteQuery.ExecSQL;
   	FWriteQuery.Close;
 
