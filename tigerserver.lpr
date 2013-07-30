@@ -59,8 +59,12 @@ type
     Cell: string;
     DateCell: TDateTime;
     Document: TJSONObject;
+    DocumentID: integer;
     DocumentsArray: TJSONArray;
+    ImagesArray: TJSONArray;
+    Image: TJSONObject;
     i, Col: integer;
+    ImCount, ImCol: integer;
   begin
     writeln('Existing documents on server:');
     DocumentsArray := TJSONArray.Create;
@@ -90,16 +94,28 @@ type
     for i := 0 to DocumentsArray.Count - 1 do
     begin
       Document := (DocumentsArray[i] as TJSONObject);
-      if i = 0 then // column headers
+      // Write column headers:
+      if i = 0 then
       begin
         for Col := 0 to Document.Count - 1 do
         begin
-          Write(Document.Names[Col] + ';');
+          Write(Document.Names[Col]);
         end;
+        if Col<Document.Count -1 then
+          Write(';');
         writeln();
       end;
+
+      // Write column data for each record:
       for Col := 0 to Document.Count - 1 do
       begin
+        try
+          DocumentID := Document.Items[0].AsInteger; //document ID is first returned item
+        except
+          writeln('Error getting document ID. Aborting.');
+          exit;
+        end;
+
         //todo: for date, we get a number instead of a date. fix this
         try
           Cell := Document.Items[Col].AsString;
@@ -107,22 +123,87 @@ type
           Cell := '[INVALID]';
         end;
         case Document.Items[Col].JSONType of
-          jtUnknown: Write('[UNKNOWN];');
-          jtNumber: Write(Cell + ';');
+          jtUnknown: Write('[UNKNOWN]');
+          jtNumber: Write(Cell);
           jtString:
           begin
             if FTigerCore.TryParseDate(Cell, DateCell) then
               Write(DateTimeToStr(DateCell))
             else
-              Write(Cell + ';');
+              Write(Cell);
           end;
-          jtBoolean: Write(Cell + ';');
-          jtNull: Write(Cell + ';');
-          jtArray: Write('[ARRAY];');
-          jtObject: Write('[OBJECT];');
+          jtBoolean: Write(Cell);
+          jtNull: Write(Cell);
+          jtArray: Write('[ARRAY]');
+          jtObject: Write('[OBJECT]');
         end;
+        if Col<Document.Count - 1 then
+          Write(';');
       end;
-      write(LineEnding);
+      writeln;
+
+      // Now enumerate all images in that document
+      ImagesArray := TJSONArray.Create;
+      FTigerCore.ListImages(DocumentID, ImagesArray);
+      // Check for empty array
+      if ImagesArray.Count < 1 then
+      begin
+        writeln('*** no images available for document '+inttostr(DocumentID)+' ***');
+        continue; //skip to next document
+      end;
+
+      // Check for empty object=>empty recordset
+      Image := TJSONObject(ImagesArray.Items[0]);
+      if Image.JSONType <> jtObject then
+      begin
+        writeln('*** no images available for document '+inttostr(DocumentID)+' ***');
+        continue; //skip to next document
+      end;
+
+      for ImCount := 0 to ImagesArray.Count - 1 do
+      begin
+        Image := (ImagesArray[ImCount] as TJSONObject);
+        // Write column headers:
+        if ImCount = 0 then
+        begin
+          for Col := 0 to Image.Count - 1 do
+          begin
+            Write(Image.Names[Col]);
+          end;
+          if Col<Image.Count -1 then
+            Write(';');
+          writeln();
+        end;
+
+        // Write column data for each record:
+        for ImCol := 0 to Image.Count - 1 do
+        begin
+          //todo: for date, we get a number instead of a date. fix this
+          try
+            Cell := Image.Items[ImCol].AsString;
+          except
+            Cell := '[INVALID]';
+          end;
+          case Image.Items[ImCol].JSONType of
+            jtUnknown: Write('[UNKNOWN]');
+            jtNumber: Write(Cell);
+            jtString:
+            begin
+              if FTigerCore.TryParseDate(Cell, DateCell) then
+                Write(DateTimeToStr(DateCell))
+              else
+                Write(Cell);
+            end;
+            jtBoolean: Write(Cell);
+            jtNull: Write(Cell);
+            jtArray: Write('[ARRAY]');
+            jtObject: Write('[OBJECT]');
+          end;
+          if ImCol<Image.Count - 1 then
+            Write(';');
+        end;
+        writeln;
+      end;
     end;
     writeln();
   end;

@@ -344,7 +344,7 @@ begin
       FReadQuery.SQL.Text :=
         'SELECT ID,IMAGEORDER,DOCUMENTID,PATH,IMAGEHASH FROM IMAGES ORDER BY DOCUMENTID,IMAGEORDER '
     else
-      // Specified document; no need for parametrized queries: one time only, integer
+      // Specified document; no need for parameterized queries: one time only, integer
       FReadQuery.SQL.Text :=
         'SELECT ID,IMAGEORDER,DOCUMENTID,PATH,IMAGEHASH FROM IMAGES WHERE DOCUMENTID=' +
         IntToStr(DocumentID) + ' ORDER BY IMAGEORDER ';
