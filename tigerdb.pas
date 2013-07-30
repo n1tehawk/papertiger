@@ -467,8 +467,6 @@ begin
 
     // Remove empty image paths
   	FWriteQuery.SQL.Text := 'DELETE FROM IMAGES WHERE (PATH IS NULL) OR (PATH='''') ';
-    //todo: debug
-    writeln(FWritequery.sql.text);
   	FWriteQuery.ExecSQL;
   	FWriteQuery.Close;
 
@@ -476,7 +474,7 @@ begin
 
     // Now remove empty documents that have no images
     FWriteQuery.SQL.Text := 'DELETE FROM DOCUMENTS WHERE '+
-      '((documents.PDFPATH is null) or (documents.pdfpath='')) AND ((select count(ID) FROM IMAGES WHERE IMAGES.DOCUMENTID=DOCUMENTS.ID)=0) ';
+      '((documents.PDFPATH is null) or (documents.pdfpath='''')) AND ((select count(ID) FROM IMAGES WHERE IMAGES.DOCUMENTID=DOCUMENTS.ID)=0) ';
     //todo: debug
     writeln(FWritequery.sql.text);
 
