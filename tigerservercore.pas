@@ -121,6 +121,18 @@ type
     // - if DeleteFromDisk, also delete from filesystem
     // returns success or failure
     function DeleteDocument(const DocumentID: integer; DeleteFromDisk: boolean): boolean;
+    // Deletes all documents
+    // Internally calls DeleteDocument
+    function DeleteDocuments(DeleteFromDisk: boolean): boolean;
+    // Delete image(s) from DB
+    // Deletes *all* images if InvalidID specified as ImageID
+    // - if DeleteFromDisk, also delete from filesystem
+    // returns success or failure
+    function DeleteImage(const ImageID: integer; DeleteFromDisk: boolean): boolean;
+    // Deletes all images
+    // Internally calls DeleteImage
+    function DeleteImages(DeleteFromDisk: boolean): boolean;
+
     // Get image identified by documentID and image number/imageorder (starting with 1)
     function GetImage(DocumentID, ImageOrder: integer;
       const ImageStream: TStream): boolean;
@@ -382,6 +394,53 @@ begin
       TigerLog.WriteLog(etError,'DeleteDocument: could not delete document ID '+inttostr(DocumentID));
     end;
   end;
+end;
+
+function TTigerServerCore.DeleteDocuments(DeleteFromDisk: boolean): boolean;
+begin
+  result:=DeleteDocument(INVALIDID,DeleteFromDisk);
+end;
+
+function TTigerServerCore.DeleteImage(const ImageID: integer;
+  DeleteFromDisk: boolean): boolean;
+var
+  ImagesArray: TJSONArray;
+  Image: TJSONObject;
+  ImCount: integer;
+begin
+  result:=false;
+
+  //Get any images belonging to document, delete from fs/db
+  ImagesArray := TJSONArray.Create;
+  ListImages(InvalidID, ImagesArray);
+  // Empty (list of) images is no problem here; just don't delete them
+  if ImagesArray.Count > 0 then
+  begin
+    // Check for empty object=>empty recordset
+    Image := TJSONObject(ImagesArray.Items[0]);
+    if Image.JSONType = jtObject then
+    begin
+      for ImCount := 0 to ImagesArray.Count - 1 do
+      begin
+        Image := (ImagesArray[ImCount] as TJSONObject);
+        // Delete image if it matches the user's wishes
+        if (ImageID=InvalidID) or (ImageID=Image.Items[0].AsInteger) then
+        begin
+          // image.items[3]: path database column
+          if DeleteFromDisk and (FileExists(Image.Items[3].AsString)) then
+            DeleteFile(Image.Items[3].AsString);
+          if not(FTigerDB.DeleteImageRecord(Image.Items[0].AsInteger)) then
+            TigerLog.WriteLog(etError,'DeleteDocument: could not delete image ID '+
+            Image.Items[0].AsString);
+        end;
+      end;
+    end;
+  end;
+end;
+
+function TTigerServerCore.DeleteImages(DeleteFromDisk: boolean): boolean;
+begin
+  result:=DeleteImage(INVALIDID,DeleteFromDisk);
 end;
 
 function TTigerServerCore.GetImage(DocumentID, ImageOrder: integer;

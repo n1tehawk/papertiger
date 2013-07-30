@@ -116,7 +116,6 @@ type
           exit;
         end;
 
-        //todo: for date, we get a number instead of a date. fix this
         try
           Cell := Document.Items[DocCol].AsString;
         except

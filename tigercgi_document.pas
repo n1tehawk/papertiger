@@ -109,16 +109,14 @@ begin
       case WordCount(StrippedPath, ['/']) of
         1: //http://server/cgi-bin/tigercgi/document/
         begin
-          //todo: delete every document
-          FTigerCore.DeleteDocuments;
-          IsValidRequest:=FTigerCore.DeleteDocuments = False;
+          IsValidRequest:=FTigerCore.DeleteDocuments(true);
         end;
         2: //http://server/cgi-bin/tigercgi/document/304
         begin
           DocumentID := StrToIntDef(ExtractWord(2, StrippedPath, ['/']), INVALIDID);
           if DocumentID <> INVALIDID then
           begin
-            IsValidRequest:= FTigerCore.DeleteDocument(DocumentID);
+            IsValidRequest:= FTigerCore.DeleteDocument(DocumentID,true);
           end
           else
           begin
