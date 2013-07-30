@@ -327,40 +327,49 @@ var
   DocCount, DocCol: integer;
   ImCount, ImCol: integer;
 begin
+  result:=false;
   //Get all images, delete from fs
   ImagesArray := TJSONArray.Create;
   ListImages(DocumentID, ImagesArray);
-  // Check for empty array
-  if ImagesArray.Count < 1 then
-    exit;
-
-  // Check for empty object=>empty recordset
-  Image := TJSONObject(ImagesArray.Items[0]);
-  if Image.JSONType <> jtObject then
-    exit;
-
-  for ImCount := 0 to ImagesArray.Count - 1 do
+  // Empty (list of) images is no problem here; just don't delete them
+  if ImagesArray.Count > 0 then
   begin
-    Image := (ImagesArray[ImCount] as TJSONObject);
-    // Delete image
-    // image.items[3]: path database column
-    if DeleteFromDisk and (FileExists(Image.Items[3].AsString)) then
-      DeleteFile(Image.Items[3].AsString);
-    if not(FTigerDB.DeleteImageRecord(Image.Items[0].AsInteger)) then
-      TigerLog.WriteLog(etError,'DeleteDocument: could not delete image ID '+
-      inttostr(Image.Items[0].AsInteger)+' belonging to document ID '+inttostr(DocumentID));
+    // Check for empty object=>empty recordset
+    Image := TJSONObject(ImagesArray.Items[0]);
+    if Image.JSONType = jtObject then
+    begin
+      for ImCount := 0 to ImagesArray.Count - 1 do
+      begin
+        Image := (ImagesArray[ImCount] as TJSONObject);
+        // Delete image
+        // image.items[3]: path database column
+        if DeleteFromDisk and (FileExists(Image.Items[3].AsString)) then
+          DeleteFile(Image.Items[3].AsString);
+        if not(FTigerDB.DeleteImageRecord(Image.Items[0].AsInteger)) then
+          TigerLog.WriteLog(etError,'DeleteDocument: could not delete image ID '+
+          inttostr(Image.Items[0].AsInteger)+' belonging to document ID '+inttostr(DocumentID));
+      end;
+    end;
   end;
+
+
   //Delete document PDF file and document record from db
   DocumentsArray := TJSONArray.Create;
   ListDocuments(DocumentID, DocumentsArray);
   // Check for empty array
   if DocumentsArray.Count < 1 then
+  begin
+    TigerLog.WriteLog(etError,'DeleteDocument: empty DocumentsArray for document ID '+inttostr(DocumentID));
     exit;
+  end;
 
   // Check for empty object=>empty recordset
   Document := TJSONObject(DocumentsArray.Items[0]);
   if Document.JSONType <> jtObject then
+  begin
+    TigerLog.WriteLog(etError,'DeleteDocument: invalid document object for ID '+inttostr(DocumentID));
     exit;
+  end;
 
   // Even though we're just looking for one document, a bit of superfluous looping is not too bad
   for DocCount := 0 to DocumentsArray.Count - 1 do
@@ -370,10 +379,12 @@ begin
     // item 2=pdfpath
     if DeleteFromDisk and (FileExists(Document.Items[2].AsString)) then
       DeleteFile(Document.Items[2].AsString);
-    if not(FTigerDB.DeleteDocumentRecord(Document.Items[0].AsInteger)) then
+    result:=FTigerDB.DeleteDocumentRecord(Document.Items[0].AsInteger);
+    if not(result) then
+    begin
       TigerLog.WriteLog(etError,'DeleteDocument: could not delete document ID '+inttostr(DocumentID));
+    end;
   end;
-  result:=true;
 end;
 
 function TTigerServerCore.DeleteDocuments: boolean;
