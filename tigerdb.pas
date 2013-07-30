@@ -72,6 +72,8 @@ type
     function DeleteImageRecord(const ImageID: integer): boolean;
     // Returns highest existing imageorder for images or 0 if error
     function GetHighestImageOrder(DocumentID: integer): integer;
+    // Returns path+filename for PDF associated with document
+    function GetPDFPath(DocumentID: integer): string;
     // Returns path+filename for requested image - imageorder gives the sort order/image number
     function ImagePath(DocumentID: integer; Imageorder: integer = 1): string;
     // Inserts a new scan record in database; retruns scan ID.
@@ -87,8 +89,8 @@ type
     procedure ListDocuments(const DocumentID: integer; var DocumentsArray: TJSONArray);
     // List images with DocumentID or all images if DocumentID=INVALIDID. Path has full path and image filename.
     procedure ListImages(const DocumentID: integer; var DocumentsArray: TJSONArray);
-    // Returns path+filename for PDF associated with document
-    function GetPDFPath(DocumentID: integer): string;
+    // Purge database of image/document records without existing files
+    function Purge: boolean;
     // Sets path+filename for PDF associated with document. Returns result.
     function SetPDFPath(DocumentID: integer; PDFPath: string): boolean;
     constructor Create;
@@ -451,6 +453,36 @@ begin
         F.Message));
       TigerLog.WriteLog(etError, 'ListDocuments: exception: ' + F.Message);
     end;
+  end;
+end;
+
+function TTigerDB.Purge: boolean;
+// Removes all records where image path is empty or does not exist
+begin
+  result:=false;
+  try
+    // Remove empty image paths
+  	if FReadWriteTransaction.Active = False then
+  		FReadWriteTransaction.StartTransaction;
+  	FWriteQuery.Close;
+  	FWriteQuery.SQL.Text := 'DELETE FROM IMAGES WHERE PATH IS NULL OR PATH='''' ';
+  	FWriteQuery.ExecSQL;
+  	FWriteQuery.Close;
+  	FReadWriteTransaction.Commit;
+    result:=true;
+  except
+  	on E: EDatabaseError do
+  	begin
+  		if FReadWriteTransaction.Active then
+  			FReadWriteTransaction.Rollback;
+  		TigerLog.WriteLog(etError, 'Purge: Database error: ' + E.Message, True);
+  	end;
+  	on F: Exception do
+  	begin
+  		if FReadWriteTransaction.Active then
+  			FReadWriteTransaction.Rollback;
+  		TigerLog.WriteLog(etError, 'Purge: Exception: ' + F.Message, True);
+  	end;
   end;
 end;
 
