@@ -118,7 +118,7 @@ begin
   	if FReadWriteTransaction.Active = False then
   		FReadWriteTransaction.StartTransaction;
   	FWriteQuery.Close;
-  	FWriteQuery.SQL.Text := 'DELETE DOCUMENTS WHERE ID=' +
+  	FWriteQuery.SQL.Text := 'DELETE FROM DOCUMENTS WHERE ID=' +
   		IntToStr(DocumentID);
   	FWriteQuery.ExecSQL;
   	FWriteQuery.Close;
@@ -152,7 +152,7 @@ begin
   	if FReadWriteTransaction.Active = False then
   		FReadWriteTransaction.StartTransaction;
   	FWriteQuery.Close;
-  	FWriteQuery.SQL.Text := 'DELETE IMAGES WHERE ID=' +
+  	FWriteQuery.SQL.Text := 'DELETE FROM IMAGES WHERE ID=' +
   		IntToStr(ImageID);
   	FWriteQuery.ExecSQL;
   	FWriteQuery.Close;
