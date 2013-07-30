@@ -221,7 +221,8 @@ type
     PDF: string;
   begin
     // quick check parameters
-    ErrorMsg := CheckOptions('d:hi:l:p:r:sv', 'blackwhite color colour deletedocument: device: gray grayscale help image: language: lineart list pages: rotate: scan scanonly version');
+    ErrorMsg := CheckOptions('d:hi:l:p:r:sv',
+      'blackwhite color colour deletedocument: device: gray grayscale help image: language: lineart list pages: purge rotate: scan scanonly version');
     if ErrorMsg <> '' then
     begin
       ShowException(Exception.Create(ErrorMsg));
@@ -306,6 +307,12 @@ type
       begin
         writeln('Invalid document ID specified. Stopping.');
       end;
+    end;
+
+    if HasOption('purge') then
+    begin
+      if not FTigerCore.Purge then
+        writeln('Error trying to purge database.');
     end;
 
     if HasOption('i', 'image') then
@@ -409,9 +416,6 @@ type
   begin
     inherited Create(TheOwner);
     StopOnException := true;
-
-
-
     FTigerCore := TTigerServerCore.Create;
   end;
 
@@ -445,15 +449,17 @@ type
     writeln(' eng (English) by default. See the OCR documentation for ');
     writeln(' language codes (e.g. man tesseract)');
     writeln('--list');
-    writeln(' list already scanned documents, including document IDs and images');
+    writeln(' List already scanned documents, including document IDs and images');
+    writeln('-p <n> --pages=<n>');
+    writeln(' Specify number of pages for processing/scanning multi page docs.');
+    writeln('--purge');
+    writeln(' Purge database of empty and invalid document/image records.');
     writeln('-r <d> --rotate=<d>');
-    writeln(' rotate image or scan d degrees clockwise before processing');
+    writeln(' Rotate image or scan d degrees clockwise before processing');
     writeln('-s --scan');
     writeln(' Scan document, process (perform OCR, create PDF).');
     writeln('--scanonly');
     writeln(' Scan document but do not process further.');
-    writeln('-p <n> --pages=<n>');
-    writeln(' Specify number of pages for processing/scanning multi page docs.');
     writeln('-v --version');
     writeln(' Show version information and exit.');
   end;
