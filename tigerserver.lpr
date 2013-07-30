@@ -311,7 +311,7 @@ type
 
     if HasOption('purge') then
     begin
-      if not FTigerCore.Purge then
+      if not FTigerCore.PurgeDB then
         writeln('Error trying to purge database.');
     end;
 
