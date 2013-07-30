@@ -32,7 +32,7 @@ uses
 //todo: add support for pascalsane/using libsane instead of wrapping sane command line?
 
 const
-  // todo: create separate settings class
+  // todo: use separate settings class
   SettingsFile = 'tigerserver.ini';
 
 type
@@ -56,7 +56,6 @@ type
     // Black & white, grayscale or colour scan?
     property ColorType: ScanType read FColorType write FColorType;
     // File where scanned image should be or has been stored
-    //todo: how to deal with existing files?
     property FileName: string read FFileName write FFileName;
     // Scan resolution in DPI
     property Resolution: integer read FResolution write FResolution;
@@ -108,7 +107,6 @@ const
 var
   Output: string = '';
 begin
-  //todo: scanimage --list-devices
   {
   --list-devices         show available scanner devices
   --formatted-device-list=FORMAT similar to -L, but the FORMAT of the output
@@ -132,7 +130,6 @@ var
   ScanDevicePart: string;
   ScanType: string;
 begin
-  //todo: call runprocess scanimage... etc
   {Example call:
   scanimage --device-name=genesys:libusb:001:002 --mode=Color --swdeskew=yes --swcrop=yes --format=tiff > /tmp/testscan.tiff
   swdeskew, swcrop, color arguments are device dependent
@@ -193,7 +190,6 @@ var
 begin
   inherited Create;
   FColorType := stLineArt; //Lineart is suitable for OCR for black & white docments?!?
-  //todo: we would like to scan graphics in B&W or even colour, then text as lineart. This would probably require fiddling with the hOCR output to get the text areas etc???
   FFileName := SysUtils.GetTempFileName(GetTempDir(false), 'SCN') + TesseractTIFFExtension;
   FResolution := 300;
   //todo: check whether sane works by --version ??

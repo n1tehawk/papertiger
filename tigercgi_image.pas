@@ -109,18 +109,17 @@ begin
     begin
       case WordCount(StrippedPath, ['/']) of
         1: //http://server/cgi-bin/tigercgi/image/
+        // Note that this is a bit of a ridiculous call: deleting images without deleting the documents/pdfs
         begin
-          IsValidRequest := True;
-          //todo: delete every image
-          AResponse.Contents.Add('<p>todo delete all images</p>');
+          IsValidRequest := FTigerCore.DeleteImages(true);
         end;
         2: //http://server/cgi-bin/tigercgi/image/304
         begin
           ImageID := StrToIntDef(ExtractWord(2, StrippedPath, ['/']), INVALIDID);
-          if ImageID <> INVALIDID then
-            IsValidRequest := True;
-          //todo: delete given image
-          AResponse.Contents.Add('<p>todo delete image ' + IntToStr(ImageID) + '</p>');
+          if ImageID = INVALIDID then
+            IsValidRequest := false
+          else
+            IsValidRequest := FTigerCore.DeleteImage(ImageID,true);
         end;
       end;
     end;
