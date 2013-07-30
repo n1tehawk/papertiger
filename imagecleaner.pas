@@ -32,8 +32,6 @@ unpaper input.ppm output.ppm => perhaps more formats than ppm? use eg. exactimag
 
 {$i tigerserver.inc}
 {$DEFINE USE_IMAGEMAGICK}
-// Don't use exactimage; its parameter handling plain sucks, even using bash.
-// e.g. try running --crop
 {.$DEFINE USE_EXACTIMAGE}
 
 interface
@@ -317,14 +315,14 @@ begin
 
   // We just let the tool do the 0 degree rotations, too.
   {$IFDEF USE_EXACTIMAGE}
-  //todo: this just doesn't seem to rotate. Command line appears correct
+  //todo: this just doesn't seem to rotate. Command line appears correct though.
   // perhaps bug in exactimage 0.8.8 which I ran.
 
   // Rotate; indicate output should be tiff format
   // Output appears to be CCIT fax T.6, but apparently tesseract 3.02.02
   // can now read that
   ErrorCode:=ExecuteCommand(ConvertCommand+
-    ' --rotate '+inttostr(Degrees)+
+    ' --rotate "'+inttostr(Degrees)+'" '+
     ' --input "'+SourceFile+'" '+
     ' --output "tiff:'+TempFile+'" ', false);
   {$ENDIF}
