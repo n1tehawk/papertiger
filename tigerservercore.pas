@@ -261,7 +261,6 @@ end;
 function TTigerServerCore.AddImage(ImageFile: string; DocumentID: integer;
   ImageOrder: integer): integer;
 var
-  Clean: TImageCleaner;
   ImageStream: TFileStream;
 begin
   result:=0;
@@ -319,14 +318,11 @@ end;
 
 function TTigerServerCore.DeleteDocument(const DocumentID: integer; DeleteFromDisk: boolean): boolean;
 var
-  Cell: string;
-  DateCell: TDateTime;
   Document: TJSONObject;
   DocumentsArray: TJSONArray;
   ImagesArray: TJSONArray;
   Image: TJSONObject;
-  DocCount, DocCol: integer;
-  ImCount, ImCol: integer;
+  DocCount,ImCount: integer;
 begin
   result:=false;
 
