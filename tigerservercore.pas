@@ -117,12 +117,10 @@ type
     // Cleans up image (postprocessing): straightens them up, despeckles etc. Returns true if succesful
     function CleanUpImage(const Source, Destination: string): boolean;
     // Delete document and associated images from DB
+    // Deletes *all* documents if InvalidID specified as DocumentID
     // - if DeleteFromDisk, also delete from filesystem
     // returns success or failure
     function DeleteDocument(const DocumentID: integer; DeleteFromDisk: boolean): boolean;
-    // Delete all document and associated images from DB and filesystem
-    // returns success or failure
-    function DeleteDocuments: boolean;
     // Get image identified by documentID and image number/imageorder (starting with 1)
     function GetImage(DocumentID, ImageOrder: integer;
       const ImageStream: TStream): boolean;
@@ -374,7 +372,7 @@ begin
     exit;
   end;
 
-  // Even though we're just looking for one document, a bit of superfluous looping is not too bad
+  // If INVALIDID specified, we're looking at multiple docs so run a loop.
   for DocCount := 0 to DocumentsArray.Count - 1 do
   begin
     Document := (DocumentsArray[DocCount] as TJSONObject);
@@ -388,14 +386,6 @@ begin
       TigerLog.WriteLog(etError,'DeleteDocument: could not delete document ID '+inttostr(DocumentID));
     end;
   end;
-end;
-
-function TTigerServerCore.DeleteDocuments: boolean;
-begin
-  //todo: for all docs,
-  //todo: get all images, delete from fs
-  //todo: get pdf, delete from fs
-  //todo: delete document and images from db
 end;
 
 function TTigerServerCore.GetImage(DocumentID, ImageOrder: integer;
