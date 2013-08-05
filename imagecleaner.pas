@@ -38,7 +38,7 @@ interface
 
 uses
   Classes, SysUtils,
-  processutils, tigerutil,
+  processutils, strutils, tigerutil,
   ocr;
 
 type
@@ -50,8 +50,8 @@ type
     FLanguage: string;
     // Tests page layout by running a scan.
     // Returns OCR recognition score (percentage: correct/total words) as well as the
-    // approximate number of correctly-spelled words found
-    function CheckRecognition(ImageFile: string; var CorrectWords: integer): integer;
+    // approximate number of correctly-detected words found
+    function CheckRecognition(ImageFile: string): integer;
     // Returns degrees image needs to be turned to end right-side-up
     function DetectRotation(Source: string): integer;
   public
@@ -88,7 +88,7 @@ const
   {$ENDIF}
   NormalizeCommand='optimize2bw'; //exactimage's => black&white TIFF conversion tool
 
-function TImageCleaner.CheckRecognition(ImageFile: string; var CorrectWords: integer): integer;
+function TImageCleaner.CheckRecognition(ImageFile: string): integer;
 {todo:  tesseract tries to output valid words in the selected language and
 will often falsely detect numbers instead of gibberish when scanning rotated text.
 Therefore remove all words containing only numbers before calculating statistics
@@ -97,120 +97,32 @@ const
   DetectLog = '/tmp/detectlog.txt';
 var
   i, LinesRead: integer;
-  ImageTextFile: string;
   Proc: TProcessEx;
   TempOCR: TOCR;
   ResList: TStringList;
-  WordsTotal, WordsWrong: integer;
+  ResText: string;
 begin
   result:=-1; //Negative recognition rate: fail by default
   TempOCR:=TOCR.Create;
   ResList:=TStringList.Create;
   try
+    result:=0;
     TigerLog.WriteLog(etDebug,'CheckRecognition: going to call ocr for file '+ImageFile);
     TempOCR.ImageFile:=ImageFile;
     TempOCR.Language:=FLanguage;
     TempOCR.RecognizeText;
 
-    // Now run a spell check and open the result text file to check effectiveness
-    // todo:
-    // - get rid of spell check;
-    // - strip out "words" consisting of only numbers
-    // - count total number of remaining words and score on that
-    ImageTextFile:=GetTempFileName('','OCT');
-    ResList.Clear;
-    ResList.Add(TempOCR.Text);
-    ResList.SaveToFile(ImageTextFile);
-    ResList.Clear;
-    {$IFNDEF DEBUG}
-    DeleteFile(ImageTextFile);
-    {$ENDIF}
-
-    Proc:=TProcessEx.Create(nil);
-    try
-      try
-        Proc.CommandLine:=TextDetectCommand+' "'+ImageTextFile+'"';
-        //todo: temporary solution pending lookup table
-        // Convert tesseract style language codes to LANG variables
-        case FLanguage of
-          'eng': Proc.Environment.SetVar('LANG','en_US.UTF-8');
-          'fra': Proc.Environment.SetVar('LANG','fr_FR.UTF-8');
-          'nld': Proc.Environment.SetVar('LANG','nl_NL.UTF-8');
-          else
-          begin
-            Proc.Environment.SetVar('LANG','en_US.UTF-8');
-            TigerLog.WriteLog(etWarning,'TImageCleaner.CheckRecognition: Unknown detction language '+FLanguage+'; defaulting to English. Detection scores may be invalid.');
-          end;
-        end;
-        Proc.Execute;
-        if (Proc.ExitStatus=0) then
-          result:=0
-        else
-          result:=-1;
-      except
-        result:=-1;
-      end;
-    finally
-      Proc.Free;
-    end;
-
-    if result=0 then
+    // strip out all numbers - including gibberish misdetected as numbers
+    ResText:=TempOCR.Text;
+    for i:=0 to length(ResText) do
     begin
-      // hardcoded results in /tmp/detectlog.txt
-      ResList.LoadFromFile(DetectLog);
-      {$IFDEF DEBUG}
-      SysUtils.RenameFile(DetectLog,DetectLog+'_'+ImageFile);
-      {$ELSE}
-      sysutils.DeleteFile(DetectLog);
-      {$ENDIF}
-      LinesRead:=0;
-      if ResList.Count=0 then
-      begin
-        TigerLog.WriteLog(etError,'TImageCleaner.CheckRecognition: error running spell check recognition for image '+ImageFile+': empty file '+DetectLog);
-        exit;
-      end;
-
-      for i:=0 to ResList.Count-1 do
-      begin
-        // Ignore comments starting with #
-        if pos('#',trim(Reslist[i]))<>1 then
-        begin
-          case LinesRead of
-          0:
-            begin
-              // Total wordcount
-              WordsTotal:=strtointdef(Trim(ResList[i]),-1);
-              LinesRead:=LinesRead+1;
-            end;
-          1:
-            begin
-              // Number of spelling errors/incorrectly spelled words
-              try
-                WordsWrong:=strtointdef(Trim(ResList[i]),0);
-                CorrectWords:=WordsTotal-WordsWrong;
-                if CorrectWords<0 then CorrectWords:=0;
-                TigerLog.WriteLog(etDebug,'TImageCleaner.CheckRecognition: found '+
-                  inttostr(WordsTotal)+' total words: '+
-                  inttostr(CorrectWords)+' correct; '+
-                  inttostr(WordsWrong)+' wrong.');
-                Result:=Round(100*CorrectWords/WordsTotal);
-              except
-                // keep result at -1
-              end;
-              LinesRead:=LinesRead+1;
-            end;
-          else
-            begin
-              TigerLog.WriteLog(etWarning,'TImageCleaner.CheckRecognition: unknown detect line: '+ResList[i]);
-            end;
-          end;
-        end;
-      end;
-    end
-    else
-    begin
-      TigerLog.WriteLog(etError,'TImageCleaner.CheckRecognition: '+TextDetectCommand+' exited with non-zero result code.');
+      if char(ResText[i]) in ['0'..'9'] then
+        Delete(ResText,i,1);
     end;
+    ResList.Text:=ResText;
+    ResText:='';
+
+    result:=WordCount((ResList.Text),StdWordDelims);
   finally
     TempOCR.Free;
     ResList.Free;
@@ -227,7 +139,6 @@ var
   Rotation: integer=0;
   Score: integer=0;
   TopScore: integer=0;
-  CorrectWords: integer=0;
 begin
   Result:=0;
   Rotation:=0;
@@ -240,13 +151,13 @@ begin
       RotatedImage:=GetTempFileName('',inttostr(Rotation));
       Rotate(Rotation,Source,RotatedImage);
     end;
-    Score:=CheckRecognition(RotatedImage,CorrectWords);
-    TigerLog.WriteLog(etDebug, 'File: '+RotatedImage+' rotation '+inttostr(Rotation)+' score '+inttostr(Score)+' %; correct words: '+inttostr(CorrectWOrds));
+    Score:=CheckRecognition(RotatedImage);
+    TigerLog.WriteLog(etDebug, 'File: '+RotatedImage+' rotation '+inttostr(Rotation)+' score '+inttostr(Score));
     {$IFNDEF DEBUG}
     DeleteFile(RotatedImage); //clean up
     {$ENDIF}
 
-    if (Score>TopScore) and (CorrectWords>MinWords) then
+    if (Score>TopScore) and (Score>MinWords) then
     begin
       TopScore:=Score;
       DetectedRotation:=Rotation;
