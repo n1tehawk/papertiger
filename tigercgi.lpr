@@ -3,7 +3,10 @@ program tigercgi;
 {$mode objfpc}{$H+}
 
 uses
-  fpCGI, tigerutil, tigercgimain, tigercgi_document, tigercgi_image, tigerservercore, tigerdb, scan, ocr;
+  fpCGI, tigerutil, tigercgimain,
+  { Modules that handle of URLs:}
+  tigercgi_server, tigercgi_document, tigercgi_image,
+  tigerservercore, tigerdb, scan, ocr;
 
 begin
   Application.Initialize;
