@@ -62,7 +62,7 @@
     <RunParams>
       <local>
         <FormatVersion Value="1"/>
-        <CommandLineParams Value="--image=/tmp/bla.tiff"/>
+        <CommandLineParams Value="--purge"/>
       </local>
     </RunParams>
     <Units Count="8">
