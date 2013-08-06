@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <CONFIG>
   <ProjectOptions>
     <Version Value="9"/>
@@ -65,7 +65,7 @@
         <CommandLineParams Value="--image=/tmp/bla.tiff"/>
       </local>
     </RunParams>
-    <Units Count="2">
+    <Units Count="8">
       <Unit0>
         <Filename Value="tigerserver.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -76,6 +76,36 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="tigerservercore"/>
       </Unit1>
+      <Unit2>
+        <Filename Value="scan.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="scan"/>
+      </Unit2>
+      <Unit3>
+        <Filename Value="ocr.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="ocr"/>
+      </Unit3>
+      <Unit4>
+        <Filename Value="pdf.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="pdf"/>
+      </Unit4>
+      <Unit5>
+        <Filename Value="tigerdb.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="tigerdb"/>
+      </Unit5>
+      <Unit6>
+        <Filename Value="imagecleaner.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="imagecleaner"/>
+      </Unit6>
+      <Unit7>
+        <Filename Value="tigerutil.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="tigerutil"/>
+      </Unit7>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
