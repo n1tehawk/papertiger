@@ -26,14 +26,19 @@ unit clientmain;
 {$mode objfpc}{$H+}
 // Define USEMAGICK to work with imagemagick. Will still need some code changes.
 // On Linux, probably need libmagick-dev, libmagickcore-dev, libmagickwand-dev
+// On Windows, needs the imagemagick dlls (see readme.txt)
 {.$DEFINE USEMAGICK}
 
 interface
 
 uses
-  Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, Menus, Grids,
-  StdCtrls, tigersettings, LJGridUtils, FPJSON, jsonparser, httpclient, imageformunit,
-  fpreadtiff_custom1bit {custom 1bit TIFF format read support, useful when using FPC 2.6.x}, lclintf,
+  Classes, SysUtils, FileUtil, Forms, Controls,
+  {$IFDEF FPC_FULLVERSION<20701}
+  // register before the other units so this takes precedence
+  fpreadtiff_custom1bit, {custom 1bit TIFF format read support, useful when using FPC 2.6.x}
+  {$ENDIF}
+  Graphics, Dialogs, Menus, Grids,
+  StdCtrls, lclintf, tigersettings, LJGridUtils, FPJSON, jsonparser, httpclient, imageformunit,
   {$IFDEF USEMAGICK}
   magick_wand, ImageMagick {for conversion from TIFF formats unsupported by FPC to regular bitmaps},
   {$ENDIF USEMAGICK}
@@ -153,6 +158,7 @@ var
   Success: boolean;
 begin
   Success := false;
+  CommJSON:=TJSONString.Create(''); //dummy content
   ReturnJSON := TJSONObject.Create;
   try
     Success := (HttpRequestWithData(CommJSON, FCGIURL + 'serverinfo', rmPost).Code = 200);
@@ -175,9 +181,14 @@ begin
   {$INCLUDE %FPCTARGETCPU%}
       ) + ' on ' + lowercase(
   {$INCLUDE %FPCTARGETOS%}
-      ) + LineEnding + 'Uses ImageMagick software.' + LineEnding + LineEnding + 'Papertiger server: ' + Message;
+      ) + LineEnding +
+      {$IFDEF USEMAGICK}
+      'Uses ImageMagick software.' + LineEnding +
+      {$ENDIF}
+      LineEnding + 'Papertiger server: ' + Message;
     ShowMessage(Message);
   finally
+    CommJSON.Free;
     ReturnJSON.Free;
   end;
 end;
@@ -199,7 +210,7 @@ var
   CommJSON: TJSONData;
 begin
   Result := INVALIDID;
-  CommJSON := TJSONObject.Create;
+  CommJSON := TJSONString.Create(''); //dummy content
   try
     try
       RequestResult := HttpRequestWithData(CommJSON, FCGIURL + 'document/', rmPost);
@@ -425,6 +436,7 @@ var
   RequestResult: THTTPResult;
   VData: TJSONData;
 begin
+  VData:=TJSONString.Create(''); //Dummy value
   try
     ClearGrid(DocumentsGrid);
     RequestResult := HttpRequest(FCGIURL + 'document/', VData, rmGet);
@@ -435,7 +447,15 @@ begin
     end
     else
     begin
-      LoadJSON(DocumentsGrid, (VData as TJSONArray), false, false, true);
+      try
+        LoadJSON(DocumentsGrid, (VData as TJSONArray), true, false, true);
+      except
+        on E: Exception do
+        begin
+          ShowMessage('Error parsing document list. Technical details: JSON error: ' + E.Message);
+          exit;
+        end;
+      end;
     end;
   finally
     VData.Free;
@@ -450,9 +470,10 @@ var
   VData: TJSONData;
 begin
   PDFStream := TMemoryStream.Create;
+  VData:=TJSONString.Create(''); //dummy value
   try
     // post a request to get the PDF
-    HttpRequest(FCGIURL + 'document/' + IntToStr(DocumentID) + '/pdf', VData, rmGet);
+    RequestResult:=HttpRequest(FCGIURL + 'document/' + IntToStr(DocumentID) + '/pdf', VData, rmGet);
     if RequestResult.Code <> 200 then
     begin
       ShowMessage('Error getting PDF from server. HTTP result code: ' + IntToStr(RequestResult.Code) + '/' + RequestResult.Text);
@@ -516,6 +537,7 @@ begin
     mtConfirmation, [mbOK, mbCancel], 0, mbCancel) = mrCancel) then
     exit;
 
+  CommJSON:=TJSONString.Create(''); //dummy content
   try
     Screen.Cursor := crHourglass;
     try

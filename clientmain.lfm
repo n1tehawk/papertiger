@@ -8,7 +8,7 @@ object Form1: TForm1
   ClientWidth = 665
   Menu = MainMenu1
   OnCreate = FormCreate
-  LCLVersion = '1.0.10.0'
+  LCLVersion = '1.1'
   object DocumentsGrid: TStringGrid
     Left = 11
     Height = 353
@@ -81,9 +81,9 @@ object Form1: TForm1
   end
   object Label1: TLabel
     Left = 552
-    Height = 14
+    Height = 13
     Top = 24
-    Width = 30
+    Width = 29
     Caption = 'pages'
     ParentColor = False
   end

@@ -8,8 +8,11 @@ uses
 begin
   Application.Initialize;
   Application.AllowDefaultModule:=false; //all URLs must include the module name (image, document..)
-  { If there is only 1 element in the URL, like something in http://localhost/cgi-bin/something,
-   treat it as a module by setting PreferModuleName. Otherwise it would have been treated like an action.}
+  { If there is only 1 element in the URL, like the "something" in
+    http://localhost/cgi-bin/something
+    treat it as a module by setting PreferModuleName.
+    Otherwise it would have been treated like an action.
+  }
   Application.PreferModuleName:=true;
   if Application.EventLog=nil then ;  //initialize event log
   Application.Run;

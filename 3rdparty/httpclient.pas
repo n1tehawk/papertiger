@@ -55,20 +55,28 @@ begin
     VHttp.HTTPMethod(VMethod, AUrl, VData, []);
     Result.Code := VHttp.ResponseStatusCode;
     Result.Text := VHttp.ResponseStatusText;
-    if Assigned(AResponse) and (VData.Size > 0) then
+    if VData.Size > 0 then
     begin
-      VData.Position := 0;
-      VParser := TJSONParser.Create(VData);
-      try
-        try
-          AResponse := VParser.Parse;
-        except
-          //error occurred, e.g. we have regular HTML instead of JSON
-          AResponse := nil; //caller has to check for nil
-        end;
-      finally
-        VParser.Free;
-      end;
+       if Assigned(AResponse) then
+       begin
+         VData.Position := 0;
+         VParser := TJSONParser.Create(VData);
+         try
+           try
+             AResponse := VParser.Parse;
+           except
+             //error occurred, e.g. we have regular HTML instead of JSON
+             AResponse := nil; //caller has to check for nil
+           end;
+         finally
+           VParser.Free;
+         end;
+       end
+       else
+       begin
+         // We need an assigned Aresponse...
+         AResponse := nil;
+       end;
     end;
   finally
     VData.Free;
