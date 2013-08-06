@@ -33,7 +33,7 @@ uses {$IFDEF UNIX} {$IFDEF UseCThreads}
   CustApp,
   fpjson,
   jsonparser,
-  tigerservercore;
+  tigerservercore, ocr, imagecleaner, tigerutil, scan, pdf, tigerdb;
 
 type
 

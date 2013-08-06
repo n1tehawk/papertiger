@@ -161,6 +161,7 @@ begin
   CommJSON:=TJSONString.Create(''); //dummy content
   ReturnJSON := TJSONObject.Create;
   try
+    Message := 'Unknown server or not connected.');
     Success := (HttpRequestWithData(CommJSON, FCGIURL + 'server/', rmGet).Code = 200);
     if Success then
       try
@@ -185,7 +186,7 @@ begin
       {$IFDEF USEMAGICK}
       'Uses ImageMagick software.' + LineEnding +
       {$ENDIF}
-      LineEnding + 'Papertiger server: ' + Message;
+      LineEnding + 'Papertiger server: ' + LineEnding + Message;
     ShowMessage(Message);
   finally
     CommJSON.Free;

@@ -3,7 +3,7 @@ object Form1: TForm1
   Height = 481
   Top = 155
   Width = 665
-  Caption = 'Form1'
+  Caption = 'PaperTiger'
   ClientHeight = 462
   ClientWidth = 665
   Menu = MainMenu1
