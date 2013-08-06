@@ -458,11 +458,12 @@ begin
     FWriteQuery.Close;
     FReadQuery.Close;
     FReadQuery.SQL.Text := 'SELECT ID, PATH FROM IMAGES WHERE (PATH IS NOT NULL) AND (PATH<>'''') ORDER BY PATH ';
+    FReadQuery.Open;
     while not (FReadQuery.EOF) do
     begin
       if not (FileExists(FReadQuery.FieldByName('PATH').AsString)) then
       begin
-        FWriteQuery.SQL.Text := 'UPDATE IMAGES SET PATH=NULL WHERE ID=' + FReadQuery.FieldByName('ID').AsString + ' ORDER BY PDFPATH ';
+        FWriteQuery.SQL.Text := 'UPDATE IMAGES SET PATH=NULL WHERE ID=' + FReadQuery.FieldByName('ID').AsString+' ';
         FWriteQuery.ExecSQL;
       end;
       FReadQuery.Next;
@@ -471,6 +472,7 @@ begin
 
     // Find all invalid document paths and reset them
     FReadQuery.SQL.Text := 'SELECT ID, PDFPATH FROM DOCUMENTS WHERE (PDFPATH IS NOT NULL) AND (PDFPATH<>'''') ';
+    FReadQuery.Open;
     while not (FReadQuery.EOF) do
     begin
       if not (FileExists(FReadQuery.FieldByName('PDFPATH').AsString)) then
