@@ -161,7 +161,7 @@ begin
   CommJSON:=TJSONString.Create(''); //dummy content
   ReturnJSON := TJSONObject.Create;
   try
-    Success := (HttpRequestWithData(CommJSON, FCGIURL + 'serverinfo', rmPost).Code = 200);
+    Success := (HttpRequestWithData(CommJSON, FCGIURL + 'server/', rmGet).Code = 200);
     if Success then
       try
         Message := (CommJSON as TJSONObject).Strings['serverinfo'];
