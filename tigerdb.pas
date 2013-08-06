@@ -56,13 +56,13 @@ type
 
   TTigerDB = class(TObject)
   private
-    FDB: TSQLConnection; //Database connection
+    FDB: TSQLConnection;     //Database connection
     FInsertImage: TSQLQuery; //Inserts new images (for now with an insert query)
-    FInsertScan: TSQLQuery; //Inserts new scan data.
-    FReadQuery: TSQLQuery; //Query used for reading data
+    FInsertScan: TSQLQuery;  //Inserts new scan data.
+    FReadQuery: TSQLQuery;   //Query used for reading data
     FReadTransaction: TSQLTransaction; //Transaction for read-only access
     FReadWriteTransaction: TSQLTransaction; //Transaction for read/write access
-    FWriteQuery: TSQLQuery; //Query used for writing misc data.
+    FWriteQuery: TSQLQuery;  //Query used for writing misc data.
   public
     // Deletes document record from database (but leaves any PDF files intact)
     // Returns success value
@@ -79,12 +79,10 @@ type
     // Inserts a new scan record in database; retruns scan ID.
     // Keep string values empty to insert NULLs;
     // TheScanDate: please pass UTC date/time, pass a pre 1900 date to specify unknown date
-    function InsertDocument(const DocumentName, PDFPath, DocumentHash: string;
-      TheScanDate: TDateTime): integer;
+    function InsertDocument(const DocumentName, PDFPath, DocumentHash: string; TheScanDate: TDateTime): integer;
     // Inserts a new image record in database (specify specifc image order or -1 to place image after existing images for a document)
     // Returns image ID.
-    function InsertImage(const DocumentID, Imageorder: integer;
-      const Path, ImageHash: string): integer;
+    function InsertImage(const DocumentID, Imageorder: integer; const Path, ImageHash: string): integer;
     // Lists document with DocumentID or all documents if DocumentID=INVALIDID
     procedure ListDocuments(const DocumentID: integer; var DocumentsArray: TJSONArray);
     // List images with DocumentID or all images if DocumentID=INVALIDID. Path has full path and image filename.
@@ -117,28 +115,27 @@ begin
     exit;
   end;
   try
-  	if FReadWriteTransaction.Active = False then
-  		FReadWriteTransaction.StartTransaction;
-  	FWriteQuery.Close;
-  	FWriteQuery.SQL.Text := 'DELETE FROM DOCUMENTS WHERE ID=' +
-  		IntToStr(DocumentID);
-  	FWriteQuery.ExecSQL;
-  	FWriteQuery.Close;
-  	FReadWriteTransaction.Commit;
-    result:=true;
+    if FReadWriteTransaction.Active = false then
+      FReadWriteTransaction.StartTransaction;
+    FWriteQuery.Close;
+    FWriteQuery.SQL.Text := 'DELETE FROM DOCUMENTS WHERE ID=' + IntToStr(DocumentID);
+    FWriteQuery.ExecSQL;
+    FWriteQuery.Close;
+    FReadWriteTransaction.Commit;
+    Result := true;
   except
-  	on E: EDatabaseError do
-  	begin
-  		if FReadWriteTransaction.Active then
-  			FReadWriteTransaction.Rollback;
-  		TigerLog.WriteLog(etError, 'DeleteDocumentRecord: Database error: ' + E.Message, True);
-  	end;
-  	on F: Exception do
-  	begin
-  		if FReadWriteTransaction.Active then
-  			FReadWriteTransaction.Rollback;
-  		TigerLog.WriteLog(etError, 'DeleteDocumentRecord: Exception: ' + F.Message, True);
-  	end;
+    on E: EDatabaseError do
+    begin
+      if FReadWriteTransaction.Active then
+        FReadWriteTransaction.Rollback;
+      TigerLog.WriteLog(etError, 'DeleteDocumentRecord: Database error: ' + E.Message, true);
+    end;
+    on F: Exception do
+    begin
+      if FReadWriteTransaction.Active then
+        FReadWriteTransaction.Rollback;
+      TigerLog.WriteLog(etError, 'DeleteDocumentRecord: Exception: ' + F.Message, true);
+    end;
   end;
 end;
 
@@ -151,28 +148,27 @@ begin
     exit;
   end;
   try
-  	if FReadWriteTransaction.Active = False then
-  		FReadWriteTransaction.StartTransaction;
-  	FWriteQuery.Close;
-  	FWriteQuery.SQL.Text := 'DELETE FROM IMAGES WHERE ID=' +
-  		IntToStr(ImageID);
-  	FWriteQuery.ExecSQL;
-  	FWriteQuery.Close;
-  	FReadWriteTransaction.Commit;
-    result:=true;
+    if FReadWriteTransaction.Active = false then
+      FReadWriteTransaction.StartTransaction;
+    FWriteQuery.Close;
+    FWriteQuery.SQL.Text := 'DELETE FROM IMAGES WHERE ID=' + IntToStr(ImageID);
+    FWriteQuery.ExecSQL;
+    FWriteQuery.Close;
+    FReadWriteTransaction.Commit;
+    Result := true;
   except
-  	on E: EDatabaseError do
-  	begin
-  		if FReadWriteTransaction.Active then
-  			FReadWriteTransaction.Rollback;
-  		TigerLog.WriteLog(etError, 'DeleteImageRecord: Database error: ' + E.Message, True);
-  	end;
-  	on F: Exception do
-  	begin
-  		if FReadWriteTransaction.Active then
-  			FReadWriteTransaction.Rollback;
-  		TigerLog.WriteLog(etError, 'DeleteImageRecord: Exception: ' + F.Message, True);
-  	end;
+    on E: EDatabaseError do
+    begin
+      if FReadWriteTransaction.Active then
+        FReadWriteTransaction.Rollback;
+      TigerLog.WriteLog(etError, 'DeleteImageRecord: Database error: ' + E.Message, true);
+    end;
+    on F: Exception do
+    begin
+      if FReadWriteTransaction.Active then
+        FReadWriteTransaction.Rollback;
+      TigerLog.WriteLog(etError, 'DeleteImageRecord: Exception: ' + F.Message, true);
+    end;
   end;
 end;
 
@@ -185,12 +181,12 @@ begin
     exit;
   end;
 
-  if FReadTransaction.Active = False then
+  if FReadTransaction.Active = false then
     FReadTransaction.StartTransaction;
   try
     // Select top imageorder number; I just don't want to understand GROUP BY and this works.
-    FReadQuery.SQL.Text := 'SELECT IMAGEORDER FROM IMAGES WHERE DOCUMENTID=' +
-      IntToStr(DocumentID) + ' ORDER BY IMAGEORDER DESC ROWS 1';
+    FReadQuery.SQL.Text := 'SELECT IMAGEORDER FROM IMAGES WHERE DOCUMENTID=' + IntToStr(DocumentID) +
+      ' ORDER BY IMAGEORDER DESC ROWS 1';
     FReadQuery.Open;
     if not (FReadQuery.EOF) then
       Result := FReadQuery.FieldByName('IMAGEORDER').AsInteger;
@@ -219,11 +215,11 @@ begin
     exit;
   end;
 
-  if FReadTransaction.Active = False then
+  if FReadTransaction.Active = false then
     FReadTransaction.StartTransaction;
   try
-    FReadQuery.SQL.Text := 'SELECT PATH FROM IMAGES WHERE DOCUMENTID=' +
-      IntToStr(DocumentID) + ' AND IMAGEORDER=' + IntToStr(ImageOrder);
+    FReadQuery.SQL.Text := 'SELECT PATH FROM IMAGES WHERE DOCUMENTID=' + IntToStr(DocumentID) +
+      ' AND IMAGEORDER=' + IntToStr(ImageOrder);
     FReadQuery.Open;
     if not (FReadQuery.EOF) then
       Result := FReadQuery.FieldByName('PATH').AsString;
@@ -242,8 +238,7 @@ begin
   end;
 end;
 
-function TTigerDB.InsertImage(const DocumentID, Imageorder: integer;
-  const Path, ImageHash: string): integer;
+function TTigerDB.InsertImage(const DocumentID, Imageorder: integer; const Path, ImageHash: string): integer;
 var
   NewImageOrder: integer;
 begin
@@ -257,8 +252,7 @@ begin
       if NewImageOrder = INVALIDID then
       begin
         TigerLog.WriteLog(etError,
-          'InsertImage: could not get new image order for document: ' +
-          IntToStr(DocumentID), True);
+          'InsertImage: could not get new image order for document: ' + IntToStr(DocumentID), true);
         exit;
       end;
       NewImageOrder := NewImageOrder + 1;
@@ -267,7 +261,7 @@ begin
     begin
       NewImageOrder := ImageOrder;
     end;
-    if FReadWriteTransaction.Active = False then
+    if FReadWriteTransaction.Active = false then
       FReadWriteTransaction.StartTransaction;
     FInsertImage.Close;
     FInsertImage.ParamByName('DOCUMENTID').AsInteger := DocumentID;
@@ -290,23 +284,22 @@ begin
     begin
       if FReadWriteTransaction.Active then
         FReadWriteTransaction.Rollback;
-      TigerLog.WriteLog(etError, 'Database error: ' + E.Message, True);
+      TigerLog.WriteLog(etError, 'Database error: ' + E.Message, true);
     end;
     on F: Exception do
     begin
       if FReadWriteTransaction.Active then
         FReadWriteTransaction.Rollback;
-      TigerLog.WriteLog(etError, 'Exception: ' + F.ClassName + '/' + F.Message, True);
+      TigerLog.WriteLog(etError, 'Exception: ' + F.ClassName + '/' + F.Message, true);
     end;
   end;
 end;
 
-function TTigerDB.InsertDocument(const DocumentName, PDFPath, DocumentHash: string;
-  TheScanDate: TDateTime): integer;
+function TTigerDB.InsertDocument(const DocumentName, PDFPath, DocumentHash: string; TheScanDate: TDateTime): integer;
 begin
   Result := INVALIDID;
   try
-    if FReadWriteTransaction.Active = False then
+    if FReadWriteTransaction.Active = false then
       FReadWriteTransaction.StartTransaction;
     FInsertScan.Close;
     if DocumentName = '' then // NULL
@@ -337,26 +330,25 @@ begin
     begin
       if FReadWriteTransaction.Active then
         FReadWriteTransaction.Rollback;
-      TigerLog.WriteLog(etError, 'InsertDocument: Database error: ' + E.Message, True);
+      TigerLog.WriteLog(etError, 'InsertDocument: Database error: ' + E.Message, true);
     end;
     on F: Exception do
     begin
       if FReadWriteTransaction.Active then
         FReadWriteTransaction.Rollback;
-      TigerLog.WriteLog(etError, 'InsertDocument: Exception: ' + F.Message, True);
+      TigerLog.WriteLog(etError, 'InsertDocument: Exception: ' + F.Message, true);
     end;
   end;
 end;
 
-procedure TTigerDB.ListDocuments(const DocumentID: integer;
-  var DocumentsArray: TJSONArray);
+procedure TTigerDB.ListDocuments(const DocumentID: integer; var DocumentsArray: TJSONArray);
 // Will return an array containing objects/records for each document
 var
   RecordObject: TJSONObject;
 begin
   //todo: convert to generic db query => json array function
   DocumentsArray := TJSONArray.Create; //clears any existing data at the same time
-  if FReadTransaction.Active = False then
+  if FReadTransaction.Active = false then
     FReadTransaction.StartTransaction;
   try
     if DocumentID = INVALIDID then
@@ -366,8 +358,7 @@ begin
     else
       // Specified document; no need for parametrized queries: one time only, integer
       FReadQuery.SQL.Text :=
-        'SELECT ID,DOCUMENTNAME,PDFPATH,SCANDATE,DOCUMENTHASH FROM DOCUMENTS WHERE ID=' +
-        IntToStr(DocumentID);
+        'SELECT ID,DOCUMENTNAME,PDFPATH,SCANDATE,DOCUMENTHASH FROM DOCUMENTS WHERE ID=' + IntToStr(DocumentID);
     FReadQuery.Open;
     while not FReadQuery.EOF do
     begin
@@ -378,8 +369,7 @@ begin
       // Convert dates to ISO 8601 UTC-based date/times e.g.:
       // 2013-02-21T09:47:42.467Z
       // Assuming the dates stored in the DB are UTC.
-      RecordObject.Add('scandate', FormatDateTime(ISO8601FullDateFormat,
-        FReadQuery.FieldByName('SCANDATE').AsDateTime));
+      RecordObject.Add('scandate', FormatDateTime(ISO8601FullDateFormat, FReadQuery.FieldByName('SCANDATE').AsDateTime));
       RecordObject.Add('documenthash', FReadQuery.FieldByName('DOCUMENTHASH').AsString);
       DocumentsArray.Add(RecordObject);
       FReadQuery.Next;
@@ -390,16 +380,14 @@ begin
     on E: EDatabaseError do
     begin
       DocumentsArray.Clear;
-      DocumentsArray.Add(TJSONString.Create('ListDocuments: db exception: ' +
-        E.Message));
+      DocumentsArray.Add(TJSONString.Create('ListDocuments: db exception: ' + E.Message));
       TigerLog.WriteLog(etError, 'ListDocuments: db exception: ' + E.Message);
       FReadTransaction.RollBack;
     end;
     on F: Exception do
     begin
       DocumentsArray.Clear;
-      DocumentsArray.Add(TJSONString.Create('ListDocuments: exception: message ' +
-        F.Message));
+      DocumentsArray.Add(TJSONString.Create('ListDocuments: exception: message ' + F.Message));
       TigerLog.WriteLog(etError, 'ListDocuments: exception: ' + F.Message);
     end;
   end;
@@ -412,7 +400,7 @@ var
 begin
   //todo: convert to generic db query => json array function
   DocumentsArray := TJSONArray.Create; //clears any existing data at the same time
-  if FReadTransaction.Active = False then
+  if FReadTransaction.Active = false then
     FReadTransaction.StartTransaction;
   try
     if DocumentID = INVALIDID then
@@ -422,8 +410,8 @@ begin
     else
       // Specified document; no need for parameterized queries: one time only, integer
       FReadQuery.SQL.Text :=
-        'SELECT ID,IMAGEORDER,DOCUMENTID,PATH,IMAGEHASH FROM IMAGES WHERE DOCUMENTID=' +
-        IntToStr(DocumentID) + ' ORDER BY IMAGEORDER ';
+        'SELECT ID,IMAGEORDER,DOCUMENTID,PATH,IMAGEHASH FROM IMAGES WHERE DOCUMENTID=' + IntToStr(DocumentID) +
+        ' ORDER BY IMAGEORDER ';
     FReadQuery.Open;
     while not FReadQuery.EOF do
     begin
@@ -449,31 +437,30 @@ begin
     on F: Exception do
     begin
       DocumentsArray.Clear;
-      DocumentsArray.Add(TJSONString.Create('ListImages: exception: message ' +
-        F.Message));
+      DocumentsArray.Add(TJSONString.Create('ListImages: exception: message ' + F.Message));
       TigerLog.WriteLog(etError, 'ListDocuments: exception: ' + F.Message);
     end;
   end;
 end;
 
 function TTigerDB.Purge: boolean;
-// Removes all records where image path is empty or does not exist
+  // Removes all records where image path is empty or does not exist
 begin
-  result:=false;
+  Result := false;
   try
-  	if FReadWriteTransaction.Active = False then
-  		FReadWriteTransaction.StartTransaction;
-  	FWriteQuery.Close;
+    if FReadWriteTransaction.Active = false then
+      FReadWriteTransaction.StartTransaction;
+    FWriteQuery.Close;
 
     // Find all invalid image paths and reset them so they can be deleted later
-    if FReadTransaction.Active = False then
+    if FReadTransaction.Active = false then
       FReadTransaction.StartTransaction;
-    FReadQuery.SQL.Text:='SELECT ID, PATH FROM IMAGES WHERE (PATH IS NOT NULL) AND (PATH<>'''') ORDER BY PATH ';
-    while not(FReadQuery.EOF) do
+    FReadQuery.SQL.Text := 'SELECT ID, PATH FROM IMAGES WHERE (PATH IS NOT NULL) AND (PATH<>'''') ORDER BY PATH ';
+    while not (FReadQuery.EOF) do
     begin
-      if not(FileExists(FReadQuery.FieldByName('PATH').AsString)) then
+      if not (FileExists(FReadQuery.FieldByName('PATH').AsString)) then
       begin
-        FWriteQuery.SQL.Text:='UPDATE IMAGES SET PATH=NULL WHERE ID='+FReadQuery.FieldByName('ID').AsString+' ORDER BY PDFPATH ';
+        FWriteQuery.SQL.Text := 'UPDATE IMAGES SET PATH=NULL WHERE ID=' + FReadQuery.FieldByName('ID').AsString + ' ORDER BY PDFPATH ';
         FWriteQuery.ExecSQL;
       end;
       FReadQuery.Next;
@@ -482,14 +469,14 @@ begin
     FReadTransaction.Commit;
 
     // Find all invalid document paths and reset them
-    if FReadTransaction.Active = False then
+    if FReadTransaction.Active = false then
       FReadTransaction.StartTransaction;
-    FReadQuery.SQL.Text:='SELECT ID, PDFPATH FROM DOCUMENTS WHERE (PDFPATH IS NOT NULL) AND (PDFPATH<>'''') ';
-    while not(FReadQuery.EOF) do
+    FReadQuery.SQL.Text := 'SELECT ID, PDFPATH FROM DOCUMENTS WHERE (PDFPATH IS NOT NULL) AND (PDFPATH<>'''') ';
+    while not (FReadQuery.EOF) do
     begin
-      if not(FileExists(FReadQuery.FieldByName('PDFPATH').AsString)) then
+      if not (FileExists(FReadQuery.FieldByName('PDFPATH').AsString)) then
       begin
-        FWriteQuery.SQL.Text:='UPDATE DOCUMENTS SET PDFPATH=NULL WHERE ID='+FReadQuery.FieldByName('ID').AsString+' ';
+        FWriteQuery.SQL.Text := 'UPDATE DOCUMENTS SET PDFPATH=NULL WHERE ID=' + FReadQuery.FieldByName('ID').AsString + ' ';
         FWriteQuery.ExecSQL;
       end;
       FReadQuery.Next;
@@ -498,31 +485,31 @@ begin
     FReadTransaction.Commit;
 
     // Remove empty image paths - both those we reset and those that already existed
-  	FWriteQuery.SQL.Text := 'DELETE FROM IMAGES WHERE (PATH IS NULL) OR (PATH='''') ';
-  	FWriteQuery.ExecSQL;
-  	FWriteQuery.Close;
+    FWriteQuery.SQL.Text := 'DELETE FROM IMAGES WHERE (PATH IS NULL) OR (PATH='''') ';
+    FWriteQuery.ExecSQL;
+    FWriteQuery.Close;
 
     // Now remove (recently) empty documents that have no images
-    FWriteQuery.SQL.Text := 'DELETE FROM DOCUMENTS WHERE '+
+    FWriteQuery.SQL.Text := 'DELETE FROM DOCUMENTS WHERE ' +
       '((documents.PDFPATH is null) or (documents.pdfpath='''')) AND ((select count(ID) FROM IMAGES WHERE IMAGES.DOCUMENTID=DOCUMENTS.ID)=0) ';
-  	FWriteQuery.ExecSQL;
-  	FWriteQuery.Close;
+    FWriteQuery.ExecSQL;
+    FWriteQuery.Close;
 
-  	FReadWriteTransaction.Commit;
-    result:=true;
+    FReadWriteTransaction.Commit;
+    Result := true;
   except
-  	on E: EDatabaseError do
-  	begin
-  		if FReadWriteTransaction.Active then
-  			FReadWriteTransaction.Rollback;
-  		TigerLog.WriteLog(etError, 'Purge: Database error: ' + E.Message, True);
-  	end;
-  	on F: Exception do
-  	begin
-  		if FReadWriteTransaction.Active then
-  			FReadWriteTransaction.Rollback;
-  		TigerLog.WriteLog(etError, 'Purge: Exception: ' + F.Message, True);
-  	end;
+    on E: EDatabaseError do
+    begin
+      if FReadWriteTransaction.Active then
+        FReadWriteTransaction.Rollback;
+      TigerLog.WriteLog(etError, 'Purge: Database error: ' + E.Message, true);
+    end;
+    on F: Exception do
+    begin
+      if FReadWriteTransaction.Active then
+        FReadWriteTransaction.Rollback;
+      TigerLog.WriteLog(etError, 'Purge: Exception: ' + F.Message, true);
+    end;
   end;
 end;
 
@@ -536,11 +523,10 @@ begin
     exit;
   end;
 
-  if FReadTransaction.Active = False then
+  if FReadTransaction.Active = false then
     FReadTransaction.StartTransaction;
   try
-    FReadQuery.SQL.Text := 'SELECT PDFPATH FROM DOCUMENTS WHERE ID=' +
-      IntToStr(DocumentID);
+    FReadQuery.SQL.Text := 'SELECT PDFPATH FROM DOCUMENTS WHERE ID=' + IntToStr(DocumentID);
     FReadQuery.Open;
     if not (FReadQuery.EOF) then
       Result := FReadQuery.FieldByName('PDFPATH').AsString;
@@ -561,13 +547,12 @@ end;
 
 function TTigerDB.SetPDFPath(DocumentID: integer; PDFPath: string): boolean;
 begin
-  Result := False;
+  Result := false;
   try
-    if FReadWriteTransaction.Active = False then
+    if FReadWriteTransaction.Active = false then
       FReadWriteTransaction.StartTransaction;
     FWriteQuery.Close;
-    FWriteQuery.SQL.Text := 'UPDATE DOCUMENTS SET PDFPATH=:PDFPATH WHERE ID=' +
-      IntToStr(DocumentID);
+    FWriteQuery.SQL.Text := 'UPDATE DOCUMENTS SET PDFPATH=:PDFPATH WHERE ID=' + IntToStr(DocumentID);
 
     if PDFPath = '' then // NULL
       FWriteQuery.ParamByName('PDFPATH').Clear
@@ -576,19 +561,19 @@ begin
     FWriteQuery.ExecSQL;
     FWriteQuery.Close;
     FReadWriteTransaction.Commit;
-    Result := True;
+    Result := true;
   except
     on E: EDatabaseError do
     begin
       if FReadWriteTransaction.Active then
         FReadWriteTransaction.Rollback;
-      TigerLog.WriteLog(etError, 'SetPDFPath: Database error: ' + E.Message, True);
+      TigerLog.WriteLog(etError, 'SetPDFPath: Database error: ' + E.Message, true);
     end;
     on F: Exception do
     begin
       if FReadWriteTransaction.Active then
         FReadWriteTransaction.Rollback;
-      TigerLog.WriteLog(etError, 'SetPDFPath: Exception: ' + F.Message, True);
+      TigerLog.WriteLog(etError, 'SetPDFPath: Exception: ' + F.Message, true);
     end;
   end;
 end;
@@ -599,8 +584,7 @@ var
   SQL: string;
 begin
   inherited Create;
-  Settings := TDBConnectionConfig.Create('Firebird', '', 'tiger.fdb',
-    'SYSDBA', 'masterkey', 'UTF8');
+  Settings := TDBConnectionConfig.Create('Firebird', '', 'tiger.fdb', 'SYSDBA', 'masterkey', 'UTF8');
   try
     Settings.SettingsFile := SettingsFile;
     // Set up db connection
@@ -614,8 +598,8 @@ begin
       'SQLite': FDB := TSQLite3Connection.Create(nil);
       else
       begin
-        TigerLog.WriteLog(etWarning, 'Warning: unknown database type ' +
-          Settings.DBType + ' specified. Defaulting to Firebird', True);
+        TigerLog.WriteLog(etWarning, 'Warning: unknown database type ' + Settings.DBType +
+          ' specified. Defaulting to Firebird', true);
         FDB := TIBConnection.Create(nil);
         TIBConnection(FDB).Dialect := 3; //just to be sure
       end;
@@ -635,7 +619,7 @@ begin
     FWriteQuery := TSQLQuery.Create(nil);
 
     // Check for existing database
-    if (FDB.HostName = '') and (FileExists(FDB.DatabaseName) = False) then
+    if (FDB.HostName = '') and (FileExists(FDB.DatabaseName) = false) then
     begin
       if (FDB is TIBConnection) or (FDB is TSQLite3Connection) then
       begin
@@ -646,10 +630,8 @@ begin
         sleep(10);
         if not (FileExists(FDB.DatabaseName)) then
         begin
-          TigerLog.WriteLog(etDebug, 'Tried to create database ' +
-            FDB.DatabaseName + ' but could not.', True);
-          raise Exception.CreateFmt('Tried to create database %s but could not.',
-            [FDB.DatabaseName]);
+          TigerLog.WriteLog(etDebug, 'Tried to create database ' + FDB.DatabaseName + ' but could not.', true);
+          raise Exception.CreateFmt('Tried to create database %s but could not.', [FDB.DatabaseName]);
         end;
       end;
     end;
@@ -660,7 +642,7 @@ begin
   FDB.Open;
   if not (FDB.Connected) then
   begin
-    TigerLog.WriteLog(etDebug, 'Error opening database ' + FDB.DatabaseName, True);
+    TigerLog.WriteLog(etDebug, 'Error opening database ' + FDB.DatabaseName, true);
     raise Exception.CreateFmt('Error opening databas %s.', [FDB.DatabaseName]);
   end;
 
@@ -672,7 +654,7 @@ begin
   FInsertImage.Database := FDB;
   FInsertImage.Transaction := FReadWriteTransaction;
   //Try to work around FPC 2.6.0 bug that doesn't do Open, but execute for INSERT statements
-  FInsertImage.ParseSQL := False;
+  FInsertImage.ParseSQL := false;
   //todo: replace with merge/insert replacing
   SQL := 'INSERT INTO IMAGES (DOCUMENTID,IMAGEORDER,PATH,IMAGEHASH) ' +
     'VALUES (:DOCUMENTID,:IMAGEORDER,:PATH,:IMAGEHASH) RETURNING ID';
@@ -681,7 +663,7 @@ begin
 
   FInsertScan.Database := FDB;
   FInsertScan.Transaction := FReadWriteTransaction;
-  FInsertScan.ParseSQL := False;
+  FInsertScan.ParseSQL := false;
   SQL := 'INSERT INTO DOCUMENTS (DOCUMENTNAME,PDFPATH,SCANDATE,DOCUMENTHASH) ' +
     'VALUES (:DOCUMENTNAME,:PDFPATH,:SCANDATE,:DOCUMENTHASH) RETURNING ID';
   FInsertScan.SQL.Text := SQL;
@@ -705,7 +687,7 @@ begin
   if Assigned(FReadTransaction) then
     FReadTransaction.Rollback;
   if Assigned(FDB) then
-    FDB.Connected := False;
+    FDB.Connected := false;
   FInsertImage.Free;
   FInsertScan.Free;
   FReadQuery.Free;
