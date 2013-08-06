@@ -41,8 +41,6 @@ type
   TFPWebobsolete = class(TFPWebModule)
     procedure DataModuleCreate(Sender: TObject);
     procedure DataModuleDestroy(Sender: TObject);
-    procedure serverinfoRequest(Sender: TObject; ARequest: TRequest;
-      AResponse: TResponse; var Handled: boolean); //lists server info (version etc)
     procedure unsupportedRequest(Sender: TObject; ARequest: TRequest;
       AResponse: TResponse; var Handled: boolean); //handler for invalid requests
   private
@@ -72,24 +70,6 @@ end;
 procedure TFPWebobsolete.DataModuleDestroy(Sender: TObject);
 begin
   FTigerCore.Free;
-end;
-
-
-
-procedure TFPWebobsolete.serverinfoRequest(Sender: TObject; ARequest: TRequest;
-  AResponse: TResponse; var Handled: boolean);
-var
-  OutputJSON: TJSONObject;
-begin
-  AResponse.ContentType := 'application/json';
-  OutputJSON := TJSONObject.Create();
-  try
-    OutputJSON.Add('serverinfo', FTigerCore.ServerInfo);
-    AResponse.Contents.Add(OutputJSON.AsJSON);
-  finally
-    OutputJSON.Free;
-  end;
-  Handled := True;
 end;
 
 procedure TFPWebobsolete.unsupportedRequest(Sender: TObject;
