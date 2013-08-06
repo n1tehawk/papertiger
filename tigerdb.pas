@@ -448,13 +448,15 @@ function TTigerDB.Purge: boolean;
 begin
   Result := false;
   try
+    // Set up read and write transactions
     if FReadWriteTransaction.Active = false then
       FReadWriteTransaction.StartTransaction;
-    FWriteQuery.Close;
-
-    // Find all invalid image paths and reset them so they can be deleted later
     if FReadTransaction.Active = false then
       FReadTransaction.StartTransaction;
+
+    // Find all invalid image paths and reset them so they can be deleted later
+    FWriteQuery.Close;
+    FReadQuery.Close;
     FReadQuery.SQL.Text := 'SELECT ID, PATH FROM IMAGES WHERE (PATH IS NOT NULL) AND (PATH<>'''') ORDER BY PATH ';
     while not (FReadQuery.EOF) do
     begin
@@ -466,11 +468,8 @@ begin
       FReadQuery.Next;
     end;
     FWriteQuery.Close;
-    FReadTransaction.Commit;
 
     // Find all invalid document paths and reset them
-    if FReadTransaction.Active = false then
-      FReadTransaction.StartTransaction;
     FReadQuery.SQL.Text := 'SELECT ID, PDFPATH FROM DOCUMENTS WHERE (PDFPATH IS NOT NULL) AND (PDFPATH<>'''') ';
     while not (FReadQuery.EOF) do
     begin
@@ -481,8 +480,8 @@ begin
       end;
       FReadQuery.Next;
     end;
+    FReadQuery.Close;
     FWriteQuery.Close;
-    FReadTransaction.Commit;
 
     // Remove empty image paths - both those we reset and those that already existed
     FWriteQuery.SQL.Text := 'DELETE FROM IMAGES WHERE (PATH IS NULL) OR (PATH='''') ';
@@ -495,20 +494,25 @@ begin
     FWriteQuery.ExecSQL;
     FWriteQuery.Close;
 
+    FReadTransaction.Commit;
     FReadWriteTransaction.Commit;
     Result := true;
   except
     on E: EDatabaseError do
     begin
+      TigerLog.WriteLog(etError, 'Purge: Database error: ' + E.Message, true);
       if FReadWriteTransaction.Active then
         FReadWriteTransaction.Rollback;
-      TigerLog.WriteLog(etError, 'Purge: Database error: ' + E.Message, true);
+      if FReadTransaction.Active then
+        FReadTransaction.Rollback;
     end;
     on F: Exception do
     begin
+      TigerLog.WriteLog(etError, 'Purge: Exception: ' + F.Message, true);
       if FReadWriteTransaction.Active then
         FReadWriteTransaction.Rollback;
-      TigerLog.WriteLog(etError, 'Purge: Exception: ' + F.Message, true);
+      if FReadTransaction.Active then
+        FReadTransaction.Rollback;
     end;
   end;
 end;
