@@ -71,7 +71,6 @@ procedure TFPWebserver.DataModuleRequest(Sender: TObject; ARequest: TRequest;
 // We don't define any actions but handle the request at the module level before any actions would be evaluated.
 {
 Handled URLs/methods:
-GET    http://server/cgi-bin/tigercgi/server               // get server info
 GET    http://server/cgi-bin/tigercgi/server/              // get server info
 }
 var

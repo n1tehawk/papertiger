@@ -49,7 +49,7 @@ type
     function GetDBPath: string;
     function GetDBType: string;
     function GetDBUser: string;
-    function GetDefaultSettingsFile: string;
+    function GetDefaultSettingsFile:string;
     procedure ReadINIFile;
     procedure SetDBType(AValue: string);
     procedure SetSettingsFile(AValue: string);
@@ -60,11 +60,10 @@ type
     property DBUser: string read GetDBUser write FDBUser; //User name needed for database (e.g. sa, SYSDBA)
     property DBPassword: string read GetDBPassword write FDBPassword; //Password needed for user name
     property DBType: string read GetDBType write SetDBType; //Type of database connection, e.g. Firebird, Oracle
-    property SettingsFile: string read FSettingsFile write SetSettingsFile;
-    //ini file to read settings from. If empty defaults to <programname>.ini
+    property SettingsFile: string read FSettingsFile write SetSettingsFile; //ini file to read settings from. If empty defaults to <programname>.ini
     constructor Create;
-    constructor Create(DefaultType: string; DefaultHost: string = ''; DefaultPath: string = 'data.fdb';
-      DefaultUser: string = 'SYSDBA'; DefaultPassword: string = 'masterkey'; DefaultCharSet: string = 'UTF8');
+    constructor Create(DefaultType:string; DefaultHost:string=''; DefaultPath:string='data.fdb';
+      DefaultUser:string='SYSDBA'; DefaultPassword:string='masterkey'; DefaultCharSet:string='UTF8');
     destructor Destroy; override;
   end;
 
@@ -74,59 +73,51 @@ implementation
 
 function TDBConnectionConfig.GetDBHost: string;
 begin
-  if not (FSettingsFileIsRead) then
-    ReadINIFile;
-  Result := FDBHost;
+  if not(FSettingsFileIsRead) then ReadINIFile;
+  result:=FDBHost;
 end;
 
 function TDBConnectionConfig.GetDBCharset: string;
 begin
-  if not (FSettingsFileIsRead) then
-    ReadINIFile;
-  Result := FDBCharset;
+  if not(FSettingsFileIsRead) then ReadINIFile;
+  result:=FDBCharset;
 end;
 
 function TDBConnectionConfig.GetDBPassword: string;
 begin
-  if not (FSettingsFileIsRead) then
-    ReadINIFile;
-  Result := FDBPassword;
+  if not(FSettingsFileIsRead) then ReadINIFile;
+  result:=FDBPassword;
 end;
 
 function TDBConnectionConfig.GetDBPath: string;
 begin
-  if not (FSettingsFileIsRead) then
-    ReadINIFile;
-  Result := FDBPath;
+  if not(FSettingsFileIsRead) then ReadINIFile;
+  result:=FDBPath;
 end;
 
 function TDBConnectionConfig.GetDBType: string;
 begin
-  if not (FSettingsFileIsRead) then
-    ReadINIFile;
-  Result := FDBType;
+  if not(FSettingsFileIsRead) then ReadINIFile;
+  result:=FDBType;
 end;
 
 function TDBConnectionConfig.GetDBUser: string;
 begin
-  if not (FSettingsFileIsRead) then
-    ReadINIFile;
-  Result := FDBUser;
+  if not(FSettingsFileIsRead) then ReadINIFile;
+  result:=FDBUser;
 end;
 
-function TDBConnectionConfig.GetDefaultSettingsFile: string;
+function TDBConnectionConfig.GetDefaultSettingsFile:string;
 begin
-  Result := ChangeFileExt(ParamStr(0), '.ini');
+  result:=ChangeFileExt(ExtractFileName(ParamStr(0)), '.ini');
 end;
 
 procedure TDBConnectionConfig.SetSettingsFile(AValue: string);
 begin
   // If empty value given, use the program name
-  if AValue = '' then
-    AValue := GetDefaultSettingsFile;
-  if FSettingsFile = AValue then
-    Exit;
-  FSettingsFile := AValue;
+  if AValue='' then AValue:=GetDefaultSettingsFile;
+  if FSettingsFile=AValue then Exit;
+  FSettingsFile:=AValue;
   // Read from file if present
   ReadINIFile;
 end;
@@ -134,14 +125,14 @@ end;
 
 procedure TDBConnectionConfig.SetDBType(AValue: string);
 begin
-  if FDBType = AValue then
-    Exit;
+  if FDBType=AValue then Exit;
+  // Allow some common aliases/alternative names:
   case UpperCase(AValue) of
-    'FIREBIRD': FDBType := 'Firebird';
-    'POSTGRES', 'POSTGRESQL': FDBType := 'PostgreSQL';
-    'SQLITE', 'SQLITE3': FDBType := 'SQLite';
-    else
-      FDBType := AValue;
+    'FIREBIRD', 'INTERBASE': FDBType:='Firebird';
+    'MSSQL', 'SQLSERVER': FDBType:='MSSQLServer';
+    'POSTGRES', 'POSTGRESQL': FDBType:='PostgreSQL';
+    'SQLITE','SQLITE3': FDBType:='SQLite';
+  else FDBType:=AValue;
   end;
 end;
 
@@ -158,7 +149,7 @@ begin
       FDBPath := INI.ReadString('Database', 'Database', FDBPath);
       FDBUser := INI.ReadString('Database', 'User', 'SYSDBA');
       FDBPassword := INI.ReadString('Database', 'Password', 'masterkey');
-      FSettingsFileIsRead := true;
+      FSettingsFileIsRead:=true;
     finally
       INI.Free;
     end;
@@ -169,25 +160,27 @@ constructor TDBConnectionConfig.Create;
 begin
   inherited Create;
   // Defaults
-  FSettingsFile := GetDefaultSettingsFile;
-  FSettingsFileIsRead := false;
+  FSettingsFile:=GetDefaultSettingsFile;
+  FSettingsFileIsRead:=false;
   FDBType := 'Firebird';
-  FDBHost := ''; //embedded
+  FDBHost := ''; //embedded: no hostname
   FDBPath := 'data.fdb';
   FDBUser := 'SYSDBA';
   FDBPassword := 'masterkey';
 end;
 
-constructor TDBConnectionConfig.Create(DefaultType: string; DefaultHost: string = ''; DefaultPath: string = 'data.fdb';
-  DefaultUser: string = 'SYSDBA'; DefaultPassword: string = 'masterkey'; DefaultCharSet: string = 'UTF8');
+constructor TDBConnectionConfig.Create(DefaultType:string; DefaultHost:string=''; DefaultPath:string='data.fdb';
+  DefaultUser:string='SYSDBA'; DefaultPassword:string='masterkey'; DefaultCharSet:string='UTF8');
 begin
+  // First call regular constructor:
   Create;
-  FDBCharset := DefaultCharset;
-  FDBHost := DefaultHost;
-  FDBPassword := DefaultPassword;
-  FDBPath := DefaultPath;
-  FDBType := DefaultType;
-  FDBUser := DefaultUser;
+  //... then override properties with what we specified:
+  FDBCharset:=DefaultCharset;
+  FDBHost:=DefaultHost;
+  FDBPassword:=DefaultPassword;
+  FDBPath:=DefaultPath;
+  FDBType:=DefaultType;
+  FDBUser:=DefaultUser;
 end;
 
 destructor TDBConnectionConfig.Destroy;
@@ -196,3 +189,4 @@ begin
 end;
 
 end.
+
