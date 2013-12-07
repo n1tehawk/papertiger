@@ -129,9 +129,13 @@ begin
   // Allow some common aliases/alternative names:
   case UpperCase(AValue) of
     'FIREBIRD', 'INTERBASE': FDBType:='Firebird';
-    'MSSQL', 'SQLSERVER': FDBType:='MSSQLServer';
-    'POSTGRES', 'POSTGRESQL': FDBType:='PostgreSQL';
-    'SQLITE','SQLITE3': FDBType:='SQLite';
+    'MSSQL','MSSQLSERVER','SQLSERVER': FDBType:='MSSQLServer';
+    'MYSQL50','MYSQL5.0': FDBType:='MySQL5.0';
+    'MYSQL51','MYSQL5.1': FDBType:='MySQL5.1';
+    'MYSQL55','MYSQL5.5': FDBType:='MySQL5.5';
+    'MYSQL56','MYSQL5.6': FDBType:='MySQL5.6';
+    'POSTGRES', 'POSTGRESQL': FDBType:='PostGreSQL';
+    'SQLITE','SQLITE3': FDBType:='SQLite3';
   else FDBType:=AValue;
   end;
 end;
