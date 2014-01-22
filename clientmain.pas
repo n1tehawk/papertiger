@@ -161,7 +161,7 @@ begin
   CommJSON:=TJSONString.Create(''); //dummy content
   ReturnJSON := TJSONObject.Create;
   try
-    Message := 'Unknown server or not connected.');
+    Message := 'Unknown server or not connected.';
     Success := (HttpRequestWithData(CommJSON, FCGIURL + 'server/', rmGet).Code = 200);
     if Success then
       try
