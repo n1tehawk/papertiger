@@ -8,7 +8,7 @@ object Form1: TForm1
   ClientWidth = 665
   Menu = MainMenu1
   OnCreate = FormCreate
-  LCLVersion = '1.1'
+  LCLVersion = '1.3'
   object DocumentsGrid: TStringGrid
     Left = 11
     Height = 353
