@@ -8,11 +8,11 @@ uses
   Classes, SysUtils, dbconfig, sqldb,
   IBConnection, mssqlconn {includes sybase support},
   mysql50conn,mysql51conn,mysql55conn,
-  {$IF (FPC_FULLVERSION > 20701)}
+  {$IF (FPC_FULLVERSION >= 20604)}
   mysql56conn,
   {$ENDIF}
   odbcconn,
-  {$IF (FPC_FULLVERSION > 20604) OR NOT(DEFINED(MSWIN64))}
+  {$IF (FPC_FULLVERSION >= 20604) OR NOT(DEFINED(MSWIN64))}
   oracleconnection,
   {$ENDIF}
   pqconnection,sqlite3conn;
@@ -65,11 +65,11 @@ begin
     'MySQL5.0': FConnection:=TMySQL50Connection.Create(nil);
     'MySQL5.1': FConnection:=TMySQL51Connection.Create(nil);
     'MySQL5.5': FConnection:=TMySQL55Connection.Create(nil);
-    {$IF (FPC_FULLVERSION > 20701)}
-    'MySQL5.5': FConnection:=TMySQL56Connection.Create(nil);
+    {$IF (FPC_FULLVERSION >= 20604)}
+    'MySQL5.6': FConnection:=TMySQL56Connection.Create(nil);
     {$ENDIF}
     'ODBC': FConnection:=TODBCConnection.Create(nil);
-    {$IF (FPC_FULLVERSION > 20604) OR NOT(DEFINED(MSWIN64))}
+    {$IF (FPC_FULLVERSION >= 20604) OR NOT(DEFINED(MSWIN64))}
     'Oracle': FConnection:=TOracleConnection.Create(nil);
     {$ENDIF}
     'PostGreSQL': FConnection:=TPQConnection.Create(nil);
