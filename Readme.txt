@@ -52,14 +52,12 @@ For the client program, Lazarus trunk has been used for development.
 1. Compile hgversion.pas, e.g.:
 fpc hgversion.pas
 
-2. For the client, compile the package 3rdparty\ljgridutils\pkg\ljgridutilspkg.lpk so it is known to the IDE
-
-3. Compile the program(s) you want
-3.1 With Lazarus:
+2. Compile the program(s) you want
+2.1 With Lazarus:
 lazbuild tigercgi.lpi
 lazbuild tigerclient.lpi
 lazbuild tigerserver.lpi
-3.2 With FreePascal:
+2.2 With FreePascal:
 - Run hgversion first to update the version info
 fpc -dCGI tigercgi.lpr
 fpc tigerserver.lpr
