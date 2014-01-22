@@ -1,9 +1,9 @@
 unit tigerdb;
 
 { Database connection for papertiger.
-  Currently supports Firebird, sqlite
+  Currently supports Firebird; support planned for SQLite, PostgreSQL
 
-  Copyright (c) 2012-2013 Reinier Olislagers
+  Copyright (c) 2012-2014 Reinier Olislagers
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to
@@ -49,7 +49,7 @@ uses
 
 const
   ISO8601FullDateFormat = 'yyyy"-"mm"-"dd"T"hh":"nn":"ss"."zzz"Z"';
-//Format string used to go to/from ISO8601 dates
+//Format string used to go to/from ISO8601 dates (UTC)
 
 type
   { TTigerDB }
@@ -101,6 +101,7 @@ uses
   dbconfig;
 
 const
+  DBSchemaFile = 'database.sql'; //For Firebird
   SettingsFile = 'tigerserver.ini';
 
 
@@ -586,10 +587,15 @@ end;
 
 constructor TTigerDB.Create;
 var
+  FBScript:TSQLScript;
+  MustCreateTables: boolean;
+  ScriptText:TStringList;
   Settings: TDBConnectionConfig;
   SQL: string;
+  TranWasStarted: boolean;
 begin
   inherited Create;
+  MustCreateTables := false;
   Settings := TDBConnectionConfig.Create('Firebird', '', 'tiger.fdb', 'SYSDBA', 'masterkey', 'UTF8');
   try
     Settings.SettingsFile := SettingsFile;
@@ -631,6 +637,7 @@ begin
       begin
         if (FDB is TIBConnection) then
           TIBConnection(FDB).CreateDB;
+        MustCreateTables:=true;
         if (FDB is TSQLite3Connection) then
           TSQLite3Connection(FDB).CreateDB;
         sleep(10);
@@ -655,6 +662,37 @@ begin
   // Get transactions linked to the right database connection:
   FDB.Transaction := FReadWriteTransaction; //Default transaction for database
   FReadTransaction.Database := FDB;
+
+  //Create tables etc
+  // todo: do this for sqlite as well
+  if MustCreateTables then
+  begin
+    TranWasStarted:=FReadWriteTransaction.Active;
+    if not TranWasStarted then FReadWriteTransaction.StartTransaction;
+    FBScript:=TSQLScript.Create(nil);
+    ScriptText:=TStringList.Create;
+    try
+      if not fileexists(DBSchemaFile) then
+        raise Exception.CreateFmt('Could not load database definition file %s',[DBSchemaFile]);
+      ScriptText.LoadFromFile(DBSchemaFile);
+      FBScript.DataBase:=(FDB as TIBConnection);
+      FBScript.Transaction:=FReadWriteTransaction;
+      FBScript.UseCommit:=true; //in case DDL and DML are mixed in the script
+      FBScript.UseSetTerm:=true; //in case we have stored proc definitions etc
+      FBScript.Script:=ScriptText;
+      // Now everythin is loaded in, run all commands at once:
+      FBScript.Execute;
+      //... and then commit to make them stick and show them to the SQL that comes
+      // after the commit
+      FReadWriteTransaction.Commit;
+    finally
+      FBScript.Free;
+      ScriptText.Free;
+    end;
+    // Make sure we leave the transaction state as we found it, handy for switchnig
+    // between explicit start/commit transaction and commitretaining:
+    if TranWasStarted then FReadWriteTransaction.StartTransaction;
+  end;
 
   // todo: Check for+create required tables
   FInsertImage.Database := FDB;
