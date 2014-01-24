@@ -28,12 +28,8 @@ program tigerserver;
 
 uses {$IFDEF UNIX} {$IFDEF UseCThreads}
   cthreads, {$ENDIF} {$ENDIF}
-  Classes,
-  SysUtils,
-  CustApp,
-  fpjson,
-  jsonparser,
-  tigerservercore, ocr, imagecleaner, tigerutil, scan, pdf, tigerdb;
+  Classes, SysUtils, CustApp, fpjson, jsonparser, tigerservercore, ocr,
+  imagecleaner, tigerutil, scan, pdf, tigerdb, tigersettings;
 
 type
 

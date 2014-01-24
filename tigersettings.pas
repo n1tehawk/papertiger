@@ -2,7 +2,7 @@ unit tigersettings;
 
 { Settings management for paper tiger.
 
-  Copyright (c) 2012-2013 Reinier Olislagers
+  Copyright (c) 2012-2014 Reinier Olislagers
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to
@@ -60,6 +60,7 @@ type
     // Device ID for scanner
     property ScanDevice: string read FScanDevice write FScanDevice; //Device to be used for scanning (in SANE notation)
     constructor Create;
+    // In case your settings file is not the default SettingsFile
     constructor Create(SettingsFileName: string);
     destructor Destroy; override;
   end;

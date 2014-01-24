@@ -114,7 +114,7 @@ begin
 
     // strip out all numbers - including gibberish misdetected as numbers
     ResText:=TempOCR.Text;
-    for i:=0 to length(ResText) do
+    for i:=length(ResText) downto 1 do
     begin
       if char(ResText[i]) in ['0'..'9'] then
         Delete(ResText,i,1);

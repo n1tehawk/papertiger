@@ -62,10 +62,10 @@
     <RunParams>
       <local>
         <FormatVersion Value="1"/>
-        <CommandLineParams Value="--purge"/>
+        <CommandLineParams Value="--image=20140103Sche.tiff"/>
       </local>
     </RunParams>
-    <Units Count="8">
+    <Units Count="9">
       <Unit0>
         <Filename Value="tigerserver.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -106,6 +106,11 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="tigerutil"/>
       </Unit7>
+      <Unit8>
+        <Filename Value="tigersettings.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="tigersettings"/>
+      </Unit8>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
