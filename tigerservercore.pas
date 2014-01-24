@@ -205,6 +205,7 @@ const
   SaneBuggyText='Failed cupsGetDevices'+Chr($0A); //linefeed
 var
   MemStream: TMemoryStream;
+  Message: String;
   ImageFile, ImageHash: string;
 begin
   Result := INVALIDID;
@@ -219,6 +220,14 @@ begin
     begin
       TigerLog.WriteLog(etError,'AddImage: empty image data stream.');
       exit;
+    end;
+    if not (ForceDirectories(FSettings.ImageDirectory)) then
+    begin
+      Message := 'AddImage: Image directory %s does not exist and cannot be created.';
+      TigerLog.WriteLog(etError, StringReplace(Message, '%s',
+        FSettings.ImageDirectory, [rfReplaceAll]));
+      exit;
+      //raise Exception.CreateFmt('Image directory %s does not exist and cannot be created.', [FSettings.ImageDirectory]);
     end;
 
     // Get image into file system
