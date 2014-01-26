@@ -98,18 +98,15 @@ type
     // Adds the tiff image to given documentID.
     // Add at end of any existing images, unless ImageOrder>0.
     // Returns either image ID or INVALIDID (when failed).
-    function AddImage(ImageData: TStream; ImageName: string;
-      DocumentID: integer; ImageOrder: integer): integer;
+    function AddImage(ImageData: TStream; ImageName: string; DocumentID: integer; ImageOrder: integer): integer;
     // Adds the tiff image to given documentID.
     // Rotates it first if the user asked for it, and checks for sane bug
     // Add at end of any existing images, unless ImageOrder>0. Returns image ID or INVALIDID when failed.
-    function AddImage(ImageFile: string; DocumentID: integer;
-      ImageOrder: integer): integer;
+    function AddImage(ImageFile: string; DocumentID: integer; ImageOrder: integer): integer;
     // Whether to scan in black and white, gray or colo(u)r.
     property ColorType: ScanType read FColorType write FColorType;
     // Language to be used for OCR. Will not be saved in settings
-    property CurrentOCRLanguage: string read FCurrentOCRLanguage
-      write FCurrentOCRLanguage;
+    property CurrentOCRLanguage: string read FCurrentOCRLanguage write FCurrentOCRLanguage;
     // Number of pages to scan in one scan run.
     property Pages: integer read FPages write FPages;
     // Device to be used to scan with in sane notation; e.g. genesys:libusb:001:002
@@ -136,8 +133,7 @@ type
     function DeleteImages(DeleteFromDisk: boolean): boolean;
 
     // Get image identified by documentID and image number/imageorder (starting with 1)
-    function GetImage(DocumentID, ImageOrder: integer;
-      const ImageStream: TStream): boolean;
+    function GetImage(DocumentID, ImageOrder: integer; const ImageStream: TStream): boolean;
     // Get PDF identified by DocumentID
     function GetPDF(DocumentID: integer; const ImageStream: TStream): boolean;
     // Lists document specified by DocumentID or all documents (if DocumentID is INVALIDID)
@@ -171,21 +167,23 @@ implementation
 
 { TTigerServerCore }
 
-// Get revision from our source code repository:
-// If you have a file not found error for revision.inc, please make sure you compile hgversion.pas before compiling this project.
+ // Get revision from our source code repository:
+ // If you have a file not found error for revision.inc, please make sure you compile hgversion.pas before compiling this project.
 {$i revision.inc}
 
 procedure TTigerServerCore.SetDesiredRotation(AValue: integer);
 begin
-  FUserSpecifiedRotation:=true;
-  if FDesiredRotation=AValue then Exit;
-  FDesiredRotation:=FDesiredRotation mod 360; //Normalize...
-  if FDesiredRotation<0 then FDesiredRotation:=360+FDesiredRotation; //...part 2
-  FDesiredRotation:=AValue;
+  FUserSpecifiedRotation := true;
+  if FDesiredRotation = AValue then
+    Exit;
+  FDesiredRotation := FDesiredRotation mod 360; //Normalize...
+  if FDesiredRotation < 0 then
+    FDesiredRotation := 360 + FDesiredRotation; //...part 2
+  FDesiredRotation := AValue;
 end;
 
 function TTigerServerCore.AddDocument(DocumentName: string = ''): integer;
-// DocumentName is a real name, not necessarily a file name. So no use checking for file existence.
+  // DocumentName is a real name, not necessarily a file name. So no use checking for file existence.
 begin
   Result := INVALIDID;
   try
@@ -203,13 +201,12 @@ begin
   end;
 end;
 
-function TTigerServerCore.AddImage(ImageData: TStream; ImageName: string;
-  DocumentID: integer; ImageOrder: integer): integer;
+function TTigerServerCore.AddImage(ImageData: TStream; ImageName: string; DocumentID: integer; ImageOrder: integer): integer;
 const
-  SaneBuggyText='Failed cupsGetDevices'+Chr($0A); //linefeed
+  SaneBuggyText = 'Failed cupsGetDevices' + Chr($0A); //linefeed
 var
   MemStream: TMemoryStream;
-  Message: String;
+  Message: string;
   ImageFile, ImageHash: string;
 begin
   Result := INVALIDID;
@@ -217,19 +214,18 @@ begin
     // Sanity checks:
     if not (assigned(ImageData)) then
     begin
-      TigerLog.WriteLog(etError,'AddImage: no valid stream with image data.');
+      TigerLog.WriteLog(etError, 'AddImage: no valid stream with image data.');
       exit;
     end;
-    if ImageData.Size=0 then
+    if ImageData.Size = 0 then
     begin
-      TigerLog.WriteLog(etError,'AddImage: empty image data stream.');
+      TigerLog.WriteLog(etError, 'AddImage: empty image data stream.');
       exit;
     end;
     if not (ForceDirectories(FSettings.ImageDirectory)) then
     begin
       Message := 'AddImage: Image directory %s does not exist and cannot be created.';
-      TigerLog.WriteLog(etError, StringReplace(Message, '%s',
-        FSettings.ImageDirectory, [rfReplaceAll]));
+      TigerLog.WriteLog(etError, StringReplace(Message, '%s', FSettings.ImageDirectory, [rfReplaceAll]));
       exit;
       //raise Exception.CreateFmt('Image directory %s does not exist and cannot be created.', [FSettings.ImageDirectory]);
     end;
@@ -245,18 +241,15 @@ begin
         ImageData.Position := 0;
         MemStream.CopyFrom(ImageData, ImageData.Size);
         // Fix sane bug (use MemStream as we can write to it; not to ImageStream)
-        if FindInStream(MemStream,0,SaneBuggyText)=0 then
+        if FindInStream(MemStream, 0, SaneBuggyText) = 0 then
         begin
-          DeleteFromStream(MemStream,0,length(SaneBuggyText));
-          TigerLog.WriteLog(etDebug,'TTigerServerCore.AddImage: fixed sane bug 313851 for file '+ImageName);
+          DeleteFromStream(MemStream, 0, length(SaneBuggyText));
+          TigerLog.WriteLog(etDebug, 'TTigerServerCore.AddImage: fixed sane bug 313851 for file ' + ImageName);
         end;
 
         // Don't overwrite existing images:
-        if (not(ImageData is TFileStream)) or
-          (
-          (ImageData is TFileStream) and
-          (ExpandFileName((ImageData as TFileStream).FileName)<>ImageFile)
-          ) then
+        if (not (ImageData is TFileStream)) or ((ImageData is TFileStream) and
+          (ExpandFileName((ImageData as TFileStream).FileName) <> ImageFile)) then
         begin
           MemStream.Position := 0;
           MemStream.SaveToFile(ImageFile);
@@ -266,7 +259,7 @@ begin
       except
         on E: Exception do
         begin
-          TigerLog.WriteLog(etError,'AddImage: exception copying image file: '+E.Message);
+          TigerLog.WriteLog(etError, 'AddImage: exception copying image file: ' + E.Message);
         end;
       end;
     finally
@@ -283,15 +276,14 @@ begin
   end;
 end;
 
-function TTigerServerCore.AddImage(ImageFile: string; DocumentID: integer;
-  ImageOrder: integer): integer;
+function TTigerServerCore.AddImage(ImageFile: string; DocumentID: integer; ImageOrder: integer): integer;
 var
   ImageStream: TFileStream;
 begin
-  result:=0;
-  if not(FileExists(ImageFile)) then
+  Result := 0;
+  if not (FileExists(ImageFile)) then
   begin
-    TigerLog.WriteLog(etError,'AddImage: '+ImageFile+' is no valid image file.');
+    TigerLog.WriteLog(etError, 'AddImage: ' + ImageFile + ' is no valid image file.');
     exit;
   end;
 
@@ -315,27 +307,28 @@ function TTigerServerCore.CleanUpImage(const Source, Destination: string): boole
 var
   Cleaner: TImageCleaner;
 begin
-  Result := False;
-  if not(FileExists(Source)) then
+  Result := false;
+  if not (FileExists(Source)) then
   begin
-    TigerLog.WriteLog(etError,'CleanUpImage: '+Source+' is no valid image file.');
+    TigerLog.WriteLog(etError, 'CleanUpImage: ' + Source + ' is no valid image file.');
     exit;
   end;
 
   Cleaner := TImageCleaner.Create;
   try
-    Cleaner.Language:=FCurrentOCRLanguage;
+    Cleaner.Language := FCurrentOCRLanguage;
     // If user wanted to, rotate and overwrite existing image
     if (FUserSpecifiedRotation) then
     begin
-      if (FDesiredRotation<>0) then Cleaner.Rotate(FDesiredRotation,Source,Source);
+      if (FDesiredRotation <> 0) then
+        Cleaner.Rotate(FDesiredRotation, Source, Source);
       Cleaner.Clean(Source, Destination, false); //result in destination
     end
     else
     begin
       Cleaner.Clean(Source, Destination, true); //result in destination
     end;
-    Result := True;
+    Result := true;
   finally
     Cleaner.Free;
   end;
@@ -347,9 +340,9 @@ var
   DocumentsArray: TJSONArray;
   ImagesArray: TJSONArray;
   Image: TJSONObject;
-  DocCount,ImCount: integer;
+  DocCount, ImCount: integer;
 begin
-  result:=false;
+  Result := false;
 
   //Get any images belonging to document, delete from fs/db
   ImagesArray := TJSONArray.Create;
@@ -368,9 +361,9 @@ begin
         // image.items[3]: path database column
         if DeleteFromDisk and (FileExists(Image.Items[3].AsString)) then
           DeleteFile(Image.Items[3].AsString);
-        if not(FTigerDB.DeleteImageRecord(Image.Items[0].AsInteger)) then
-          TigerLog.WriteLog(etError,'DeleteDocument: could not delete image ID '+
-          inttostr(Image.Items[0].AsInteger)+' belonging to document ID '+inttostr(DocumentID));
+        if not (FTigerDB.DeleteImageRecord(Image.Items[0].AsInteger)) then
+          TigerLog.WriteLog(etError, 'DeleteDocument: could not delete image ID ' +
+            IntToStr(Image.Items[0].AsInteger) + ' belonging to document ID ' + IntToStr(DocumentID));
       end;
     end;
   end;
@@ -381,7 +374,7 @@ begin
   // Check for empty array
   if DocumentsArray.Count < 1 then
   begin
-    TigerLog.WriteLog(etError,'DeleteDocument: empty DocumentsArray for document ID '+inttostr(DocumentID));
+    TigerLog.WriteLog(etError, 'DeleteDocument: empty DocumentsArray for document ID ' + IntToStr(DocumentID));
     exit;
   end;
 
@@ -389,7 +382,7 @@ begin
   Document := TJSONObject(DocumentsArray.Items[0]);
   if Document.JSONType <> jtObject then
   begin
-    TigerLog.WriteLog(etError,'DeleteDocument: invalid document object for ID '+inttostr(DocumentID));
+    TigerLog.WriteLog(etError, 'DeleteDocument: invalid document object for ID ' + IntToStr(DocumentID));
     exit;
   end;
 
@@ -401,27 +394,26 @@ begin
     // item 2=pdfpath
     if DeleteFromDisk and (FileExists(Document.Items[2].AsString)) then
       DeleteFile(Document.Items[2].AsString);
-    result:=FTigerDB.DeleteDocumentRecord(Document.Items[0].AsInteger);
-    if not(result) then
+    Result := FTigerDB.DeleteDocumentRecord(Document.Items[0].AsInteger);
+    if not (Result) then
     begin
-      TigerLog.WriteLog(etError,'DeleteDocument: could not delete document ID '+inttostr(DocumentID));
+      TigerLog.WriteLog(etError, 'DeleteDocument: could not delete document ID ' + IntToStr(DocumentID));
     end;
   end;
 end;
 
 function TTigerServerCore.DeleteDocuments(DeleteFromDisk: boolean): boolean;
 begin
-  result:=DeleteDocument(INVALIDID,DeleteFromDisk);
+  Result := DeleteDocument(INVALIDID, DeleteFromDisk);
 end;
 
-function TTigerServerCore.DeleteImage(const ImageID: integer;
-  DeleteFromDisk: boolean): boolean;
+function TTigerServerCore.DeleteImage(const ImageID: integer; DeleteFromDisk: boolean): boolean;
 var
   ImagesArray: TJSONArray;
   Image: TJSONObject;
   ImCount: integer;
 begin
-  result:=false;
+  Result := false;
 
   //Get any images belonging to document, delete from fs/db
   ImagesArray := TJSONArray.Create;
@@ -437,14 +429,13 @@ begin
       begin
         Image := (ImagesArray[ImCount] as TJSONObject);
         // Delete image if it matches the user's wishes
-        if (ImageID=InvalidID) or (ImageID=Image.Items[0].AsInteger) then
+        if (ImageID = InvalidID) or (ImageID = Image.Items[0].AsInteger) then
         begin
           // image.items[3]: path database column
           if DeleteFromDisk and (FileExists(Image.Items[3].AsString)) then
             DeleteFile(Image.Items[3].AsString);
-          if not(FTigerDB.DeleteImageRecord(Image.Items[0].AsInteger)) then
-            TigerLog.WriteLog(etError,'DeleteDocument: could not delete image ID '+
-            Image.Items[0].AsString);
+          if not (FTigerDB.DeleteImageRecord(Image.Items[0].AsInteger)) then
+            TigerLog.WriteLog(etError, 'DeleteDocument: could not delete image ID ' + Image.Items[0].AsString);
         end;
       end;
     end;
@@ -453,16 +444,15 @@ end;
 
 function TTigerServerCore.DeleteImages(DeleteFromDisk: boolean): boolean;
 begin
-  result:=DeleteImage(INVALIDID,DeleteFromDisk);
+  Result := DeleteImage(INVALIDID, DeleteFromDisk);
 end;
 
-function TTigerServerCore.GetImage(DocumentID, ImageOrder: integer;
-  const ImageStream: TStream): boolean;
+function TTigerServerCore.GetImage(DocumentID, ImageOrder: integer; const ImageStream: TStream): boolean;
 var
   ImageFile: string;
   MemStream: TMemoryStream;
 begin
-  Result := False;
+  Result := false;
   if DocumentID <> INVALIDID then
   begin
     ImageFile := FTigerDB.ImagePath(DocumentID, ImageOrder);
@@ -473,8 +463,8 @@ begin
         // Although this is a bit of a hack, it allows testing from different servers with different mountpoints
         if not (fileexists(ImageFile)) then
         begin
-          TigerLog.WriteLog(etWarning, 'GetImage: cannot read image "' +
-            ImageFile + '". Hack: trying again with mangled ImageDirectory');
+          TigerLog.WriteLog(etWarning, 'GetImage: cannot read image "' + ImageFile +
+            '". Hack: trying again with mangled ImageDirectory');
           ImageFile := FSettings.ImageDirectory + ExtractFileName(ImageFile);
         end;
         MemStream := TMemoryStream.Create;
@@ -484,25 +474,23 @@ begin
         finally
           MemStream.Free;
         end;
-        Result := True;
+        Result := true;
       except
         on E: Exception do
         begin
-          TigerLog.WriteLog(etError, 'GetImage: error trying to read image file ' +
-            ImageFile + '. Exception:' + E.Message);
+          TigerLog.WriteLog(etError, 'GetImage: error trying to read image file ' + ImageFile + '. Exception:' + E.Message);
         end;
       end;
     end;
   end;
 end;
 
-function TTigerServerCore.GetPDF(DocumentID: integer;
-  const ImageStream: TStream): boolean;
+function TTigerServerCore.GetPDF(DocumentID: integer; const ImageStream: TStream): boolean;
 var
   PDFFile: string;
   MemStream: TMemoryStream;
 begin
-  Result := False;
+  Result := false;
   if DocumentID <> INVALIDID then
   begin
     PDFFile := FTigerDB.GetPDFPath(DocumentID);
@@ -513,8 +501,7 @@ begin
         // Although this is a bit of a hack, it allows testing from different servers
         if not (fileexists(PDFFile)) then
         begin
-          TigerLog.WriteLog(etWarning, 'GetPDF: cannot read PDF ' +
-            PDFFile + '. Hack: trying again with mangled PDFDirectory');
+          TigerLog.WriteLog(etWarning, 'GetPDF: cannot read PDF ' + PDFFile + '. Hack: trying again with mangled PDFDirectory');
           PDFFile := FSettings.PDFDirectory + ExtractFileName(PDFFile);
         end;
         MemStream := TMemoryStream.Create;
@@ -524,32 +511,28 @@ begin
         finally
           MemStream.Free;
         end;
-        Result := True;
+        Result := true;
       except
         on E: Exception do
         begin
-          TigerLog.WriteLog(etError, 'GetPDF: error trying to read PDF file ' +
-            PDFFile + '. Exception:' + E.Message);
+          TigerLog.WriteLog(etError, 'GetPDF: error trying to read PDF file ' + PDFFile + '. Exception:' + E.Message);
         end;
       end;
     end;
   end;
 end;
 
-procedure TTigerServerCore.ListDocuments(DocumentID: integer;
-  var DocumentsArray: TJSONArray);
+procedure TTigerServerCore.ListDocuments(DocumentID: integer; var DocumentsArray: TJSONArray);
 begin
   FTigerDB.ListDocuments(DocumentID, DocumentsArray);
 end;
 
-procedure TTigerServerCore.ListImages(DocumentID: integer;
-  var DocumentsArray: TJSONArray);
+procedure TTigerServerCore.ListImages(DocumentID: integer; var DocumentsArray: TJSONArray);
 begin
   FTigerDB.ListImages(DocumentID, DocumentsArray);
 end;
 
-function TTigerServerCore.ProcessImages(DocumentID: integer;
-  Resolution: integer): string;
+function TTigerServerCore.ProcessImages(DocumentID: integer; Resolution: integer): string;
 var
   CleanImage: string;
   HOCRFile: string;
@@ -562,12 +545,11 @@ var
   Success: boolean;
 begin
   Result := '';
-  Success := False;
+  Success := false;
   if not (ForceDirectories(FSettings.PDFDirectory)) then
   begin
     Message := 'PDF directory %s does not exist and cannot be created.';
-    TigerLog.WriteLog(etError, StringReplace(Message, '%s',
-      FSettings.PDFDirectory, [rfReplaceAll]));
+    TigerLog.WriteLog(etError, StringReplace(Message, '%s', FSettings.PDFDirectory, [rfReplaceAll]));
     exit;
     //raise Exception.CreateFmt(Message,[FSettings.PDFDirectory]); rather pass back empty value to indicate failure
   end;
@@ -587,7 +569,7 @@ begin
     begin
       // path contain full image path, no need to add FSettings.ImageDirectory
       ImageFile := (ImagesArray.Items[i] as TJSONObject).Elements['path'].AsString;
-      CleanImage:=GetTempFileName('','TIFC');
+      CleanImage := GetTempFileName('', 'TIFC');
       // Clean up image, copy into temporary file
       Success := CleanUpImage(ImageFile, CleanImage);
 
@@ -619,8 +601,8 @@ begin
           PDF.HOCRFile := HOCRFile;
           PDF.ImageFile := ImageFile; // The original, unaltered image file
           TigerLog.WriteLog(etDebug, 'pdfdirectory: ' + FSettings.PDFDirectory);
-          PDF.PDFFile := IncludeTrailingPathDelimiter(FSettings.PDFDirectory) +
-            ChangeFileExt(ExtractFileName(ImageFile), '.pdf');
+          PDF.PDFFile := IncludeTrailingPathDelimiter(FSettings.PDFDirectory) + ChangeFileExt(
+            ExtractFileName(ImageFile), '.pdf');
           //todo: add metadata stuff to pdf unit
           //todo: add compression to pdf unit?
           Success := PDF.CreatePDF;
@@ -638,17 +620,17 @@ begin
     end
     else
     begin
-      TigerLog.WriteLog(etDebug, 'ProcessImages: got invalid json array item from ListImages; item number '+inttostr(i));
+      TigerLog.WriteLog(etDebug, 'ProcessImages: got invalid json array item from ListImages; item number ' + IntToStr(i));
     end;
   end; //all images added
-  //todo: concatenate pdfs; we just add the last one for now
-  if success=false then
+       //todo: concatenate pdfs; we just add the last one for now
+  if success = false then
     TigerLog.WriteLog(etDebug, 'ProcessImages failed.');
 end;
 
 function TTigerServerCore.PurgeDB: boolean;
 begin
-  result:=FTigerDB.Purge;
+  Result := FTigerDB.Purge;
 end;
 
 {
@@ -704,8 +686,7 @@ begin
   if not (ForceDirectories(FSettings.ImageDirectory)) then
   begin
     Message := 'ScanSinglePage: Image directory %s does not exist and cannot be created.';
-    TigerLog.WriteLog(etError, StringReplace(Message, '%s',
-      FSettings.ImageDirectory, [rfReplaceAll]));
+    TigerLog.WriteLog(etError, StringReplace(Message, '%s', FSettings.ImageDirectory, [rfReplaceAll]));
     exit;
     //raise Exception.CreateFmt('Image directory %s does not exist and cannot be created.', [FSettings.ImageDirectory]);
   end;
@@ -718,37 +699,34 @@ begin
     StartDate := Now(); //local time
     StartDateString := FormatDateTime('yyyymmddhhnnss', StartDate);
 
-    TigerLog.WriteLog(etInfo, 'ScanSinglePage: Going to scan single page; start date: ' +
-      StartDateString);
+    TigerLog.WriteLog(etInfo, 'ScanSinglePage: Going to scan single page; start date: ' + StartDateString);
 
     //Insert image after existing images:
     try
       ImageOrder := FTigerDB.GetHighestImageOrder(DocumentID) + 1;
     except
-      TigerLog.WriteLog(etError,'ScanSinglePage: error getting next image order for document '+inttostr(DocumentID));
+      TigerLog.WriteLog(etError, 'ScanSinglePage: error getting next image order for document ' + IntToStr(DocumentID));
       exit;
     end;
-    Scanner.FileName := FSettings.ImageDirectory + StartDateString +
-      '_' + format('%.4d', [ImageOrder]) + TESSERACTTIFFEXTENSION;
+    Scanner.FileName := FSettings.ImageDirectory + StartDateString + '_' + format('%.4d', [ImageOrder]) + TESSERACTTIFFEXTENSION;
 
     if not (Scanner.Scan) then
     begin
       message := 'TigerServerCore: an error occurred while scanning document %s';
-      TigerLog.WriteLog(etError, StringReplace(Message, '%s',
-        Scanner.FileName, [rfReplaceAll]));
+      TigerLog.WriteLog(etError, StringReplace(Message, '%s', Scanner.FileName, [rfReplaceAll]));
       exit;
       //raise Exception.CreateFmt(Message, [Scanner.FileName]);
     end;
 
     // Rotate image first if user had requested it
-    if FDesiredRotation<>0 then
+    if FDesiredRotation <> 0 then
     begin
-      Clean:=TImageCleaner.Create;
+      Clean := TImageCleaner.Create;
       try
-        if not(Clean.Rotate(FDesiredRotation,Scanner.FileName,Scanner.FileName)) then
+        if not (Clean.Rotate(FDesiredRotation, Scanner.FileName, Scanner.FileName)) then
         begin
-          result:=INVALIDID;
-          TigerLog.WriteLog(etError,'TTigerServerCore.AddImage: error rotating image '+Scanner.FileName+'. Aborting.');
+          Result := INVALIDID;
+          TigerLog.WriteLog(etError, 'TTigerServerCore.AddImage: error rotating image ' + Scanner.FileName + '. Aborting.');
           exit;
         end;
       finally
@@ -761,15 +739,14 @@ begin
   finally
     Scanner.Free;
   end;
-  if result=INVALIDID then
-    TigerLog.WriteLog(etDebug,'ScanSinglePage: an error occurred.');
+  if Result = INVALIDID then
+    TigerLog.WriteLog(etDebug, 'ScanSinglePage: an error occurred.');
 end;
 
 function TTigerServerCore.ServerInfo: string;
 begin
   Result :=
-    'Papertiger ' + LineEnding + 'version: based on commit ' +
-    RevisionStr + ' (' + versiondate + ')' + LineEnding + 'build date: ' +
+    'Papertiger ' + LineEnding + 'version: based on commit ' + RevisionStr + ' (' + versiondate + ')' + LineEnding + 'build date: ' +
 {$INCLUDE %DATE%}
     +' ' +
 {$INCLUDE %TIME%}
@@ -780,35 +757,31 @@ begin
     );
 end;
 
-class function TTigerServerCore.TryParseDate(DateString: string;
-  out ParseDate: TDateTime): boolean;
+class function TTigerServerCore.TryParseDate(DateString: string; out ParseDate: TDateTime): boolean;
   // Try to detect ISO 8601 formatted UTC datetime. Note: only full datetime
   // Returns false if not a date.
 begin
-  Result := False;
+  Result := false;
   try
     // Scandatetime won't work, so do it the old-fashioned way
     //2013-02-21T09:47:42.467Z
     //0        1         2
     //123456789012345678901234
-    if (copy(DateString, 5, 1) = '-') and (copy(DateString, 8, 1) = '-') and
-      (copy(DateString, 11, 1) = 'T') and (copy(DateString, 14, 1) = ':') and
-      (copy(DateString, 17, 1) = ':') and (copy(DateString, 20, 1) = '.') and
+    if (copy(DateString, 5, 1) = '-') and (copy(DateString, 8, 1) = '-') and (copy(DateString, 11, 1) = 'T') and
+      (copy(DateString, 14, 1) = ':') and (copy(DateString, 17, 1) = ':') and (copy(DateString, 20, 1) = '.') and
       (copy(DateString, 24, 1) = 'Z') then
     begin
       {$IF FPC_FULLVERSION>=20602}
-      ParseDate := UniversalTimeToLocal(EncodeDateTime(StrToInt(copy(DateString, 1, 4)),
-        StrToInt(copy(DateString, 6, 2)), StrToInt(copy(DateString, 9, 2)),
-        StrToInt(copy(DateString, 12, 2)), StrToInt(copy(DateString, 15, 2)),
+      ParseDate := UniversalTimeToLocal(EncodeDateTime(StrToInt(copy(DateString, 1, 4)), StrToInt(copy(DateString, 6, 2)),
+        StrToInt(copy(DateString, 9, 2)), StrToInt(copy(DateString, 12, 2)), StrToInt(copy(DateString, 15, 2)),
         StrToInt(copy(DateString, 18, 2)), StrToInt(copy(DateString, 21, 3))));
       {$ELSE}
       {$WARNING This FPC version does not support UTC time conversion - times will be off!}
-      ParseDate := EncodeDateTime(StrToInt(copy(DateString, 1, 4)),
-        StrToInt(copy(DateString, 6, 2)), StrToInt(copy(DateString, 9, 2)),
-        StrToInt(copy(DateString, 12, 2)), StrToInt(copy(DateString, 15, 2)),
+      ParseDate := EncodeDateTime(StrToInt(copy(DateString, 1, 4)), StrToInt(copy(DateString, 6, 2)),
+        StrToInt(copy(DateString, 9, 2)), StrToInt(copy(DateString, 12, 2)), StrToInt(copy(DateString, 15, 2)),
         StrToInt(copy(DateString, 18, 2)), StrToInt(copy(DateString, 21, 3)));
       {$ENDIF}
-      Result := True;
+      Result := true;
     end;
   except
     //ignore
@@ -826,8 +799,8 @@ begin
   FColorType := stLineArt; //todo: save to settings/restore from settings as text string
   //read language from settings; can be overridden by command line option
   FCurrentOCRLanguage := FSettings.Language;
-  FDesiredRotation:=0;
-  FUserSpecifiedRotation:=false;
+  FDesiredRotation := 0;
+  FUserSpecifiedRotation := false;
   FPages := 1; //Assume single scan, not batch
   FTigerDB := TTigerDB.Create;
 end;
