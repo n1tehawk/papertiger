@@ -53,6 +53,7 @@ type
     // approximate number of correctly-detected words found
     function CheckRecognition(ImageFile: string): integer;
     // Returns degrees image needs to be turned to end right-side-up
+    // Currently based on Tesseract rotation detection functionality (added January 2014)
     function DetectRotation(Source: string): integer;
   public
     // Cleans up before scanning:
@@ -142,28 +143,8 @@ var
 begin
   Result:=0;
   Rotation:=0;
-  while Rotation <= 270 do
-  begin
-    if Rotation = 0 then
-      RotatedImage:=Source
-    else
-    begin
-      RotatedImage:=GetTempFileName('',inttostr(Rotation));
-      Rotate(Rotation,Source,RotatedImage);
-    end;
-    Score:=CheckRecognition(RotatedImage);
-    TigerLog.WriteLog(etDebug, 'File: '+RotatedImage+' rotation '+inttostr(Rotation)+' score '+inttostr(Score));
-    {$IFNDEF DEBUG}
-    DeleteFile(RotatedImage); //clean up
-    {$ENDIF}
-
-    if (Score>TopScore) and (Score>MinWords) then
-    begin
-      TopScore:=Score;
-      DetectedRotation:=Rotation;
-    end;
-    Rotation:=Rotation + 90;
-  end;
+  DetectedRotation:=0;
+  //todo: add tesseract recognition here
   result := DetectedRotation;
 end;
 

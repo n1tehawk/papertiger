@@ -3,7 +3,7 @@ unit tigerservercore;
 { Core functionality for the server part of papertiger.
   Shared by web/CGI, command line etc frontends.
 
-  Copyright (c) 2012-2013 Reinier Olislagers
+  Copyright (c) 2012-2014 Reinier Olislagers
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to
@@ -26,6 +26,8 @@ unit tigerservercore;
 
 {
 //todo:
+- use tesseract position detection since January 2014 trunk
+- use tesseract searchable PDF output since January 2014 trunk=>probably needs leptonica 1.70 (r1009, 23 Jan 2014 Turned on pdfrenderer functionality that needs leptonica 1.70 )
 - use unpaper/scantailor for cropping/deskewing/despeckling instead of device/driver dependent sane functionality
 - orientation detection (e.g. upside down) with new tesseract using API (option -psd)
   (or by doing OCR on all orientations, picking highestg confidence level)
@@ -177,6 +179,8 @@ procedure TTigerServerCore.SetDesiredRotation(AValue: integer);
 begin
   FUserSpecifiedRotation:=true;
   if FDesiredRotation=AValue then Exit;
+  FDesiredRotation:=FDesiredRotation mod 360; //Normalize...
+  if FDesiredRotation<0 then FDesiredRotation:=360+FDesiredRotation; //...part 2
   FDesiredRotation:=AValue;
 end;
 
