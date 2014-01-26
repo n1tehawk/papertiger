@@ -168,9 +168,19 @@ begin
     TempFile:=GetTempFileName('','TIF')
   else
     TempFile:=DestinationFile;
-  ErrorCode:=ExecuteCommand(NormalizeCommand+
-    ' --denoise --dpi 300'+
-    ' --input "'+SourceFile+'" --output "tiff:'+TempFile+'" ', false);
+  try
+    ErrorCode:=ExecuteCommand(NormalizeCommand+
+      ' --denoise --dpi 300'+
+      ' --input "'+SourceFile+'" --output "tiff:'+TempFile+'" ', false);
+  except
+    on E: Exception do
+    begin
+      TigerLog.WriteLog(etWarning,
+        'ToBlackWhiteTIFF: got exception '+E.Message+
+        ' when calling '+NormalizeCommand+' for image '+SourceFile);
+      ErrorCode:=processutils.PROC_INTERNALEXCEPTION;
+    end;
+  end;
   if ErrorCode=0 then
   begin
     result:=true;
@@ -217,19 +227,39 @@ begin
   // Rotate; indicate output should be tiff format
   // Output appears to be CCIT fax T.6, but apparently tesseract 3.02.02
   // can now read that
-  ErrorCode:=ExecuteCommand(ConvertCommand+
-    ' --rotate "'+inttostr(Degrees)+'" '+
-    ' --input "'+SourceFile+'" '+
-    ' --output "tiff:'+TempFile+'" ', false);
+  try
+    ErrorCode:=ExecuteCommand(ConvertCommand+
+      ' --rotate "'+inttostr(Degrees)+'" '+
+      ' --input "'+SourceFile+'" '+
+      ' --output "tiff:'+TempFile+'" ', false);
+  except
+    on E: Exception do
+    begin
+      TigerLog.WriteLog(etWarning,
+        'TImageCleaner.Rotate: got exception '+E.Message+
+        ' when calling '+ConvertCommand+' for rotation '+inttostr(Degrees))
+      ErrorCode:=PROC_INTERNALEXCEPTION;
+    end;
+  end;
   {$ENDIF}
   {$IFDEF USE_IMAGEMAGICK}
   // Rotate; indicate output should be tiff format
   // Output appears to be CCIT fax T.6, but apparently tesseract 3.02.02
   // can now read that
-  ErrorCode:=ExecuteCommand(ConvertCommand+
-    ' "'+SourceFile+'" '+
-    ' -rotate '+inttostr(Degrees)+
-    ' "'+TempFile+'" ', false);
+  try
+    ErrorCode:=ExecuteCommand(ConvertCommand+
+      ' "'+SourceFile+'" '+
+      ' -rotate '+inttostr(Degrees)+
+      ' "'+TempFile+'" ', false);
+  except
+    on E: Exception do
+    begin
+      TigerLog.WriteLog(etWarning,
+        'TImageCleaner.Rotate: got exception '+E.Message+
+        ' when calling '+ConvertCommand+' for rotation '+inttostr(Degrees));
+      ErrorCode:=PROC_INTERNALEXCEPTION;
+    end;
+  end;
   {$ENDIF}
 
   result:=(ErrorCode=0);
