@@ -82,14 +82,24 @@ begin
     ResolutionOption := ' --resolution ' + IntToStr(FImageResolution);
   Options := ' "' + FHOCRFile + '" -i "' + FImageFile + '" -o "' + FPDFFile + '"' + ResolutionOption + ' --sloppy-text';
   TigerLog.WriteLog(etDebug, 'CreatePDF: PDF generation: running ' + Command + Options, true);
-  if ExecuteCommand(Command + Options, false) = 0 then
-  begin
-    TigerLog.WriteLog(etDebug, 'CreatePDF: PDF succeeded.', true);
-    Result := true;
-  end
-  else
-  begin
-    TigerLog.WriteLog(etError, 'CreatePDF: Error running command.');
+  try
+    if ExecuteCommand(Command + Options, false) = 0 then
+    begin
+      TigerLog.WriteLog(etDebug, 'CreatePDF: PDF succeeded.', true);
+      Result := true;
+    end
+    else
+    begin
+      TigerLog.WriteLog(etError, 'CreatePDF: Error running command.');
+    end;
+  except
+    on E: Exception do
+    begin
+      TigerLog.WriteLog(etError,
+        'CreatePDF: got exception '+E.Message+
+        ' when calling '+Command + Options);
+      Result:=false;
+    end;
   end;
   //todo: deal with temp files somewhere. complicated because some are needed by other processes. Best to add them to an overarchiing object with list?
 end;
