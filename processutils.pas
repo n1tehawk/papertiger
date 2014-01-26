@@ -1,5 +1,5 @@
 { Process utility unit
-Copyright (C) 2012 Ludo Brands
+Copyright (C) 2012-2014 Ludo Brands, Reinier Olislagers
 
 This unit is licensed as modified LGPL or MIT, at your choice. Licenses below
 }
@@ -51,7 +51,7 @@ IN THE SOFTWARE.
 unit processutils;
 
 {$mode objfpc}{$H+}
-{not $DEFINE DEBUG} //define debug to get writeln output of commands called
+{not $DEFINE DEBUGCONSOLE} //define debug to get writeln output of commands called
 
 interface
 
@@ -62,6 +62,12 @@ const
   // Internal error code/result codes:
   PROC_INTERNALERROR=-1; // error while running process code in this unit
   PROC_INTERNALEXCEPTION=-2; //exception while running process code in this unit
+  {$IFDEF MSWINDOWS}
+  PATHVARNAME = 'Path'; //Name for path environment variable
+  {$ELSE}
+  //Unix/Linux
+  PATHVARNAME = 'PATH';
+  {$ENDIF MSWINDOWS}
 
 type
   TProcessEx=class; //forward
@@ -69,8 +75,8 @@ type
   TDumpMethod = procedure (Sender:TProcessEx; output:string) of object;
   TErrorFunc = procedure (Sender:TProcessEx;IsException:boolean);
   TErrorMethod = procedure (Sender:TProcessEx;IsException:boolean) of object;
-  { TProcessEnvironment }
 
+  { TProcessEnvironment }
   TProcessEnvironment = class(TObject)
     private
       FEnvironmentList:TStringList;
@@ -139,6 +145,9 @@ function ExecuteCommand(Commandline: string; Verbose:boolean): integer; overload
 function ExecuteCommand(Commandline: string; var Output:string; Verbose:boolean): integer; overload;
 function ExecuteCommandInDir(Commandline, Directory: string; Verbose:boolean): integer; overload;
 function ExecuteCommandInDir(Commandline, Directory: string; var Output:string; Verbose:boolean): integer; overload;
+// PrependPath is prepended to existing path. If empty, keep current path
+function ExecuteCommandInDir(Commandline, Directory: string; var Output:string; Verbose:boolean; PrependPath: string): integer; overload;
+// Writes output to console
 procedure DumpConsole(Sender:TProcessEx; output:string);
 
 
@@ -176,7 +185,7 @@ function TProcessEx.GetResultingCommand: string;
 var i:integer;
 begin
   //this is not the command as executed. The quotes are surrounding individual params.
-  //the actual quoting is platform dependant
+  //the actual quoting is platform dependent
   //perhaps better to use another quoting character to make this clear to the user.
   result:=Executable;
   for i:=0 to Parameters.Count-1 do
@@ -399,7 +408,6 @@ begin
   inherited Destroy;
 end;
 
-
 procedure DumpConsole(Sender:TProcessEx; output:string);
 begin
   write(output);
@@ -428,7 +436,14 @@ end;
 
 function ExecuteCommandInDir(Commandline, Directory: string;
   var Output: string; Verbose: boolean): integer;
+begin
+  Result:=ExecuteCommandInDir(CommandLine,Directory,Output,Verbose,'');
+end;
+
+function ExecuteCommandInDir(Commandline, Directory: string;
+  var Output: string; Verbose: boolean; PrependPath: string): integer;
 var
+  OldPath: string;
   PE:TProcessEx;
   s:string;
 
@@ -475,6 +490,15 @@ begin
   try
     if Directory<>'' then
       PE.CurrentDirectory:=Directory;
+    // Prepend specified PrependPath if needed:
+    if PrependPath<>'' then
+    begin
+      OldPath:=PE.Environment.GetVar(PATHVARNAME);
+      if OldPath<>'' then
+        PE.Environment.SetVar(PATHVARNAME, PrependPath+PathSeparator+OldPath)
+      else
+        PE.Environment.SetVar(PATHVARNAME, PrependPath);
+    end;
     PE.Executable:=GetFirstWord;
     s:=GetFirstWord;
     while s<>'' do
@@ -485,14 +509,17 @@ begin
     PE.ShowWindow := swoHIDE;
     if Verbose then
       PE.OnOutput:=@DumpConsole;
-    {$IFDEF DEBUG}
+    {$IFDEF DEBUGCONSOLE}
     writeln('ExecuteCommandInDir: executable '+PE.Executable);
     writeln('ExecuteCommandInDir: params     '+PE.Parameters.Text);
-    {$ENDIF}
+    {$ENDIF DEBUGCONSOLE}
     PE.Execute;
 
     Output:=PE.OutputString;
     Result:=PE.ExitStatus;
+    {$IFDEF DEBUGCONSOLE}
+    writeln('ExecuteCommandInDir: exit status: '+inttostr(Result));
+    {$ENDIF DEBUGCONSOLE}
   finally
     PE.Free;
   end;

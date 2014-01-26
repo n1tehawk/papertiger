@@ -29,8 +29,6 @@ unit tigerservercore;
 - use tesseract position detection since January 2014 trunk
 - use tesseract searchable PDF output since January 2014 trunk=>probably needs leptonica 1.70 (r1009, 23 Jan 2014 Turned on pdfrenderer functionality that needs leptonica 1.70 )
 - use unpaper/scantailor for cropping/deskewing/despeckling instead of device/driver dependent sane functionality
-- orientation detection (e.g. upside down) with new tesseract using API (option -psd)
-  (or by doing OCR on all orientations, picking highestg confidence level)
 - look at getting ocrfeeder (text mode) instead of the scan/ocr/pdf processes
 http://git.gnome.org/browse/ocrfeeder
 - run multiple scan engines, compare results. Differences should be marked for manual intervention
