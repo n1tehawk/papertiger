@@ -131,12 +131,16 @@
 }
 
 {11/10/2009 - Ali Keshavarz: Char is replaced with AnsiChar to work properly in Delphi 2009}
+{4 April 2014 - Reinier Olislagers: mode Delphi for FPC compilers}
 
 unit Twain;
 
 interface
 
 {$HPPEMIT '#include <twain.h>' }
+{$IFDEF FPC}
+  {$MODE DELPHI}
+{$ENDIF}
 
 {uses
   Windows;}

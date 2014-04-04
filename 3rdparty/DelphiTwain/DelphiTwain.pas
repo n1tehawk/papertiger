@@ -25,6 +25,8 @@
 {
 CHANGE LOG:
 
+2014/04/04 - Typo fixes in language constants
+
 2013/12/18 - FireMonkey support, color bug fix.
 
 2013/08/18 - New method OnTransferComplete: fired when all documents are
@@ -110,8 +112,8 @@ type
   TOnSourceFileTransfer = procedure(Sender: TObject; const Index: Integer;
     Filename: TW_STR255; Format: TTwainFormat; var Cancel: Boolean) of object;
 
-  {Avaliable twain languages}
-  TTwainLanguage = ({-1}tlUserLocale, tlDanish, tlDutch, tlInternationalEnglish,
+  {Available twain languages}
+  TTwainLanguage = ({-1}tlUserLocale=-1, tlDanish, tlDutch, tlInternationalEnglish,
     tlFrenchCanadian, tlFinnish, tlFrench, tlGerman, tlIcelandic, tlItalian,
     tlNorwegian, tlPortuguese, tlSpanish, tlSwedish, tlUsEnglish,
     tlAfrikaans, tlAlbania, tlArabic, tlArabicAlgeria, tlArabicBahrain, {18}
@@ -135,7 +137,7 @@ type
     tlDogri, tlGujarati {92}, tlHarayanvi, tlHindi, tlKannada, tlKashmiri,
     tlMalayalam, tlMarathi, tlMarwari, tlMeghalayan, tlMizo, tlNaga {102},
     tlOrissi, tlPunjabi, tlPushtu, tlSerbianCyrillic, tlSikkimi,
-    tlSwidishFinland, tlTamil, tlTelugu, tlTripuri, tlUrdu, tlVietnamese);
+    tlSwedishFinland, tlTamil, tlTelugu, tlTripuri, tlUrdu, tlVietnamese);
   {Twain supported groups}
   TTwainGroups = set of (tgControl, tgImage, tgAudio);
 

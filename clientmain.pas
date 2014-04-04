@@ -38,7 +38,9 @@ uses
   fpreadtiff_custom1bit, {custom 1bit TIFF format read support, useful when using FPC 2.6.x}
   {$ENDIF}
   Graphics, Dialogs, Menus, Grids,
-  StdCtrls, lclintf, tigersettings, LJGridUtils, FPJSON, jsonparser, httpclient, imageformunit,
+  StdCtrls, lclintf, tigersettings,
+  LJGridUtils, FPJSON, jsonparser, httpclient,
+  imageformunit,
   {$IFDEF USEMAGICK}
   magick_wand, ImageMagick {for conversion from TIFF formats unsupported by FPC to regular bitmaps},
   {$ENDIF USEMAGICK}
@@ -46,7 +48,6 @@ uses
   {$IFDEF WINDOWS}
   , wia, DelphiTwain, DelphiTwain_VCL
   {$ENDIF};
-//todo: think about splitting up data access layer so you can e.g. build a CLI client
 
 type
 
@@ -342,40 +343,38 @@ begin
       {$IFDEF WINDOWS}
       'TWAIN':
       begin
-        if not(assigned(TwainScanner)) then
-        begin
-          TwainScanner:=TDelphiTwain.Create;
+        TwainScanner:=TDelphiTwain.Create;
+        try
           TwainScanner.OnTwainAcquire:=@TwainTwainAcquire;
-        end;
-        if not(TwainScanner.LoadLibrary) then
-        begin
-          ShowMessage('Error: TWAIN is not installed.');
-          exit;
-        end;
-
-        //Load source manager
-        TwainScanner.SourceManagerLoaded := true;
-
-        // Allow user to select source -> only the first time
-        if not Assigned(TwainScanner.SelectedSource) then
-          TwainScanner.SelectSource;
-
-        if Assigned(TwainScanner.SelectedSource) then begin
-          for CurrentPage := 1 to NumberPages do
+          if not(TwainScanner.LoadLibrary) then
           begin
-            if CurrentPage > 1 then
-            begin
-              ShowMessage('Please put page ' + IntToStr(CurrentPage) + ' in the scanner.');
-            end;
-
-            // Load source, select transfer method and enable (display interface)}
-            TwainScanner.SelectedSource.Loaded := True;
-            TwainScanner.SelectedSource.ShowUI := True;//display interface
-            TwainScanner.SelectedSource.Enabled := True;
+            ShowMessage('Error: TWAIN is not installed.');
+            exit;
           end;
-        end;
-        if assigned(TwainScanner) then
+          //Load source manager
+          TwainScanner.SourceManagerLoaded := true;
+
+          // Allow user to select source -> only the first time
+          if not Assigned(TwainScanner.SelectedSource) then
+            TwainScanner.SelectSource;
+
+          if Assigned(TwainScanner.SelectedSource) then begin
+            for CurrentPage := 1 to NumberPages do
+            begin
+              if CurrentPage > 1 then
+              begin
+                ShowMessage('Please put page ' + IntToStr(CurrentPage) + ' in the scanner.');
+              end;
+
+              // Load source, select transfer method and enable (display interface)}
+              TwainScanner.SelectedSource.Loaded := True;
+              TwainScanner.SelectedSource.ShowUI := True;//display interface
+              TwainScanner.SelectedSource.Enabled := True;
+            end;
+          end;
+        finally
           TwainScanner.Free;
+        end;
       end;
       {$ENDIF}
       else
@@ -479,6 +478,7 @@ var
   ImageFile: string;
   RequestResult: THTTPResult;
   CommJSON: TJSONData;
+  MemStream: TMemoryStream;
 begin
   if DocumentsGrid.Row < 1 then
   begin
@@ -499,11 +499,13 @@ begin
   if ImageFile <> '' then
   begin
     CommJSON := TJSONObject.Create;
+    MemStream := TMemoryStream.Create;
     try
+      MemStream.LoadFromFile(ImageFile);
+      MemStream.Position := 0;
       // Upload image as form data
-      //todo: add form encoded data here e.g.
-      //FileFormPost
-      RequestResult := HttpRequestWithData(CommJSON, FSettings.CGIURL + 'image/', rmPost);
+      RequestResult := FileFormPostWithDataStream(CommJSON,FSettings.CGIURL + 'image/',
+        'image',MemStream,ImageFile);
       if RequestResult.Code <> 200 then
       begin
         ShowMessageFmt('Error adding image to document %d. HTTP result code: %d/%s',[DocumentID,RequestResult.Code,RequestResult.Text]);
@@ -514,6 +516,7 @@ begin
         //do something
       end;
     finally
+      MemStream.Free;
       CommJSON.Free;
     end;
   end
