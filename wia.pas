@@ -29,7 +29,8 @@ unit wia;
 interface
 
 uses
-  Classes, SysUtils, WIA_1_0_TLB;
+  Classes, SysUtils, WIA_1_0_TLB,
+  forms, controls, dialogs {todo: debug: temporarily added for troubleshooting output};
 
 type
 
@@ -51,15 +52,29 @@ procedure TLocalWIAScanner.Scan;
 // Adapted from
 // http://stackoverflow.com/questions/721948/delphi-twain-issue-help
 var
+  i:integer;
   Scanner: Device;
   Picture: IItem;
   Image: OleVariant;
   AImage: IImageFile;
+  ReturnString: string;
 begin
   try
-    // Figure out first scanner(?)
+    // List of devices is a 1 based array
+    showmessage('number of devices: '+inttostr(FDevMgr.DeviceInfos.Count));
+    for i:=1 to FDevMgr.DeviceInfos.Count do
+    begin
+      // sigsegv happens in line below
+      ReturnString:=utf8encode(FDevMgr.DeviceInfos[POleVariant(i)].Properties[POleVariant('Name')].get_Value);
+      showmessage('Device: '+ReturnString);
+      //check for scanner class, not camera etc
+      //FDevMgr.DeviceInfos[i].Type=WiaDeviceType.ScannerDeviceType
+    end;
+    // This takes the first device. Todo: Figure out first scanner (adapt code above)
     Scanner:=FDevMgr.DeviceInfos.Item[POleVariant(1)].Connect;
-    // figure out which command scans
+    // to do: figure out which command scans
+    //reference: wia item property constants - grayscale deskew etc
+    //http://msdn.microsoft.com/en-us/library/ms630196%28v=VS.85%29
     Picture := Scanner.ExecuteCommand(Scanner.Commands.Item[1].CommandID);
     { todo: add scan selection dialog:
     lDialog.ShowAcquireImage(WIA_TLB.ScannerDeviceType,WIA_TLB.GrayscaleIntent,WIA_TLB.MinimizeSize,
