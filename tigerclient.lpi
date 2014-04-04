@@ -28,7 +28,7 @@
           </Target>
           <SearchPaths>
             <IncludeFiles Value="$(ProjOutDir)"/>
-            <OtherUnitFiles Value="3rdparty;3rdparty\ljgridutils\src"/>
+            <OtherUnitFiles Value="3rdparty;3rdparty\ljgridutils\src;3rdparty\delphitwain"/>
             <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
           </SearchPaths>
           <CodeGeneration>
@@ -136,7 +136,7 @@
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
-      <OtherUnitFiles Value="3rdparty;3rdparty\ljgridutils\src"/>
+      <OtherUnitFiles Value="3rdparty;3rdparty\ljgridutils\src;3rdparty\delphitwain"/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <CodeGeneration>
