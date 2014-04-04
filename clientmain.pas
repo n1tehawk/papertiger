@@ -2,7 +2,7 @@ unit clientmain;
 
 { Papertiger client main form
 
-  Copyright (c) 2013 Reinier Olislagers
+  Copyright (c) 2013-2014 Reinier Olislagers
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to
@@ -42,7 +42,10 @@ uses
   {$IFDEF USEMAGICK}
   magick_wand, ImageMagick {for conversion from TIFF formats unsupported by FPC to regular bitmaps},
   {$ENDIF USEMAGICK}
-  IntfGraphics, FPimage, LazUTF8;
+  IntfGraphics, FPimage, LazUTF8
+  {$IFDEF WINDOWS}
+  , wia
+  {$ENDIF};
 //todo: think about splitting up data access layer so you can e.g. build a CLI client
 
 type
@@ -67,6 +70,7 @@ type
     DeleteButton: TButton;
     procedure DeleteButtonClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
+    procedure FormDestroy(Sender: TObject);
     procedure mnuAboutClick(Sender: TObject);
     procedure mnuQuitClick(Sender: TObject);
     procedure RefreshDocumentsButtonClick(Sender: TObject);
@@ -76,7 +80,7 @@ type
     procedure UploadImageButtonClick(Sender: TObject);
   private
     { private declarations }
-    FCGIURL: string; //Base cgi URL used for connecting, normally with trailing /
+    FSettings: TTigerSettings;
     // Asks the server to add a new document and returns the document ID. Returns INVALIDID on error.
     function AddDocument: integer;
     // Refresh list of documents in grid
@@ -162,7 +166,7 @@ begin
   ReturnJSON := TJSONObject.Create;
   try
     Message := 'Unknown server or not connected.';
-    Success := (HttpRequestWithData(CommJSON, FCGIURL + 'server/', rmGet).Code = 200);
+    Success := (HttpRequestWithData(CommJSON, FSettings.CGIURL + 'server/', rmGet).Code = 200);
     if Success then
       try
         Message := (CommJSON as TJSONObject).Strings['serverinfo'];
@@ -214,7 +218,7 @@ begin
   CommJSON := TJSONString.Create(''); //dummy content
   try
     try
-      RequestResult := HttpRequestWithData(CommJSON, FCGIURL + 'document/', rmPost);
+      RequestResult := HttpRequestWithData(CommJSON, Fsettings.CGIURL + 'document/', rmPost);
       if RequestResult.Code <> 200 then
       begin
         ShowMessage('Adddocument: error from server. HTTP result code: ' + IntToStr(RequestResult.Code) + '/' + RequestResult.Text);
@@ -254,6 +258,9 @@ var
   NumberPages: integer; //Number of pages user requested for sca
   RequestResult: THttpResult;
   CommJSON: TJSONData;
+  {$IFDEF WINDOWS}
+  WIAScanner: TLocalWIAScanner;
+  {$ENDIF}
 begin
   NumberPages := StrToIntDef(NumberPagesControl.Text, 1);
 
@@ -267,36 +274,63 @@ begin
 
   for CurrentPage := 1 to NumberPages do
   begin
-    if CurrentPage > 1 then
+    if FSettings.ScanProtocol='' then
     begin
-      ShowMessage('Please put page ' + IntToStr(CurrentPage) + ' in the scanner.');
-    end;
+      // Remote scan
+      if CurrentPage > 1 then
+      begin
+        ShowMessage('Please put page ' + IntToStr(CurrentPage) + ' in the scanner.');
+      end;
 
-    try
-      Screen.Cursor := crHourglass;
       try
-        RequestResult := HTTPRequest(FCGIURL + 'image?documentid=' + IntToStr(DocumentID), CommJSON, rmPost);
-        if RequestResult.Code <> 200 then
-        begin
-          Screen.Cursor := crDefault;
-          ShowMessage('Error from server after scan request; HTTP result code: ' + IntToStr(RequestResult.Code) + '/' + RequestResult.Text);
-          exit;
+        Screen.Cursor := crHourglass;
+        try
+          RequestResult := HTTPRequest(FSettings.CGIURL + 'image?documentid=' + IntToStr(DocumentID), CommJSON, rmPost);
+          if RequestResult.Code <> 200 then
+          begin
+            Screen.Cursor := crDefault;
+            ShowMessage('Error from server after scan request; HTTP result code: ' + IntToStr(RequestResult.Code) + '/' + RequestResult.Text);
+            exit;
+          end;
+        except
+          on E: Exception do
+          begin
+            Screen.Cursor := crDefault;
+            ShowMessage('Error interpreting response from server after scan request. Technical details: ' + E.Message);
+            exit;
+          end;
         end;
+      finally
+        Screen.Cursor := crDefault;
+      end;
+    end
+    else
+    begin
+      // Local scan
+      if FSettings.ScanProtocol<>'WIA' then
+        raise Exception.Create('Only WIA supported now.');
+      if CurrentPage > 1 then
+      begin
+        ShowMessage('Please put page ' + IntToStr(CurrentPage) + ' in the scanner.');
+      end;
+
+      WIAScanner:=TLocalWIAScanner.Create;
+      try
+        WIAScanner.Scan;
+        //todo: upload images to server
       except
         on E: Exception do
         begin
-          Screen.Cursor := crDefault;
-          ShowMessage('Error interpreting response from server after scan request. Technical details: ' + E.Message);
+          ShowMessage('Error while scanning. Technical details: ' + E.Message);
           exit;
         end;
       end;
-    finally
-      Screen.Cursor := crDefault;
+      WIAScanner.Free;
     end;
   end; //all pages scanned now
 
   try
-    RequestResult := HttpRequest(FCGIURL + 'document/' + IntToStr(DocumentID) + '?processdocument=true', CommJSON, rmPost);
+    RequestResult := HttpRequest(FSettings.CGIURL + 'document/' + IntToStr(DocumentID) + '?processdocument=true', CommJSON, rmPost);
     if RequestResult.Code <> 200 then
     begin
       ShowMessage('Error from server after OCR request. HTTP result code: ' + IntToStr(RequestResult.Code) + '/' + RequestResult.Text);
@@ -337,7 +371,7 @@ begin
     (VData as TJSONObject).Add('documentid', DocumentID);
     (VData as TJSONObject).Add('imageorder', ImageOrder); //sort order number
     //post a request to show the image
-    RequestResult := HttpRequestWithDataStream(VData, FCGIURL + 'image', TIFFStream, rmGet);
+    RequestResult := HttpRequestWithDataStream(VData, FSettings.CGIURL + 'image', TIFFStream, rmGet);
     if RequestResult.Code <> 200 then
     begin
       ShowMessage('Error getting image from server. HTTP result code: ' + IntToStr(RequestResult.Code) + '/' + RequestResult.Text);
@@ -411,7 +445,7 @@ begin
   begin
     CommJSON := TJSONObject.Create;
     try
-      RequestResult := HttpRequestWithData(CommJSON, FCGIURL + 'image/', rmPost);
+      RequestResult := HttpRequestWithData(CommJSON, FSettings.CGIURL + 'image/', rmPost);
       if RequestResult.Code <> 200 then
       begin
         ShowMessage('Error getting document list from server. HTTP result code: ' + IntToStr(RequestResult.Code) + '/' + RequestResult.Text);
@@ -440,7 +474,7 @@ begin
   VData:=TJSONString.Create(''); //Dummy value
   try
     ClearGrid(DocumentsGrid);
-    RequestResult := HttpRequest(FCGIURL + 'document/', VData, rmGet);
+    RequestResult := HttpRequest(FSettings.CGIURL + 'document/', VData, rmGet);
     if RequestResult.Code <> 200 then
     begin
       ShowMessage('Error getting document list from server. HTTP result code: ' + IntToStr(RequestResult.Code) + '/' + RequestResult.Text);
@@ -474,7 +508,7 @@ begin
   VData:=TJSONString.Create(''); //dummy value
   try
     // post a request to get the PDF
-    RequestResult:=HttpRequest(FCGIURL + 'document/' + IntToStr(DocumentID) + '/pdf', VData, rmGet);
+    RequestResult:=HttpRequest(FSettings.CGIURL + 'document/' + IntToStr(DocumentID) + '/pdf', VData, rmGet);
     if RequestResult.Code <> 200 then
     begin
       ShowMessage('Error getting PDF from server. HTTP result code: ' + IntToStr(RequestResult.Code) + '/' + RequestResult.Text);
@@ -500,15 +534,13 @@ begin
 end;
 
 procedure TForm1.FormCreate(Sender: TObject);
-var
-  Settings: TTigerSettings;
 begin
-  Settings := TTigerSettings.Create('tigerclient.ini');
-  try
-    FCGIURL := Settings.CGIURL;
-  finally
-    Settings.Free;
-  end;
+  FSettings := TTigerSettings.Create('tigerclient.ini');
+end;
+
+procedure TForm1.FormDestroy(Sender: TObject);
+begin
+  FSettings.Free;
 end;
 
 procedure TForm1.DeleteButtonClick(Sender: TObject);
@@ -542,7 +574,7 @@ begin
   try
     Screen.Cursor := crHourglass;
     try
-      RequestResult := HTTPRequest(FCGIURL + 'document/' + IntToStr(DocumentID), CommJSON, rmDelete);
+      RequestResult := HTTPRequest(FSettings.CGIURL + 'document/' + IntToStr(DocumentID), CommJSON, rmDelete);
       if RequestResult.Code <> 200 then
       begin
         Screen.Cursor := crDefault;

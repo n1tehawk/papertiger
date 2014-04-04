@@ -312,7 +312,7 @@ type
 
     if HasOption('i', 'image') then
     begin
-      //todo: add support for ; or , separated image names when pages>1
+      //todo: add support for ; or , separated ? image names when pages>1
       DocumentID := FTigerCore.AddDocument('Document ' + FormatDateTime('yyyymmddhhnnss', Now));
       if DocumentID <> INVALIDID then
       begin

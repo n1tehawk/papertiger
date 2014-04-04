@@ -76,16 +76,17 @@ type
   TTigerServerCore = class(TObject)
   private
     FColorType: ScanType;
+    // Effective language (from settings file, possibly overridden by e.g. command-line options)
     FCurrentOCRLanguage: string;
     // Any rotation specified by user; FUserSpecifiedRotation must be true, too
     FDesiredRotation: integer;
-    //effective language (from settings file, possibly overridden by e.g. command-line options)
-    FPages: integer;
-    FScanDevice: string;
     // Number of pages to scan/process at once
     // Use >1 for batch (e.g. multipage documents)
     //todo: think about multipage tiff
+    FPages: integer;
+    FScanDevice: string;
     FSettings: TTigerSettings;
+    // Enables FDesiredRotation
     FUserSpecifiedRotation: boolean;
     FTigerDB: TTigerDB;
     procedure SetDesiredRotation(AValue: integer);
@@ -99,7 +100,8 @@ type
     function AddImage(ImageData: TStream; ImageName: string; DocumentID: integer; ImageOrder: integer): integer;
     // Adds the tiff image to given documentID.
     // Rotates it first if the user asked for it, and checks for sane bug
-    // Add at end of any existing images, unless ImageOrder>0. Returns image ID or INVALIDID when failed.
+    // Add at end of any existing images, unless ImageOrder>0.
+    // Returns image ID, or INVALIDID when failed.
     function AddImage(ImageFile: string; DocumentID: integer; ImageOrder: integer): integer;
     // Whether to scan in black and white, gray or colo(u)r.
     property ColorType: ScanType read FColorType write FColorType;
@@ -136,7 +138,8 @@ type
     function GetPDF(DocumentID: integer; const ImageStream: TStream): boolean;
     // Lists document specified by DocumentID or all documents (if DocumentID is INVALIDID)
     procedure ListDocuments(DocumentID: integer; var DocumentsArray: TJSONArray);
-    // List images specified DocumentID or all images (if DocumentID is INVALIDID). Image path contains full path+file name.
+    // List images specified DocumentID or all images (if DocumentID is INVALIDID).
+    // Image path contains full path+file name.
     procedure ListImages(DocumentID: integer; var DocumentsArray: TJSONArray);
     // Process (set of) existing (TIFF) image(s); should be named <image>.tif
     // Images are specified using the Images property
@@ -602,7 +605,6 @@ begin
           PDF.PDFFile := IncludeTrailingPathDelimiter(FSettings.PDFDirectory) + ChangeFileExt(
             ExtractFileName(ImageFile), '.pdf');
           //todo: add metadata stuff to pdf unit
-          //todo: add compression to pdf unit?
           Success := PDF.CreatePDF;
           if Success then
           begin

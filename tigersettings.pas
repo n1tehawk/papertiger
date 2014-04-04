@@ -45,7 +45,8 @@ type
     FImageDirectory: string;
     FLanguage: string;
     FPDFDirectory: string;
-    FScanDevice: string;
+    FScanDevice: string; //Scanner device name
+    FScanProtocol: string; //SANE,WIA,TWAIN planned
     FSettings: TINIFile;
     FSettingsFileName: string; //name part only of the required settings file
   public
@@ -57,8 +58,10 @@ type
     property Language: string read FLanguage write FLanguage;
     // Directory where resulting PDFs must be stored; Has trailing path delimiter.
     property PDFDirectory: string read FPDFDirectory write FPDFDirectory;
-    // Device ID for scanner
-    property ScanDevice: string read FScanDevice write FScanDevice; //Device to be used for scanning (in SANE notation)
+    // Device ID for scanner (e.g. in SANE notation if SANE used)
+    property ScanDevice: string read FScanDevice write FScanDevice;
+    // Protocol used for scanner
+    property ScanProtocol: string read FScanProtocol write FScanProtocol;
     constructor Create;
     // In case your settings file is not the default SettingsFile
     constructor Create(SettingsFileName: string);
@@ -86,12 +89,33 @@ begin
     FCGIURL := FSettings.ReadString('General', 'CGIURL', FCGIURL);
 
     // When reading the settings, expand ~ to home directory etc
+    // Default to current directory
+    {$IFDEF UNIX}
     FImageDirectory := IncludeTrailingPathDelimiter(ExpandFileName(FSettings.ReadString('General', 'ImageDirectory', '~/scans')));
-    //Default to current directory
+    {$ENDIF}
+    {$IFDEF WINDOWS}
+    FImageDirectory := IncludeTrailingPathDelimiter(ExpandFileName(FSettings.ReadString('General', 'ImageDirectory', IncludeTrailingPathDelimiter(GetAppConfigDir(false))+'scans')));
+    {$ENDIF}
     FLanguage := FSettings.ReadString('General', 'Language', FLanguage);
-    FPDFDirectory := IncludeTrailingPathDelimiter(ExpandFileName(FSettings.ReadString('General', 'PDFDirectory', '~/pdfs')));
     //Default to current directory
-    FScanDevice := FSettings.ReadString('Sane', 'DeviceName', '')
+    FPDFDirectory := IncludeTrailingPathDelimiter(ExpandFileName(FSettings.ReadString('General', 'PDFDirectory', '~/pdfs')));
+    // Default to sane, then wia then twain
+    FScanProtocol :=''; //not defined, e.g. for client: use server
+    FScanDevice := FSettings.ReadString('Sane', 'DeviceName', '');
+    if FScanDevice<>'' then
+      FScanProtocol := 'SANE'
+    else
+    begin
+      FScanDevice := FSettings.ReadString('WIA', 'DeviceName', '');
+      if FScanDevice <> '' then
+        FScanProtocol := 'WIA'
+      else
+      begin
+        FScanDevice := FSettings.ReadString('TWAIN', 'DeviceName', '');
+        if FScanDevice <> '' then
+          FScanProtocol := 'TWAIN';
+      end;
+    end;
   except
     // ignore errors
   end;
