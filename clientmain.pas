@@ -44,7 +44,7 @@ uses
   {$ENDIF USEMAGICK}
   IntfGraphics, FPimage, LazUTF8
   {$IFDEF WINDOWS}
-  , wia, DelphiTwain_VCL
+  , wia, DelphiTwain, DelphiTwain_VCL
   {$ENDIF};
 //todo: think about splitting up data access layer so you can e.g. build a CLI client
 
@@ -278,37 +278,38 @@ begin
     exit;
   end;
 
-  for CurrentPage := 1 to NumberPages do
-  begin
     if FSettings.ScanProtocol='' then
     begin
       // Remote scan
-      if CurrentPage > 1 then
+      for CurrentPage := 1 to NumberPages do
       begin
-        ShowMessage('Please put page ' + IntToStr(CurrentPage) + ' in the scanner.');
-      end;
-
-      try
-        Screen.Cursor := crHourglass;
-        try
-          RequestResult := HTTPRequest(FSettings.CGIURL + 'image?documentid=' + IntToStr(DocumentID), CommJSON, rmPost);
-          if RequestResult.Code <> 200 then
-          begin
-            Screen.Cursor := crDefault;
-            ShowMessage('Error from server after scan request; HTTP result code: ' + IntToStr(RequestResult.Code) + '/' + RequestResult.Text);
-            exit;
-          end;
-        except
-          on E: Exception do
-          begin
-            Screen.Cursor := crDefault;
-            ShowMessage('Error interpreting response from server after scan request. Technical details: ' + E.Message);
-            exit;
-          end;
+        if CurrentPage > 1 then
+        begin
+          ShowMessage('Please put page ' + IntToStr(CurrentPage) + ' in the scanner.');
         end;
-      finally
-        Screen.Cursor := crDefault;
-      end;
+
+        try
+          Screen.Cursor := crHourglass;
+          try
+            RequestResult := HTTPRequest(FSettings.CGIURL + 'image?documentid=' + IntToStr(DocumentID), CommJSON, rmPost);
+            if RequestResult.Code <> 200 then
+            begin
+              Screen.Cursor := crDefault;
+              ShowMessage('Error from server after scan request; HTTP result code: ' + IntToStr(RequestResult.Code) + '/' + RequestResult.Text);
+              exit;
+            end;
+          except
+            on E: Exception do
+            begin
+              Screen.Cursor := crDefault;
+              ShowMessage('Error interpreting response from server after scan request. Technical details: ' + E.Message);
+              exit;
+            end;
+          end;
+        finally
+          Screen.Cursor := crDefault;
+        end;
+      end; //all pages scanned now
     end
     else
     begin
@@ -317,15 +318,17 @@ begin
       {$IFDEF WINDOWS}
       'WIA':
       begin
-        if CurrentPage > 1 then
-        begin
-          ShowMessage('Please put page ' + IntToStr(CurrentPage) + ' in the scanner.');
-        end;
-
         WIAScanner:=TLocalWIAScanner.Create;
         try
-          WIAScanner.Scan;
-          //todo: upload images to server
+          for CurrentPage := 1 to NumberPages do
+          begin
+            if CurrentPage > 1 then
+            begin
+              ShowMessage('Please put page ' + IntToStr(CurrentPage) + ' in the scanner.');
+            end;
+            WIAScanner.Scan;
+            //todo: upload images to server
+          end;
         except
           on E: Exception do
           begin
@@ -339,34 +342,40 @@ begin
       {$IFDEF WINDOWS}
       'TWAIN':
       begin
-        if CurrentPage > 1 then
-        begin
-          ShowMessage('Please put page ' + IntToStr(CurrentPage) + ' in the scanner.');
-        end;
-
-        if TwainScanner=nil then
+        if not(assigned(TwainScanner)) then
         begin
           TwainScanner:=TDelphiTwain.Create;
           TwainScanner.OnTwainAcquire:=@TwainTwainAcquire;
         end;
-        if TwainScanner.LoadLibrary then
+        if not(TwainScanner.LoadLibrary) then
         begin
-          //Load source manager
-          TwainScanner.SourceManagerLoaded := true;
+          ShowMessage('Error: TWAIN is not installed.');
+          exit;
+        end;
 
-          // Allow user to select source -> only the first time
-          if not Assigned(TwainScanner.SelectedSource) then
-            TwainScanner.SelectSource;
+        //Load source manager
+        TwainScanner.SourceManagerLoaded := true;
 
-          if Assigned(TwainScanner.SelectedSource) then begin
+        // Allow user to select source -> only the first time
+        if not Assigned(TwainScanner.SelectedSource) then
+          TwainScanner.SelectSource;
+
+        if Assigned(TwainScanner.SelectedSource) then begin
+          for CurrentPage := 1 to NumberPages do
+          begin
+            if CurrentPage > 1 then
+            begin
+              ShowMessage('Please put page ' + IntToStr(CurrentPage) + ' in the scanner.');
+            end;
+
             // Load source, select transfer method and enable (display interface)}
             TwainScanner.SelectedSource.Loaded := True;
             TwainScanner.SelectedSource.ShowUI := True;//display interface
             TwainScanner.SelectedSource.Enabled := True;
           end;
-        end
-        else
-          ShowMessage('Error: TWAIN is not installed.');
+        end;
+        if assigned(TwainScanner) then
+          TwainScanner.Free;
       end;
       {$ENDIF}
       else
@@ -374,7 +383,6 @@ begin
         raise Exception.CreateFmt('Unknown scan protocol %s. Please fix your configuration file or update the code.',[FSettings.ScanProtocol]);
       end;
     end;
-  end; //all pages scanned now
 
   try
     RequestResult := HttpRequest(FSettings.CGIURL + 'document/' + IntToStr(DocumentID) + '?processdocument=true', CommJSON, rmPost);
