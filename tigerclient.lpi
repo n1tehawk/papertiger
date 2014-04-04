@@ -75,7 +75,7 @@
         <PackageName Value="LCL"/>
       </Item1>
     </RequiredPackages>
-    <Units Count="5">
+    <Units Count="9">
       <Unit0>
         <Filename Value="tigerclient.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -107,6 +107,25 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="LJGridUtils"/>
       </Unit4>
+      <Unit5>
+        <Filename Value="tigersettings.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="tigersettings"/>
+      </Unit5>
+      <Unit6>
+        <Filename Value="tigercommondefs.inc"/>
+        <IsPartOfProject Value="True"/>
+      </Unit6>
+      <Unit7>
+        <Filename Value="wia.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="wia"/>
+      </Unit7>
+      <Unit8>
+        <Filename Value="wia_1_0_tlb.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="WIA_1_0_TLB"/>
+      </Unit8>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

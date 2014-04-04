@@ -7,7 +7,12 @@ uses
   cthreads,
   {$ENDIF}{$ENDIF}
   Interfaces, // this includes the LCL widgetset
-  Forms, clientmain, httpclient, LJGridUtils, imageformunit;
+  Forms, clientmain, httpclient, LJGridUtils, imageformunit, tigersettings
+  {$IFDEF WINDOWS}
+  ,wia
+  ,WIA_1_0_TLB
+  {$ENDIF}
+  ;
 
 {$R *.res}
 

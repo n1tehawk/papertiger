@@ -31,9 +31,6 @@ uses
   Classes, SysUtils, tigerutil, tigersettings;
 //todo: add support for pascalsane/using libsane instead of wrapping sane command line?
 
-const
-  // todo: use separate settings class
-  SettingsFile = 'tigerserver.ini';
 
 type
   // Colour/color, grayscale and lineart/black & white scan modes
