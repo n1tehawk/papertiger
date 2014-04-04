@@ -56,6 +56,7 @@ var
   Scanner: Device;
   Picture: IItem;
   Image: OleVariant;
+  InVar: OLEVariant;
   AImage: IImageFile;
   ReturnString: string;
 begin
@@ -64,8 +65,9 @@ begin
     showmessage('number of devices: '+inttostr(FDevMgr.DeviceInfos.Count));
     for i:=1 to FDevMgr.DeviceInfos.Count do
     begin
-      // sigsegv happens in line below
-      ReturnString:=utf8encode(FDevMgr.DeviceInfos[POleVariant(i)].Properties[POleVariant('Name')].get_Value);
+      InVar:=i;
+      // sigsegv happens in line below===============================>>>>>>
+      ReturnString:=utf8encode(FDevMgr.DeviceInfos[@InVar].Properties[POleVariant('Name')].get_Value);
       showmessage('Device: '+ReturnString);
       //check for scanner class, not camera etc
       //FDevMgr.DeviceInfos[i].Type=WiaDeviceType.ScannerDeviceType

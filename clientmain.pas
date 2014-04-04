@@ -44,7 +44,7 @@ uses
   {$ENDIF USEMAGICK}
   IntfGraphics, FPimage, LazUTF8
   {$IFDEF WINDOWS}
-  , wia
+  , wia, DelphiTwain_VCL
   {$ENDIF};
 //todo: think about splitting up data access layer so you can e.g. build a CLI client
 
@@ -87,6 +87,11 @@ type
     procedure RefreshDocuments;
     // Shows pdf for relevant document
     procedure ShowPDF(DocumentID: integer);
+    {$IFDEF WINDOWS}
+    // Callback for acquisition
+    procedure TwainTwainAcquire(Sender: TObject; const {%H-}Index: Integer;
+      Image: TBitmap; var Cancel: Boolean);
+    {$ENDIF}
   public
     { public declarations }
   end;
@@ -260,6 +265,7 @@ var
   CommJSON: TJSONData;
   {$IFDEF WINDOWS}
   WIAScanner: TLocalWIAScanner;
+  TwainScanner: TDelphiTwain;
   {$ENDIF}
 begin
   NumberPages := StrToIntDef(NumberPagesControl.Text, 1);
@@ -307,25 +313,66 @@ begin
     else
     begin
       // Local scan
-      if FSettings.ScanProtocol<>'WIA' then
-        raise Exception.Create('Only WIA supported now.');
-      if CurrentPage > 1 then
+      case Uppercase(FSettings.ScanProtocol) of
+      {$IFDEF WINDOWS}
+      'WIA':
       begin
-        ShowMessage('Please put page ' + IntToStr(CurrentPage) + ' in the scanner.');
-      end;
-
-      WIAScanner:=TLocalWIAScanner.Create;
-      try
-        WIAScanner.Scan;
-        //todo: upload images to server
-      except
-        on E: Exception do
+        if CurrentPage > 1 then
         begin
-          ShowMessage('Error while scanning. Technical details: ' + E.Message);
-          exit;
+          ShowMessage('Please put page ' + IntToStr(CurrentPage) + ' in the scanner.');
         end;
+
+        WIAScanner:=TLocalWIAScanner.Create;
+        try
+          WIAScanner.Scan;
+          //todo: upload images to server
+        except
+          on E: Exception do
+          begin
+            ShowMessage('Error while scanning. Technical details: ' + E.Message);
+            exit;
+          end;
+        end;
+        WIAScanner.Free;
       end;
-      WIAScanner.Free;
+      {$ENDIF}
+      {$IFDEF WINDOWS}
+      'TWAIN':
+      begin
+        if CurrentPage > 1 then
+        begin
+          ShowMessage('Please put page ' + IntToStr(CurrentPage) + ' in the scanner.');
+        end;
+
+        if TwainScanner=nil then
+        begin
+          TwainScanner:=TDelphiTwain.Create;
+          TwainScanner.OnTwainAcquire:=@TwainTwainAcquire;
+        end;
+        if TwainScanner.LoadLibrary then
+        begin
+          //Load source manager
+          TwainScanner.SourceManagerLoaded := true;
+
+          // Allow user to select source -> only the first time
+          if not Assigned(TwainScanner.SelectedSource) then
+            TwainScanner.SelectSource;
+
+          if Assigned(TwainScanner.SelectedSource) then begin
+            // Load source, select transfer method and enable (display interface)}
+            TwainScanner.SelectedSource.Loaded := True;
+            TwainScanner.SelectedSource.ShowUI := True;//display interface
+            TwainScanner.SelectedSource.Enabled := True;
+          end;
+        end
+        else
+          ShowMessage('Error: TWAIN is not installed.');
+      end;
+      {$ENDIF}
+      else
+        // todo: support local SANE
+        raise Exception.CreateFmt('Unknown scan protocol %s. Please fix your configuration file or update the code.',[FSettings.ScanProtocol]);
+      end;
     end;
   end; //all pages scanned now
 
@@ -445,10 +492,13 @@ begin
   begin
     CommJSON := TJSONObject.Create;
     try
+      // Upload image as form data
+      //todo: add form encoded data here e.g.
+      //FileFormPost
       RequestResult := HttpRequestWithData(CommJSON, FSettings.CGIURL + 'image/', rmPost);
       if RequestResult.Code <> 200 then
       begin
-        ShowMessage('Error getting document list from server. HTTP result code: ' + IntToStr(RequestResult.Code) + '/' + RequestResult.Text);
+        ShowMessageFmt('Error adding image to document %d. HTTP result code: %d/%s',[DocumentID,RequestResult.Code,RequestResult.Text]);
         exit;
       end
       else
@@ -531,6 +581,13 @@ begin
     PDFStream.Free;
     VData.Free;
   end;
+end;
+
+procedure TForm1.TwainTwainAcquire(Sender: TObject; const Index: Integer;
+  Image: TBitmap; var Cancel: Boolean);
+begin
+  Image.SaveToFile('twainimage.bmp'); //todo: adjust for multipage, format etc
+  Cancel:=true; //only want 1 image!??
 end;
 
 procedure TForm1.FormCreate(Sender: TObject);
