@@ -16,6 +16,7 @@ type
 
   TRequestMethod = (rmGet, rmHead, rmOptions, rmPost, rmPut, rmDelete);
 
+  //todo: add timeout support
   // Perform a POST with JSON data and a file in multipart/form data. Return response in Response
 function FileFormPostWithDataStream(const AData: TJSONData; const AURL, AFieldName: String;
   AFile: TStream; const AFileName: string): THttpResult;
