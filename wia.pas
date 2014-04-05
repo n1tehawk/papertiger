@@ -52,28 +52,62 @@ procedure TLocalWIAScanner.Scan;
 // Adapted from
 // http://stackoverflow.com/questions/721948/delphi-twain-issue-help
 var
-  i:integer;
+  Found:boolean;
+  DevNo:integer;
   Scanner: Device;
   Picture: IItem;
   Image: OleVariant;
   InVar: OLEVariant;
+  StringVar: OleVariant;
+  OutVar: OLEVariant;
   AImage: IImageFile;
-  ReturnString: string;
+  ReturnString: widestring;
 begin
   try
     // List of devices is a 1 based array
     showmessage('number of devices: '+inttostr(FDevMgr.DeviceInfos.Count));
-    for i:=1 to FDevMgr.DeviceInfos.Count do
+    Found:=false;
+    for DevNo:=1 to FDevMgr.DeviceInfos.Count do
     begin
-      InVar:=i;
-      // sigsegv happens in line below===============================>>>>>>
-      ReturnString:=utf8encode(FDevMgr.DeviceInfos[@InVar].Properties[POleVariant('Name')].get_Value);
-      showmessage('Device: '+ReturnString);
-      //check for scanner class, not camera etc
-      //FDevMgr.DeviceInfos[i].Type=WiaDeviceType.ScannerDeviceType
+      InVar:=DevNo;
+      // Only check scanners (ignore cameras etc)
+      StringVar:='Type';
+      OutVar:=FDevMgr.DeviceInfos[@InVar].Properties[@StringVar].get_Value;
+      // Apparently need to force result to 4 bytes to compare to constant:
+      if word(OutVar)=ScannerDeviceType then
+      begin
+        StringVar:='Name';
+        if FDevMgr.DeviceInfos[@InVar].Properties.Exists(StringVar) then
+        begin
+          ReturnString:=FDevMgr.DeviceInfos[@InVar].Properties[@StringVar].get_Value;
+          showmessage('Device: '+utf8encode(ReturnString));
+          Found:=true;
+          break;
+        end
+        else
+        begin
+          ShowMessage('Name property does not exist. Aborting.');
+          exit;
+        end;
+      end
+      else
+      begin
+        showmessage('found a device but it is not a scanner');
+        OutVar:=FDevMgr.DeviceInfos[@InVar].Properties[@StringVar].get_Value;
+        showmessage('got device type '+utf8encode(OutVar));
+      end;
     end;
-    // This takes the first device. Todo: Figure out first scanner (adapt code above)
-    Scanner:=FDevMgr.DeviceInfos.Item[POleVariant(1)].Connect;
+
+    if not(Found) then
+    begin
+      ShowMessage('No compatible scanner found. Aborting.');
+      exit;
+    end;
+
+    //=========< code works until here - will need to fix stuff below >==============
+    // Connect to detected scanner
+    InVar:=DevNo;
+    Scanner:=FDevMgr.DeviceInfos.Item[@DevNo].Connect;
     // to do: figure out which command scans
     //reference: wia item property constants - grayscale deskew etc
     //http://msdn.microsoft.com/en-us/library/ms630196%28v=VS.85%29
