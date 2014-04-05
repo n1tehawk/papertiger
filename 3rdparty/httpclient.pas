@@ -49,19 +49,12 @@ var
   S, Sep : string;
   SS : TStringStream;
   F : TFileStream;
+  VData: TMemoryStream; //result
 begin
   VHttp := TFPHTTPClient.Create(nil);
+  VData := TMemoryStream.Create;
   try
     VHttp.RequestHeaders.Add('Connection: Close');
-    if Assigned(AData) then
-    begin
-      VHttp.RequestBody := TMemoryStream.Create;
-      VJSON := AData.AsJSON;
-      VHttp.RequestBody.Write(Pointer(VJSON)^, Length(VJSON));
-      VHttp.RequestBody.Position := 0;
-    end;
-    // JSON part
-
     // File part
     Sep:=Format('%.8x_multipart_boundary',[Random($ffffff)]);
     VHTTP.AddHeader('Content-Type','multipart/form-data; boundary='+Sep);
@@ -69,7 +62,7 @@ begin
     s:=s+Format('Content-Disposition: form-data; name="%s"; filename="%s"'+CRLF,
       [AFieldName,ExtractFileName(AFileName)]);
     s:=s+'Content-Type: application/octet-string'+CRLF+CRLF;
-    // Start with Content-Type...
+    // Start with form-data filename
     SS:=TStringStream.Create(s);
     try
       // then add file part...
@@ -78,18 +71,30 @@ begin
       // ... then separator
       S:=CRLF+'--'+Sep+'--'+CRLF;
       SS.WriteBuffer(S[1],Length(S));
-      //todo: then add json object
+      if Assigned(AData) then
+      begin
+        // Add JSON part
+        Sep:=Format('%.8x_multipart_boundary',[Random($ffffff)]);
+        S:='--'+Sep+CRLF;
+        s:=s+'Content-Disposition: form-data; name="JSON"'+CRLF;
+        s:=s+'Content-Type: application/json'+CRLF+CRLF;
+        SS.Seek(0,soFromEnd);
+        SS.WriteBuffer(s[1],Length(S));
+        SS.WriteBuffer(AData.AsJson,Length(AData.AsJSON));
+        S:=CRLF+'--'+Sep+'--'+CRLF;
+        SS.WriteBuffer(S[1],Length(S));
+      end;
       SS.Position:=0;
       VHttp.RequestBody:=SS;
-      VHttp.HTTPMethod(VMethod, AUrl, nil, []);
+      VHttp.HTTPMethod(VMethod, AUrl, VData, []);
+      //todo: possibly parse json response
       Result.Code := VHttp.ResponseStatusCode;
       Result.Text := VHttp.ResponseStatusText;
     finally
       SS.Free;
+      VData.Free;
     end;
   finally
-    VHttp.RequestBody.Free;
-    VHttp.RequestBody := nil;
     VHttp.Free;
   end;
 end;
