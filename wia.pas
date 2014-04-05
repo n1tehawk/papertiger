@@ -48,24 +48,36 @@ implementation
 
 { TLocalWIAScanner }
 
+const
+  wiaCommandTakePicture: widestring = '{AF933CAC-ACAD-11D2-A093-00C04F72DC3C}'; //CommandID for Take Picture. Causes a WIA device to acquire an image.
+//  http://msdn.microsoft.com/en-us/library/windows/desktop/ms630829%28v=vs.85%29.aspx
+  wiaFormatBMP: widestring = '{B96B3CAB-0728-11D3-9D7B-0000F81EF32E}';
+  wiaFormatPNG: widestring = '{B96B3CAF-0728-11D3-9D7B-0000F81EF32E}';
+  wiaFormatGIF: widestring = '{B96B3CB0-0728-11D3-9D7B-0000F81EF32E}';
+  wiaFormatJPEG: widestring = '{B96B3CAE-0728-11D3-9D7B-0000F81EF32E}';
+  wiaFormatTIFF: widestring = '{B96B3CB1-0728-11D3-9D7B-0000F81EF32E}';
+
 procedure TLocalWIAScanner.Scan;
 // Adapted from
 // http://stackoverflow.com/questions/721948/delphi-twain-issue-help
 var
   Found:boolean;
   DevNo:integer;
+  AcquireDialog: ICommonDialog;
   Scanner: Device;
   Picture: IItem;
   Image: OleVariant;
-  InVar: OLEVariant;
+  InVar: OleVariant; //temp var used for passing values
   StringVar: OleVariant;
-  OutVar: OLEVariant;
+  OutVar: OLEVariant; //temp var used for passing values
   AImage: IImageFile;
   ReturnString: widestring;
 begin
+  //todo: remove showmessage and laz dependency after this is debugged
+  //todo: allow specifying specific scanner device name
   try
     // List of devices is a 1 based array
-    showmessage('number of devices: '+inttostr(FDevMgr.DeviceInfos.Count));
+    //showmessage('number of devices: '+inttostr(FDevMgr.DeviceInfos.Count));
     Found:=false;
     for DevNo:=1 to FDevMgr.DeviceInfos.Count do
     begin
@@ -80,7 +92,7 @@ begin
         if FDevMgr.DeviceInfos[@InVar].Properties.Exists(StringVar) then
         begin
           ReturnString:=FDevMgr.DeviceInfos[@InVar].Properties[@StringVar].get_Value;
-          showmessage('Device: '+utf8encode(ReturnString));
+          //showmessage('Device: '+utf8encode(ReturnString));
           Found:=true;
           break;
         end
@@ -92,7 +104,7 @@ begin
       end
       else
       begin
-        showmessage('found a device but it is not a scanner');
+        showmessage('Found a device but it is not a scanner');
         OutVar:=FDevMgr.DeviceInfos[@InVar].Properties[@StringVar].get_Value;
         showmessage('got device type '+utf8encode(OutVar));
       end;
@@ -104,20 +116,24 @@ begin
       exit;
     end;
 
-    //=========< code works until here - will need to fix stuff below >==============
     // Connect to detected scanner
     InVar:=DevNo;
-    Scanner:=FDevMgr.DeviceInfos.Item[@DevNo].Connect;
-    // to do: figure out which command scans
-    //reference: wia item property constants - grayscale deskew etc
+    Scanner:=FDevMgr.DeviceInfos.Item[@InVar].Connect;
+    //=========< code works until here - will need to fix stuff below >==============
+    // commands:
+    //http://msdn.microsoft.com/en-us/library/ms630185%28v=vs.85%29.aspx
+    // picture for cameras only?
+    //Picture := Scanner.ExecuteCommand(wiaCommandTakePicture);
+    //todo: add scan selection dialog:
+    {lDialog.ShowAcquireImage(WIA_TLB.ScannerDeviceType,WIA_TLB.GrayscaleIntent,WIA_TLB.MinimizeSize,
+           jpegFormat,false,false,false);}
+    //create dialog!??!
+    //AcquireDialog:=Show;
+    //property reference: wia item property constants - grayscale deskew etc
     //http://msdn.microsoft.com/en-us/library/ms630196%28v=VS.85%29
-    Picture := Scanner.ExecuteCommand(Scanner.Commands.Item[1].CommandID);
-    { todo: add scan selection dialog:
-    lDialog.ShowAcquireImage(WIA_TLB.ScannerDeviceType,WIA_TLB.GrayscaleIntent,WIA_TLB.MinimizeSize,
-           jpegFormat,false,false,false);
-    }
+
     //Transfer as JPG if scanner supports it. todo: change to bmp or tiff
-    Image := Picture.Transfer(Picture.Formats.Item[1]);
+    Image := Picture.Transfer(Picture.Formats.Item[LongInt(1)]);
     { todo: image may need to be converted to bmp/tiff
     http://msdn.microsoft.com/en-us/library/ms630826%28v=VS.85%29.aspx#SharedSample002
     }
@@ -134,7 +150,7 @@ begin
     //to do: debug
     on E: Exception do
     begin
-      writeln(stderr,'Error scanning locally: '+E.Message);
+      ShowMessage('Error scanning locally: '+E.Message);
     end;
   end;
 
