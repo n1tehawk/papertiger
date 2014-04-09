@@ -248,7 +248,7 @@ begin
   if not (IsValidRequest) then
   begin
     TigerLog.WriteLog(etWarning, 'Image module: invalid request; got stripped path: ' +
-      StrippedPath + ' with method ' + ARequest.Method);
+      StrippedPath + ' with method: ' + ARequest.Method);
     if ARequest.QueryString <> '' then
       TigerLog.WriteLog(etWarning, 'Image module: invalid request; got query: ' +
         ARequest.QueryString);
