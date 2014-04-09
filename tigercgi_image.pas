@@ -170,7 +170,7 @@ begin
               // error occurred, e.g. we have regular HTML instead of JSON
               on E: Exception do
               begin
-                TigerLog.WriteLog('Image get: got JSON: '+ARequest.Content+' but error parsing/processing.');
+                TigerLog.WriteLog('Image get: got JSON: '+ARequest.Content+' but error parsing/processing: '+E.Message);
                 IsValidRequest:=false;
               end;
             end;
