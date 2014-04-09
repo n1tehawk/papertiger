@@ -64,7 +64,7 @@ fpc tigerserver.lpr
 
 Installation instructions
 =========================
-- prerequisites: Linux (virtual) machine. Windows support may come later.
+- prerequisites: Linux/*nix (virtual) machine. Windows support may come later.
 - prerequisites: have sane installed and configured for your scanner. E.g.:
   aptitude install sane-utils
 - prerequisites: have tesseract installed and configured. E.g.:
