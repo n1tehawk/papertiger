@@ -414,7 +414,7 @@ procedure TForm1.ShowImageButtonClick(Sender: TObject);
 var
   DocumentID, ImageOrder: integer;
   RequestResult: THTTPResult;
-  TIFFStream: TMemoryStream;
+  ResponseStream: TMemoryStream;
   VData: TJSONData;
 begin
   // Check for selected document
@@ -425,31 +425,33 @@ begin
   end;
 
   VData := TJSONObject.Create;
-  TIFFStream := TMemoryStream.Create;
+  ResponseStream := TMemoryStream.Create;
   try
+    DocumentID := StrToInt(DocumentsGrid.Cells[0, DocumentsGrid.Row]);
     ImageOrder := 1; //todo: add support for multi tiff images, e.g. using next/previous button & capturing errors
     (VData as TJSONObject).Add('documentid', DocumentID);
     (VData as TJSONObject).Add('imageorder', ImageOrder); //sort order number
-    // Post a request to get the image ID
-    RequestResult := HttpRequestWithDataStream(VData, FSettings.CGIURL + 'image', TIFFStream, rmGet);
+    // Get a request to get the image ID
+    RequestResult := HttpRequestWithDataStream(VData, FSettings.CGIURL + 'image', ResponseStream, rmGet);
     if RequestResult.Code <> 200 then
     begin
       ShowMessage('Error getting image from server. HTTP result code: ' + IntToStr(RequestResult.Code) + '/' + RequestResult.Text);
       exit;
     end;
+    //todo: now we've got image id, get the associated image
     imageform.Hide;
-    if TIFFStream.Size = 0 then
+    if ResponseStream.Size = 0 then
     begin
       ShowMessage('Got an empty image from server.');
       exit;
     end
     else
     begin
-      TIFFStream.Position := 0;
+      ResponseStream.Position := 0;
       try
         {$IF FPC_FULLVERSION>=20701}
         // 1 bit tiff support has been added.
-        Imageform.ScanImage.Picture.LoadFromStreamWithFileExt(TIFFStream, '.tif');
+        Imageform.ScanImage.Picture.LoadFromStreamWithFileExt(ResponseStream, '.tif');
         {$ELSE}
         // Convert to a viewable bitmap with our modified FPC tiff routines supporting black & white tiff
         Imageform.ScanImage.Picture.LoadFromStreamWithFileExt(TIFFStream, '.tiffcustom1bit');
@@ -464,7 +466,7 @@ begin
     end;
   finally
     VData.Free;
-    TIFFStream.Free;
+    ResponseStream.Free;
   end;
 end;
 

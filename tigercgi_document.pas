@@ -156,8 +156,8 @@ begin
               // document name, pdf path, scandate, document hash
               OutputJSON.Add('documentid', DocumentID);
               //todo: add doc details
-              // list of images: image order, path, imagehash
-              FTigerCore.ListImages(DocumentID, DocumentArray);
+              // list of all images for document: image order, path, imagehash
+              FTigerCore.ListImages(DocumentID, InvalidID, DocumentArray);
               OutputJSON.Add('imagedetails', DocumentArray);
               AResponse.ContentType := 'application/json';
               AResponse.Contents.Add(OutputJSON.AsJSON);

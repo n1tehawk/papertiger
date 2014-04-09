@@ -158,7 +158,7 @@ begin
                 Tigerlog.writelog('image get debug: got document id: '+inttostr(documentid));
                 Tigerlog.writelog('image get debug: got imageorder id: '+inttostr(imageorder));
                 Tigerlog.writelog('image get debug: got imagearray: '+ImageArray.AsJSON);
-                FTigerCore.ListImages(DocumentID, ImageArray);
+                FTigerCore.ListImages(DocumentID, ImageOrder, ImageArray);
                 AResponse.ContentType := 'application/json';
                 AResponse.Contents.Add(ImageArray.AsJSON);
               except
@@ -191,7 +191,7 @@ begin
           DocumentID:=InvalidID;
           ImageArray := TJSONArray.Create();
           try
-            FTigerCore.ListImages(DocumentID, ImageArray);
+            FTigerCore.ListImages(DocumentID, InvalidID, ImageArray);
             AResponse.ContentType := 'application/json';
             AResponse.Contents.Add(ImageArray.AsJSON);
           except

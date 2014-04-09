@@ -139,8 +139,9 @@ type
     // Lists document specified by DocumentID or all documents (if DocumentID is INVALIDID)
     procedure ListDocuments(DocumentID: integer; var DocumentsArray: TJSONArray);
     // List images specified DocumentID or all images (if DocumentID is INVALIDID).
+    // Lists specified image for documentid if valid imageorder given; all images if ImageOrder=INVALIDID
     // Image path contains full path+file name.
-    procedure ListImages(DocumentID: integer; var ImagesArray: TJSONArray);
+    procedure ListImages(DocumentID, ImageOrder: integer; var ImagesArray: TJSONArray);
     // Process (set of) existing (TIFF) image(s); should be named <image>.tif
     // Images are specified using the Images property
     // Specify resolution override to indicate image resolution to hocr2pdf
@@ -347,7 +348,7 @@ begin
 
   //Get any images belonging to document, delete from fs/db
   ImagesArray := TJSONArray.Create;
-  ListImages(DocumentID, ImagesArray);
+  ListImages(DocumentID, InvalidID, ImagesArray);
   // Empty (list of) images is no problem here; just don't delete them
   if ImagesArray.Count > 0 then
   begin
@@ -418,7 +419,7 @@ begin
 
   //Get any images belonging to document, delete from fs/db
   ImagesArray := TJSONArray.Create;
-  ListImages(InvalidID, ImagesArray);
+  ListImages(InvalidID, InvalidID, ImagesArray);
   // Empty (list of) images is no problem here; just don't delete them
   if ImagesArray.Count > 0 then
   begin
@@ -528,9 +529,9 @@ begin
   FTigerDB.ListDocuments(DocumentID, DocumentsArray);
 end;
 
-procedure TTigerServerCore.ListImages(DocumentID: integer; var ImagesArray: TJSONArray);
+procedure TTigerServerCore.ListImages(DocumentID, ImageOrder: integer; var ImagesArray: TJSONArray);
 begin
-  FTigerDB.ListImages(DocumentID, ImagesArray);
+  FTigerDB.ListImages(DocumentID, ImageOrder, ImagesArray);
 end;
 
 function TTigerServerCore.ProcessImages(DocumentID: integer; Resolution: integer): string;
@@ -563,7 +564,7 @@ begin
   end;
 
   // Get images belonging to document
-  FTigerDB.ListImages(DocumentID, ImagesArray);
+  FTigerDB.ListImages(DocumentID, InvalidID, ImagesArray);
   for i := 0 to ImagesArray.Count - 1 do
   begin
     if (ImagesArray.Items[i].JSONType = jtObject) then
