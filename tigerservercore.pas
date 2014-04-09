@@ -137,11 +137,11 @@ type
     // Get PDF identified by DocumentID
     function GetPDF(DocumentID: integer; const ImageStream: TStream): boolean;
     // Lists document specified by DocumentID or all documents (if DocumentID is INVALIDID)
-    procedure ListDocuments(DocumentID: integer; var DocumentsArray: TJSONArray);
+    procedure ListDocuments(const DocumentID: integer; var DocumentsArray: TJSONArray);
     // List images specified DocumentID or all images (if DocumentID is INVALIDID).
     // Lists specified image for documentid if valid imageorder given; all images if ImageOrder=INVALIDID
     // Image path contains full path+file name.
-    procedure ListImages(DocumentID, ImageOrder: integer; var ImagesArray: TJSONArray);
+    procedure ListImages(const DocumentID, ImageOrder: integer; var ImagesArray: TJSONArray);
     // Process (set of) existing (TIFF) image(s); should be named <image>.tif
     // Images are specified using the Images property
     // Specify resolution override to indicate image resolution to hocr2pdf
@@ -524,12 +524,12 @@ begin
   end;
 end;
 
-procedure TTigerServerCore.ListDocuments(DocumentID: integer; var DocumentsArray: TJSONArray);
+procedure TTigerServerCore.ListDocuments(const DocumentID: integer; var DocumentsArray: TJSONArray);
 begin
   FTigerDB.ListDocuments(DocumentID, DocumentsArray);
 end;
 
-procedure TTigerServerCore.ListImages(DocumentID, ImageOrder: integer; var ImagesArray: TJSONArray);
+procedure TTigerServerCore.ListImages(const DocumentID, ImageOrder: integer; var ImagesArray: TJSONArray);
 begin
   FTigerDB.ListImages(DocumentID, ImageOrder, ImagesArray);
 end;
