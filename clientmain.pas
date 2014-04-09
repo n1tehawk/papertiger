@@ -377,9 +377,13 @@ begin
         end;
       end;
       {$ENDIF}
-      else
+      'SANE':
       begin
         // todo: support local SANE
+        raise Exception.CreateFmt('No support for scan protocol %s yet. Please fix the code.',[FSettings.ScanProtocol]);
+      end
+      else
+      begin
         raise Exception.CreateFmt('Unknown scan protocol %s. Please fix your configuration file or update the code.',[FSettings.ScanProtocol]);
       end;
     end;
