@@ -85,8 +85,10 @@ type
     function InsertImage(const DocumentID, Imageorder: integer; const Path, ImageHash: string): integer;
     // Lists document with DocumentID or all documents if DocumentID=INVALIDID
     procedure ListDocuments(const DocumentID: integer; var DocumentsArray: TJSONArray);
-    // List images with DocumentID or all images if DocumentID=INVALIDID. Path has full path and image filename.
-    procedure ListImages(const DocumentID: integer; var ImagesArray: TJSONArray);
+    // List images with DocumentID or all images if DocumentID=INVALIDID.
+    // Will return specified image if ImageOrder given or all images for a document if ImageOrder=INVALIDID
+    // Path has full path and image filename.
+    procedure ListImages(const DocumentID, ImageOrder: integer; var ImagesArray: TJSONArray);
     // Purge database of image/document records without existing files
     function Purge: boolean;
     // Sets path+filename for PDF associated with document. Returns result.
@@ -394,7 +396,7 @@ begin
   end;
 end;
 
-procedure TTigerDB.ListImages(const DocumentID: integer; var ImagesArray: TJSONArray);
+procedure TTigerDB.ListImages(const DocumentID, ImageOrder: integer; var ImagesArray: TJSONArray);
 // Will return an array containing objects/records for each image
 var
   RecordObject: TJSONObject;
@@ -409,10 +411,16 @@ begin
       FReadQuery.SQL.Text :=
         'SELECT ID,IMAGEORDER,DOCUMENTID,PATH,IMAGEHASH FROM IMAGES ORDER BY DOCUMENTID,IMAGEORDER '
     else
-      // Specified document; no need for parameterized queries: one time only, integer
-      FReadQuery.SQL.Text :=
-        'SELECT ID,IMAGEORDER,DOCUMENTID,PATH,IMAGEHASH FROM IMAGES WHERE DOCUMENTID=' + IntToStr(DocumentID) +
-        ' ORDER BY IMAGEORDER ';
+      if ImageOrder = INVALIDID then
+        // All images for document; no need for parameterized queries: one time only, integer
+        FReadQuery.SQL.Text :=
+          'SELECT ID,IMAGEORDER,DOCUMENTID,PATH,IMAGEHASH FROM IMAGES WHERE DOCUMENTID=' + IntToStr(DocumentID) +
+          ' ORDER BY IMAGEORDER '
+      else
+        // Specified image; no need for parameterized queries: one time only, integer
+        FReadQuery.SQL.Text :=
+          'SELECT ID,IMAGEORDER,DOCUMENTID,PATH,IMAGEHASH FROM IMAGES WHERE DOCUMENTID=' + IntToStr(DocumentID) +
+            ' AND IMAGEORDER = ' + IntToStr(ImageOrder);
     FReadQuery.Open;
     while not FReadQuery.EOF do
     begin
