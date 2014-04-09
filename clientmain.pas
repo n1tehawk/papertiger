@@ -439,6 +439,7 @@ begin
       exit;
     end;
     //todo: now we've got image id, get the associated image
+    do the above
     imageform.Hide;
     if ResponseStream.Size = 0 then
     begin
