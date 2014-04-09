@@ -146,19 +146,19 @@ begin
             try
               InputJSON := TJSONObject(VParser.Parse);
               if (InputJSON.Find('documentid',jtNumber)<>nil) then
-                DocumentID:=InputJSON.Integers['documentid'];
+                DocumentID := InputJSON.Integers['documentid'];
               if (InputJSON.Find('imageorder',jtNumber)<>nil) then
-                ImageOrder:=InputJSON.Integers['imageorder']
-              else //take first one
-                ImageOrder:=1;
+                ImageOrder := InputJSON.Integers['imageorder']
+              else //take first one - or perhaps should have taken all using invalidid?
+                ImageOrder := 1;
               IsValidRequest:=true;
               ImageArray := TJSONArray.Create();
               try
                 //todo: debug
                 Tigerlog.writelog('image get debug: got document id: '+inttostr(documentid));
                 Tigerlog.writelog('image get debug: got imageorder id: '+inttostr(imageorder));
-                Tigerlog.writelog('image get debug: got imagearray: '+ImageArray.AsJSON);
                 FTigerCore.ListImages(DocumentID, ImageOrder, ImageArray);
+                Tigerlog.writelog('image get debug: got imagearray: '+ImageArray.AsJSON);
                 AResponse.ContentType := 'application/json';
                 AResponse.Contents.Add(ImageArray.AsJSON);
               except
