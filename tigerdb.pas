@@ -440,14 +440,14 @@ begin
     begin
       ImagesArray.Clear;
       ImagesArray.Add(TJSONString.Create('ListImages: db exception: ' + E.Message));
-      TigerLog.WriteLog(etError, 'ListDocuments: db exception: ' + E.Message);
+      TigerLog.WriteLog(etError, 'ListImages: db exception: ' + E.Message);
       FReadTransaction.RollBack;
     end;
     on F: Exception do
     begin
       ImagesArray.Clear;
       ImagesArray.Add(TJSONString.Create('ListImages: exception: message ' + F.Message));
-      TigerLog.WriteLog(etError, 'ListDocuments: exception: ' + F.Message);
+      TigerLog.WriteLog(etError, 'ListImages: exception: ' + F.Message);
     end;
   end;
 end;
