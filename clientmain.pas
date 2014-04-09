@@ -430,7 +430,7 @@ begin
     ImageOrder := 1; //todo: add support for multi tiff images, e.g. using next/previous button & capturing errors
     (VData as TJSONObject).Add('documentid', DocumentID);
     (VData as TJSONObject).Add('imageorder', ImageOrder); //sort order number
-    //post a request to show the image
+    // Post a request to get the image ID
     RequestResult := HttpRequestWithDataStream(VData, FSettings.CGIURL + 'image', TIFFStream, rmGet);
     if RequestResult.Code <> 200 then
     begin
@@ -449,7 +449,7 @@ begin
       try
         {$IF FPC_FULLVERSION>=20701}
         // 1 bit tiff support has been added.
-        Imageform.ScanImage.Picture.LoadFromStreamWithFileExt(TIFFStream, '.tiff');
+        Imageform.ScanImage.Picture.LoadFromStreamWithFileExt(TIFFStream, '.tif');
         {$ELSE}
         // Convert to a viewable bitmap with our modified FPC tiff routines supporting black & white tiff
         Imageform.ScanImage.Picture.LoadFromStreamWithFileExt(TIFFStream, '.tiffcustom1bit');
