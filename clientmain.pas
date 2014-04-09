@@ -600,12 +600,14 @@ begin
   end;
 end;
 
+{$IFDEF WINDOWS}
 procedure TForm1.TwainTwainAcquire(Sender: TObject; const Index: Integer;
   Image: TBitmap; var Cancel: Boolean);
 begin
   Image.SaveToFile('twainimage.bmp'); //todo: adjust for multipage, format etc
   Cancel:=true; //only want 1 image!??
 end;
+{$ENDIF}
 
 procedure TForm1.FormCreate(Sender: TObject);
 begin
