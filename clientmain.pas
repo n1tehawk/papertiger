@@ -447,8 +447,13 @@ begin
     begin
       TIFFStream.Position := 0;
       try
+        {$IF FPC_FULLVERSION>=20701}
+        // 1 bit tiff support has been added.
+        Imageform.ScanImage.Picture.LoadFromStreamWithFileExt(TIFFStream, '.tiff');
+        {$ELSE}
         // Convert to a viewable bitmap with our modified FPC tiff routines supporting black & white tiff
         Imageform.ScanImage.Picture.LoadFromStreamWithFileExt(TIFFStream, '.tiffcustom1bit');
+        {$ENDIF}
         ImageForm.Show;
       except
         on E: Exception do

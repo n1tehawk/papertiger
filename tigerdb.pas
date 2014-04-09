@@ -86,7 +86,7 @@ type
     // Lists document with DocumentID or all documents if DocumentID=INVALIDID
     procedure ListDocuments(const DocumentID: integer; var DocumentsArray: TJSONArray);
     // List images with DocumentID or all images if DocumentID=INVALIDID. Path has full path and image filename.
-    procedure ListImages(const DocumentID: integer; var DocumentsArray: TJSONArray);
+    procedure ListImages(const DocumentID: integer; var ImagesArray: TJSONArray);
     // Purge database of image/document records without existing files
     function Purge: boolean;
     // Sets path+filename for PDF associated with document. Returns result.
@@ -394,13 +394,13 @@ begin
   end;
 end;
 
-procedure TTigerDB.ListImages(const DocumentID: integer; var DocumentsArray: TJSONArray);
+procedure TTigerDB.ListImages(const DocumentID: integer; var ImagesArray: TJSONArray);
 // Will return an array containing objects/records for each image
 var
   RecordObject: TJSONObject;
 begin
   //todo: convert to generic db query => json array function
-  DocumentsArray := TJSONArray.Create; //clears any existing data at the same time
+  ImagesArray := TJSONArray.Create; //clears any existing data at the same time
   if FReadTransaction.Active = false then
     FReadTransaction.StartTransaction;
   try
@@ -422,7 +422,7 @@ begin
       RecordObject.Add('documentid', FReadQuery.FieldByName('DOCUMENTID').AsInteger);
       RecordObject.Add('path', FReadQuery.FieldByName('PATH').AsString);
       RecordObject.Add('imagehash', FReadQuery.FieldByName('IMAGEHASH').AsString);
-      DocumentsArray.Add(RecordObject);
+      ImagesArray.Add(RecordObject);
       FReadQuery.Next;
     end;
     FReadQuery.Close;
@@ -430,15 +430,15 @@ begin
   except
     on E: EDatabaseError do
     begin
-      DocumentsArray.Clear;
-      DocumentsArray.Add(TJSONString.Create('ListImages: db exception: ' + E.Message));
+      ImagesArray.Clear;
+      ImagesArray.Add(TJSONString.Create('ListImages: db exception: ' + E.Message));
       TigerLog.WriteLog(etError, 'ListDocuments: db exception: ' + E.Message);
       FReadTransaction.RollBack;
     end;
     on F: Exception do
     begin
-      DocumentsArray.Clear;
-      DocumentsArray.Add(TJSONString.Create('ListImages: exception: message ' + F.Message));
+      ImagesArray.Clear;
+      ImagesArray.Add(TJSONString.Create('ListImages: exception: message ' + F.Message));
       TigerLog.WriteLog(etError, 'ListDocuments: exception: ' + F.Message);
     end;
   end;
