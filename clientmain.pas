@@ -574,8 +574,13 @@ begin
   PDFStream := TMemoryStream.Create;
   VData:=TJSONString.Create(''); //dummy value
   try
-    // post a request to get the PDF
-    RequestResult:=HttpRequest(FSettings.CGIURL + 'document/' + IntToStr(DocumentID) + '/pdf', VData, rmGet);
+    // post a request to get the PDF; expect an application/pdf result
+    RequestResult:=HttpRequestWithDataStream(VData,
+    FSettings.CGIURL + 'document/' +
+      IntToStr(DocumentID) + '/pdf',
+      PDFStream,
+      rmGet,
+      '');
     if RequestResult.Code <> 200 then
     begin
       ShowMessage('Error getting PDF from server. HTTP result code: ' + IntToStr(RequestResult.Code) + '/' + RequestResult.Text);
