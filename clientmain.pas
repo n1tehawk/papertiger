@@ -378,10 +378,12 @@ begin
       end;
       {$ENDIF}
       else
+      begin
         // todo: support local SANE
         raise Exception.CreateFmt('Unknown scan protocol %s. Please fix your configuration file or update the code.',[FSettings.ScanProtocol]);
       end;
     end;
+  end;
 
   try
     RequestResult := HttpRequest(FSettings.CGIURL + 'document/' + IntToStr(DocumentID) + '?processdocument=true', CommJSON, rmPost);
