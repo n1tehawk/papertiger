@@ -154,6 +154,10 @@ begin
               IsValidRequest:=true;
               ImageArray := TJSONArray.Create();
               try
+                //todo: debug
+                Tigerlog.writelog('image get debug: got document id: '+inttostr(documentid));
+                Tigerlog.writelog('image get debug: got imageorder id: '+inttostr(imageorder));
+                Tigerlog.writelog('image get debug: got imagearray: '+ImageArray.AsJSON);
                 FTigerCore.ListImages(DocumentID, ImageArray);
                 AResponse.ContentType := 'application/json';
                 AResponse.Contents.Add(ImageArray.AsJSON);
@@ -289,6 +293,7 @@ begin
           end;
         end;
       end;
+      // Still in POST...
       if IsValidRequest then
       begin
         AResponse.ContentType := 'application/json';
