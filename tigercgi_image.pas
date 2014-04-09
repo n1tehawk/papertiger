@@ -148,7 +148,7 @@ begin
               if (InputJSON.Find('documentid',jtNumber)<>nil) then
                 DocumentID:=InputJSON.Integers['documentid'];
               if (InputJSON.Find('imageorder',jtNumber)<>nil) then
-                ImageOrder:=InputJSON.Integers['imaageorder']
+                ImageOrder:=InputJSON.Integers['imageorder']
               else //take first one
                 ImageOrder:=1;
               IsValidRequest:=true;
