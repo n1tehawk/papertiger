@@ -73,6 +73,7 @@ procedure TFPWebimage.DataModuleRequest(Sender: TObject; ARequest: TRequest;
 Handled URLs/methods:
 DELETE http://server/cgi-bin/tigercgi/image/               //delete all images?!?!
 GET    http://server/cgi-bin/tigercgi/image/               //list of images
+GET    http://server/cgi-bin/tigercgi/image/ with documentid, imageorder in JSON: get imageID of requested image
 GET    http://server/cgi-bin/tigercgi/image/304            // get specific image
 POST   http://server/cgi-bin/tigercgi/image?documentid=55  // let server scan new image, return imageid
 POST   http://server/cgi-bin/tigercgi/image?documentid=55  // with image posted as form data: upload image, return imageid
@@ -81,12 +82,16 @@ GET    http://server/cgi-bin/tigercgi/image/304            //get image with id 3
 PUT    http://server/cgi-bin/tigercgi/image/304            //edit image with id 304
 }
 var
+  ContentStream: TStringStream;
   DocumentID: integer;
+  ImageArray: TJSONArray;
   ImageID: integer;
+  ImageOrder: integer;
   InputJSON: TJSONObject;
   IsValidRequest: boolean;
   OutputJSON: TJSONObject;
   StrippedPath: string;
+  VParser: TJSONParser;
 begin
   IsValidRequest := False;
   {
@@ -101,7 +106,7 @@ begin
     StrippedPath + ' with method ' + ARequest.Method);
   if ARequest.QueryString <> '' then
     TigerLog.WriteLog(etDebug, 'Image module: got query: ' + ARequest.QueryString);
-  TigerLog.WriteLog(etDebug, 'Wordcount: ' + IntToStr(WordCount(StrippedPath, ['/'])));
+  TigerLog.WriteLog(etDebug, 'StrippedPath wordcount: ' + IntToStr(WordCount(StrippedPath, ['/'])));
 
   // Make sure the user didn't specify levels in the URI we don't support:
   case ARequest.Method of
@@ -126,12 +131,76 @@ begin
     'GET':
     begin
       case WordCount(StrippedPath, ['/']) of
-        1: //http://server/cgi-bin/tigercgi/image/ either get list of images or all images
+        1: //http://server/cgi-bin/tigercgi/image/ get:
+        // - list of images
+        // - a specific imageID based on document id, imageorder
+        if (ARequest.ContentType='application/json') and
+          (ARequest.Content<>'') then
+        // Specific image (imageorder is optional; take first one if missing
+        //{ "documentid" : 2103354, "imageorder" : 1 }
         begin
+          ContentStream := TStringStream.Create(ARequest.Content);
+          ContentStream.Position:=0;
+          VParser := TJSONParser.Create(ContentStream);
+          try
+            try
+              InputJSON := TJSONObject(VParser.Parse);
+              if (InputJSON.Find('documentid',jtNumber)<>nil) then
+                DocumentID:=InputJSON.Integers['documentid'];
+              if (InputJSON.Find('imageorder',jtNumber)<>nil) then
+                ImageOrder:=InputJSON.Integers['imaageorder']
+              else //take first one
+                ImageOrder:=1;
+              IsValidRequest:=true;
+              ImageArray := TJSONArray.Create();
+              try
+                FTigerCore.ListImages(DocumentID, ImageArray);
+                AResponse.ContentType := 'application/json';
+                AResponse.Contents.Add(ImageArray.AsJSON);
+              except
+                on E: Exception do
+                begin
+                  ImageArray.Clear;
+                  ImageArray.Add(TJSONSTring.Create('listRequest: exception ' +
+                    E.Message));
+                  AResponse.Contents.Insert(0, ImageArray.AsJSON);
+                end;
+              end;
+            except
+              // error occurred, e.g. we have regular HTML instead of JSON
+              on E: Exception do
+              begin
+                TigerLog.WriteLog('Image get: got JSON: '+ARequest.Content+' but error parsing/processing.');
+                IsValidRequest:=false;
+              end;
+            end;
+          finally
+            VParser.Free;
+            ContentStream.Free;
+            InputJSON.Free;
+          end;
+        end
+        else
+        begin
+          // No JSON data in request; assume list of all images
           IsValidRequest := True;
-          //todo: get every image
-          AResponse.Contents.Add('<p>todo get all images</p>');
+          DocumentID:=InvalidID;
+          ImageArray := TJSONArray.Create();
+          try
+            FTigerCore.ListImages(DocumentID, ImageArray);
+            AResponse.ContentType := 'application/json';
+            AResponse.Contents.Add(ImageArray.AsJSON);
+          except
+            on E: Exception do
+            begin
+              ImageArray.Clear;
+              ImageArray.Add(TJSONSTring.Create('listRequest: exception ' +
+                E.Message));
+              AResponse.Contents.Insert(0, ImageArray.AsJSON);
+            end;
+          end;
         end;
+
         2: //http://server/cgi-bin/tigercgi/image/304 get specific image
         begin
           ImageID := StrToIntDef(ExtractWord(2, StrippedPath, ['/']), INVALIDID);

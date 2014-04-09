@@ -140,7 +140,7 @@ type
     procedure ListDocuments(DocumentID: integer; var DocumentsArray: TJSONArray);
     // List images specified DocumentID or all images (if DocumentID is INVALIDID).
     // Image path contains full path+file name.
-    procedure ListImages(DocumentID: integer; var DocumentsArray: TJSONArray);
+    procedure ListImages(DocumentID: integer; var ImagesArray: TJSONArray);
     // Process (set of) existing (TIFF) image(s); should be named <image>.tif
     // Images are specified using the Images property
     // Specify resolution override to indicate image resolution to hocr2pdf
@@ -528,9 +528,9 @@ begin
   FTigerDB.ListDocuments(DocumentID, DocumentsArray);
 end;
 
-procedure TTigerServerCore.ListImages(DocumentID: integer; var DocumentsArray: TJSONArray);
+procedure TTigerServerCore.ListImages(DocumentID: integer; var ImagesArray: TJSONArray);
 begin
-  FTigerDB.ListImages(DocumentID, DocumentsArray);
+  FTigerDB.ListImages(DocumentID, ImagesArray);
 end;
 
 function TTigerServerCore.ProcessImages(DocumentID: integer; Resolution: integer): string;
