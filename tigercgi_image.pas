@@ -154,10 +154,10 @@ begin
               IsValidRequest:=true;
               ImageArray := TJSONArray.Create();
               try
+                FTigerCore.ListImages(DocumentID, ImageOrder, ImageArray);
                 //todo: debug
                 Tigerlog.writelog('image get debug: got document id: '+inttostr(documentid));
                 Tigerlog.writelog('image get debug: got imageorder id: '+inttostr(imageorder));
-                FTigerCore.ListImages(DocumentID, ImageOrder, ImageArray);
                 Tigerlog.writelog('image get debug: got imagearray: '+ImageArray.AsJSON);
                 AResponse.ContentType := 'application/json';
                 AResponse.Contents.Add(ImageArray.AsJSON);
