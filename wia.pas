@@ -58,6 +58,38 @@ const
   wiaFormatTIFF: widestring = '{B96B3CB1-0728-11D3-9D7B-0000F81EF32E}';
 
 procedure TLocalWIAScanner.Scan;
+{ c# code:
+private void ScanDoc()
+        {
+            CommonDialogClass commonDialogClass = new CommonDialogClass();
+            Device scannerDevice = commonDialogClass.ShowSelectDevice(WiaDeviceType.ScannerDeviceType, false, false);
+            if (scannerDevice != null)
+            {
+                Item scannnerItem = scannerDevice.Items[1];
+                AdjustScannerSettings(scannnerItem, (int)nudRes.Value, 0, 0, (int)nudWidth.Value, (int)nudHeight.Value, 0, 0, cmbCMIndex);
+                object scanResult = commonDialogClass.ShowTransfer(scannnerItem, WIA.FormatID.wiaFormatTIFF, false);
+                if (scanResult != null)
+                {
+                    ImageFile image = (ImageFile)scanResult;
+                    string fileName = "";
+
+                    var files = Directory.GetFiles(txtPath.Text, "*.tiff");
+
+                    try
+                    {
+                        string f = ((files.Max(p1 => Int32.Parse(Path.GetFileNameWithoutExtension(p1)))) + 1).ToString();
+                        fileName = txtPath.Text + "\\" + f + ".tiff";
+                    }
+                    catch (Exception ex)
+                    {
+                        fileName = txtPath.Text + "\\" + "1.tiff";
+                    }
+                    SaveImageToTiff(image, fileName);
+                    picScan.ImageLocation = fileName;
+                }
+            }
+        }
+}
 // Adapted from
 // http://stackoverflow.com/questions/721948/delphi-twain-issue-help
 var
