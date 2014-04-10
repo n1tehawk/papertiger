@@ -134,6 +134,8 @@ type
 
     // Get image identified by documentID and image number/imageorder (starting with 1)
     function GetImage(DocumentID, ImageOrder: integer; const ImageStream: TStream): boolean;
+    // Get image identified by image ID
+    function GetImage(ImageID: integer; const ImageStream: TStream): boolean;
     // Get PDF identified by DocumentID
     function GetPDF(DocumentID: integer; const ImageStream: TStream): boolean;
     // Lists document specified by DocumentID or all documents (if DocumentID is INVALIDID)
@@ -458,6 +460,45 @@ begin
   if DocumentID <> INVALIDID then
   begin
     ImageFile := FTigerDB.ImagePath(DocumentID, ImageOrder);
+    if ImageFile <> '' then
+    begin
+      try
+        // Cater for different ImageDirectory setting on this server.
+        // Although this is a bit of a hack, it allows testing from different servers with different mountpoints
+        if not (fileexists(ImageFile)) then
+        begin
+          TigerLog.WriteLog(etWarning, 'GetImage: cannot read image "' + ImageFile +
+            '". Hack: trying again with mangled ImageDirectory');
+          ImageFile := FSettings.ImageDirectory + ExtractFileName(ImageFile);
+        end;
+        MemStream := TMemoryStream.Create;
+        try
+          MemStream.LoadFromFile(ImageFile);
+          ImageStream.CopyFrom(MemStream, MemStream.Size);
+        finally
+          MemStream.Free;
+        end;
+        Result := true;
+      except
+        on E: Exception do
+        begin
+          TigerLog.WriteLog(etError, 'GetImage: error trying to read image file ' + ImageFile + '. Exception:' + E.Message);
+        end;
+      end;
+    end;
+  end;
+end;
+
+function TTigerServerCore.GetImage(ImageID: integer; const ImageStream: TStream
+  ): boolean;
+var
+  ImageFile: string;
+  MemStream: TMemoryStream;
+begin
+  Result := false;
+  if ImageID <> INVALIDID then
+  begin
+    ImageFile := FTigerDB.ImagePath(ImageID);
     if ImageFile <> '' then
     begin
       try
