@@ -91,7 +91,7 @@ var
   IsValidRequest: boolean;
   OutputJSON: TJSONObject;
   StrippedPath: string;
-  VParser: TJSONParser;
+  Parser: TJSONParser;
 begin
   IsValidRequest := False;
   {
@@ -140,11 +140,10 @@ begin
         //{ "documentid" : 2103354, "imageorder" : 1 }
         begin
           ContentStream := TStringStream.Create(ARequest.Content);
-          ContentStream.Position:=0;
-          VParser := TJSONParser.Create(ContentStream);
+          Parser := TJSONParser.Create(ContentStream);
           try
             try
-              InputJSON := TJSONObject(VParser.Parse);
+              InputJSON := TJSONObject(Parser.Parse);
               if (InputJSON.Find('documentid',jtNumber)<>nil) then
                 DocumentID := InputJSON.Integers['documentid'];
               if (InputJSON.Find('imageorder',jtNumber)<>nil) then
@@ -179,7 +178,7 @@ begin
               end;
             end;
           finally
-            VParser.Free;
+            Parser.Free;
             ContentStream.Free;
             InputJSON.Free;
           end;
