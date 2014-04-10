@@ -139,7 +139,7 @@ type
 
       // Now enumerate all images in that document
       ImagesArray := TJSONArray.Create;
-      FTigerCore.ListImages(DocumentID, ImagesArray);
+      FTigerCore.ListImages(DocumentID, INVALIDID, ImagesArray);
       // Check for empty array
       if ImagesArray.Count < 1 then
       begin

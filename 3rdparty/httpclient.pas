@@ -28,10 +28,11 @@ function HttpRequestWithData(var AData: TJSONData; const AUrl: string;
   const AMethod: TRequestMethod = rmPost;
   const AContentType: string = 'application/json'): THttpResult;
 // Perform a post etc with JSON data in the request body and return the result body as a memory stream
+// AContentType is filled with return data content type
 function HttpRequestWithDataStream(var AData: TJSONData; const AUrl: string;
   const ReturnStream: TMemoryStream;
   const AMethod: TRequestMethod = rmPost;
-  const AContentType: string = 'application/json'
+  AContentType: string = 'application/json'
   ): THttpResult;
 
 
@@ -218,7 +219,7 @@ end;
 function HttpRequestWithDataStream(var AData: TJSONData; const AUrl: string;
   const ReturnStream: TMemoryStream;
   const AMethod: TRequestMethod;
-  const AContentType: string): THttpResult;
+  AContentType: string): THttpResult;
 var
   VMethod: string;
   VHttp: TFPHTTPClient;
@@ -245,6 +246,8 @@ begin
     VHttp.HTTPMethod(VMethod, AUrl, ReturnStream, []);
     Result.Code := VHttp.ResponseStatusCode;
     Result.Text := VHttp.ResponseStatusText;
+    VHTTP.ResponseHeaders.NameValueSeparator:=':'; //needt to catch e.g. Content-Type: application/json
+    AContentType:= VHttp.ResponseHeaders[VHttp.ResponseHeaders.IndexOfName('Content-Type')];
   finally
     VHttp.RequestBody.Free;
     VHttp.RequestBody := nil;
