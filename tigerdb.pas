@@ -75,7 +75,9 @@ type
     // Returns path+filename for PDF associated with document
     function GetPDFPath(DocumentID: integer): string;
     // Returns path+filename for requested image - imageorder gives the sort order/image number
-    function ImagePath(DocumentID: integer; Imageorder: integer = 1): string;
+    function ImagePath(DocumentID: integer; ImageOrder: integer): string;
+    // Retruns path+filename for requested image
+    function ImagePath(ImageID: integer): string;
     // Inserts a new scan record in database; retruns scan ID.
     // Keep string values empty to insert NULLs;
     // TheScanDate: please pass UTC date/time, pass a pre 1900 date to specify unknown date
@@ -208,7 +210,7 @@ begin
   end;
 end;
 
-function TTigerDB.ImagePath(DocumentID: integer; Imageorder: integer = 1): string;
+function TTigerDB.ImagePath(DocumentID: integer; ImageOrder: integer): string;
 begin
   Result := '';
   if DocumentID = INVALIDID then
@@ -217,12 +219,45 @@ begin
       'ImagePath: invalid document ID requested. Cannot find image filename.');
     exit;
   end;
+  if ImageOrder = 0 then ImageOrder := 1; //good default
 
   if FReadTransaction.Active = false then
     FReadTransaction.StartTransaction;
   try
     FReadQuery.SQL.Text := 'SELECT PATH FROM IMAGES WHERE DOCUMENTID=' + IntToStr(DocumentID) +
       ' AND IMAGEORDER=' + IntToStr(ImageOrder);
+    FReadQuery.Open;
+    if not (FReadQuery.EOF) then
+      Result := FReadQuery.FieldByName('PATH').AsString;
+    FReadQuery.Close;
+    FReadTransaction.Commit;
+  except
+    on E: EDatabaseError do
+    begin
+      TigerLog.WriteLog(etError, 'ImagePath: db exception: ' + E.Message);
+      FReadTransaction.RollBack;
+    end;
+    on F: Exception do
+    begin
+      TigerLog.WriteLog(etError, 'ImagePath: exception: ' + F.Message);
+    end;
+  end;
+end;
+
+function TTigerDB.ImagePath(ImageID: integer): string;
+begin
+  Result := '';
+  if ImageID = INVALIDID then
+  begin
+    TigerLog.WriteLog(etWarning,
+      'ImagePath: invalid image ID requested. Cannot find image filename.');
+    exit;
+  end;
+
+  if FReadTransaction.Active = false then
+    FReadTransaction.StartTransaction;
+  try
+    FReadQuery.SQL.Text := 'SELECT PATH FROM IMAGES WHERE ID=' + IntToStr(ImageID);
     FReadQuery.Open;
     if not (FReadQuery.EOF) then
       Result := FReadQuery.FieldByName('PATH').AsString;

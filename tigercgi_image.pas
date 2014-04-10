@@ -153,10 +153,6 @@ begin
               ImageArray := TJSONArray.Create();
               try
                 FTigerCore.ListImages(DocumentID, ImageOrder, ImageArray);
-                //todo: debug
-                Tigerlog.writelog('image get debug: got document id: '+inttostr(documentid));
-                Tigerlog.writelog('image get debug: got imageorder id: '+inttostr(imageorder));
-                Tigerlog.writelog('image get debug: got imagearray: '+ImageArray.AsJSON);
                 AResponse.ContentType := 'application/json';
                 AResponse.Contents.Add(ImageArray.AsJSON);
               except
@@ -206,8 +202,6 @@ begin
         // Still 'GET':
         2: //http://server/cgi-bin/tigercgi/image/304 get specific image
         begin
-          //todo: debug
-          tigerlog.writelog('image get: first word is '+lowercase(extractword(1,strippedpath,['/'])));
           if lowercase(ExtractWord(1, StrippedPath, ['/'])) = 'image' then
           begin
             ImageID := StrToIntDef(ExtractWord(2, StrippedPath, ['/']), INVALIDID);
@@ -220,8 +214,7 @@ begin
               AResponse.ContentStream := TMemoryStream.Create;
               try
                 // Load tiff into content stream:
-                //todo: replace this with image id => then add a call getimageid from document input documentid, order output imageid
-                if FTigerCore.GetImage(DocumentID, 1, AResponse.ContentStream) then
+                if FTigerCore.GetImage(ImageID, AResponse.ContentStream) then
                 begin
                   // Indicate papertiger should be able to deal with this data:
                   AResponse.ContentType := 'image/tiff; application=papertiger';
@@ -231,7 +224,9 @@ begin
                 end
                 else
                 begin
-                  ISValidRequest := False; //ask follow up code to return 404 error
+                  TigerLog.WriteLog(etWarning, 'GetImage failed for document ID ' + inttostr(DocumentID) +
+                    ' imageorder 1');
+                  IsValidRequest := False; //ask follow up code to return 404 error
                 end;
               finally
                 AResponse.ContentStream.Free;
