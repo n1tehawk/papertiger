@@ -2,7 +2,7 @@ unit tigercgi_server;
 
 { Papertiger CGI handling for server/administration-related functionality.
 
-  Copyright (c) 2013 Reinier Olislagers
+  Copyright (c) 2013-2014 Reinier Olislagers
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to

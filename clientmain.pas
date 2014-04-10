@@ -25,9 +25,10 @@ unit clientmain;
 
 {$mode objfpc}{$H+}
 // Define USEMAGICK to work with imagemagick. Will still need some code changes.
+// Advantage: wider range of supported TIFF formatas; probably faster
 // On Linux, probably need libmagick-dev, libmagickcore-dev, libmagickwand-dev
 // On Windows, needs the imagemagick dlls (see readme.txt)
-{.$DEFINE USEMAGICK}
+{$DEFINE USEMAGICK}
 
 interface
 
@@ -607,6 +608,9 @@ begin
     ImageStream.Position := 0;
     try
       ImageForm.Hide;
+      {$IFDEF USEMAGICK}
+      LoadMagickBitmap(ImageStream.Memory,ImageStream.Size,ImageForm.ScanImage.Picture.Bitmap);
+      {$ELSE}
       {$IF FPC_FULLVERSION>=20701}
       // 1 bit tiff support has been added to default FPC units.
       Imageform.ScanImage.Picture.LoadFromStreamWithFileExt(ImageStream, '.tif');
@@ -614,6 +618,7 @@ begin
       // Convert to a viewable bitmap with our modified FPC tiff routines supporting black & white tiff
       Imageform.ScanImage.Picture.LoadFromStreamWithFileExt(ImageStream, '.tiffcustom1bit');
       {$ENDIF}
+      {$ENDIF} //usemagick
       ImageForm.Show;
     except
       on E: Exception do
