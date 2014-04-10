@@ -624,7 +624,7 @@ begin
           OCR.Language := FCurrentOCRLanguage;
           Success := OCR.RecognizeText;
           HOCRFile := OCR.HOCRFile;
-          TigerLog.WriteLog(etDebug, 'ProcessImages: Got this text:' + OCR.Text);
+          TigerLog.WriteLog(etDebug, 'ProcessImages: Got file '+HOCRFile+' with this text:' + OCR.Text);
         finally
           OCR.Free;
         end;
@@ -641,6 +641,8 @@ begin
           if Resolution > 0 then
             PDF.ImageResolution := Resolution;
           // todo: read tiff file and extract resolution ourselves, pass it on
+          if not(FileExists(HOCRFile)) then
+            raise Exception.CreateFmt('OCR file %s does not exist',[HOCRFile]);
           PDF.HOCRFile := HOCRFile;
           PDF.ImageFile := ImageFile; // The original, unaltered image file
           TigerLog.WriteLog(etDebug, 'pdfdirectory: ' + FSettings.PDFDirectory);
