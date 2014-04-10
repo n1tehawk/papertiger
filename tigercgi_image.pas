@@ -205,12 +205,10 @@ begin
           if lowercase(ExtractWord(1, StrippedPath, ['/'])) = 'image' then
           begin
             ImageID := StrToIntDef(ExtractWord(2, StrippedPath, ['/']), INVALIDID);
-            //todo: debug
-            tigerlog.writelog('image get: client is asking for image '+extractword(2,strippedpath,['/']));
             if ImageID <> INVALIDID then
             begin
               IsValidRequest := True;
-              //retrieve tiff and put in output stream
+              // Retrieve TIFF and put in output stream
               AResponse.ContentStream := TMemoryStream.Create;
               try
                 // Load tiff into content stream:
