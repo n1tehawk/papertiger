@@ -451,7 +451,6 @@ begin
       try
         // Expect array of image data; we're only interested in id (imageid)
         // [{ "id" : 8, "imageorder" : 1, "documentid" : 8, "path" : "\/home\/pascaldev\/papertiger\/images\/SomeImage.tiff", "imagehash" : "9551a3ae49593413a5b06e6b11631cee" }]
-        //todo: we need to parse out the array and get the first record
         InputJSON := TJSONObject(Parser.Parse);
         if InputJSON.JSONType <> jtArray then
           raise Exception.Create('Asked for image ID array but received invalid JSON data instead.');
@@ -588,7 +587,7 @@ begin
   ImageStream := TMemoryStream.Create;
   VData:=TJSONString.Create(''); //dummy value
   try
-    // post a request to get the image; expect an application/pdf result
+    // post a request to get the image; expect an application/tiff result
     RequestResult:=HttpRequestWithDataStream(VData,
     FSettings.CGIURL + 'image/' +
       IntToStr(ImageID),
