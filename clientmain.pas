@@ -609,8 +609,10 @@ begin
     try
       ImageForm.Hide;
       {$IFDEF USEMAGICK}
+      // Use imagemagick to load tiff
       LoadMagickBitmap(ImageStream.Memory,ImageStream.Size,ImageForm.ScanImage.Picture.Bitmap);
       {$ELSE}
+      // Built in TIFF support
       {$IF FPC_FULLVERSION>=20701}
       // 1 bit tiff support has been added to default FPC units.
       Imageform.ScanImage.Picture.LoadFromStreamWithFileExt(ImageStream, '.tif');
