@@ -131,70 +131,77 @@ begin
     begin
       case WordCount(StrippedPath, ['/']) of
         1: //http://server/cgi-bin/tigercgi/image/ get:
-        // - list of images
-        // - a specific imageID based on document id, imageorder
-        if (ARequest.ContentType='application/json') and
-          (ARequest.Content<>'') then
-        // Specific image (imageorder is optional; take first one if missing
-        // { "documentid" : 2103354, "imageorder" : 1 }
         begin
-          ContentStream := TStringStream.Create(ARequest.Content);
-          Parser := TJSONParser.Create(ContentStream);
-          try
+          // - list of images
+          // - a specific imageID based on document id, imageorder
+          //todo:debug
+          TigerLog.WriteLog(etDebug,'image get: content type: '+ARequest.ContentType);
+          TigerLog.WriteLog(etDebug,'image get: content: '+ARequest.Content );
+          if (ARequest.ContentType='application/json') and
+            (ARequest.Content<>'') then
+          // Specific image (imageorder is optional; show all if missing
+          // { "documentid" : 2103354, "imageorder" : 1 }
+          begin
+            ContentStream := TStringStream.Create(ARequest.Content);
+            Parser := TJSONParser.Create(ContentStream);
             try
-              InputJSON := TJSONObject(Parser.Parse);
-              if (InputJSON.Find('documentid',jtNumber)<>nil) then
-                DocumentID := InputJSON.Integers['documentid'];
-              if (InputJSON.Find('imageorder',jtNumber)<>nil) then
-                ImageOrder := InputJSON.Integers['imageorder']
-              else //take first one - or perhaps should have taken all using invalidid?
-                ImageOrder := 1;
-              IsValidRequest := true;
-              ImageArray := TJSONArray.Create();
               try
-                FTigerCore.ListImages(DocumentID, ImageOrder, ImageArray);
-                AResponse.ContentType := 'application/json';
-                AResponse.Contents.Add(ImageArray.AsJSON);
+                InputJSON := TJSONObject(Parser.Parse);
+                if (InputJSON.Find('documentid',jtNumber)=nil) then
+                  raise Exception.CreateFmt('No documentID specified in JSON %s',[InputJSON.AsJSON])
+                else
+                  DocumentID := InputJSON.Integers['documentid'];
+                if (InputJSON.Find('imageorder',jtNumber)<>nil) then
+                  ImageOrder := InputJSON.Integers['imageorder']
+                else //not specified so return all images for that document
+                  ImageOrder := INVALIDID;
+                IsValidRequest := true;
+                ImageArray := TJSONArray.Create();
+                try
+                  FTigerCore.ListImages(DocumentID, ImageOrder, ImageArray);
+                  AResponse.ContentType := 'application/json';
+                  AResponse.Contents.Add(ImageArray.AsJSON);
+                except
+                  on E: Exception do
+                  begin
+                    ImageArray.Clear;
+                    ImageArray.Add(TJSONSTring.Create('listRequest: exception ' +
+                      E.Message));
+                    AResponse.Contents.Insert(0, ImageArray.AsJSON);
+                  end;
+                end;
               except
+                // error occurred, e.g. we have regular HTML instead of JSON
                 on E: Exception do
                 begin
-                  ImageArray.Clear;
-                  ImageArray.Add(TJSONSTring.Create('listRequest: exception ' +
-                    E.Message));
-                  AResponse.Contents.Insert(0, ImageArray.AsJSON);
+                  TigerLog.WriteLog('Image get: got JSON: '+ARequest.Content+' but error parsing/processing: '+E.Message);
+                  IsValidRequest:=false;
                 end;
               end;
+            finally
+              Parser.Free;
+              ContentStream.Free;
+              InputJSON.Free;
+            end;
+          end
+          else
+          begin
+            // No JSON data in request; assume list of all images
+            IsValidRequest := True;
+            DocumentID:=InvalidID;
+            ImageArray := TJSONArray.Create();
+            try
+              FTigerCore.ListImages(DocumentID, InvalidID, ImageArray);
+              AResponse.ContentType := 'application/json';
+              AResponse.Contents.Add(ImageArray.AsJSON);
             except
-              // error occurred, e.g. we have regular HTML instead of JSON
               on E: Exception do
               begin
-                TigerLog.WriteLog('Image get: got JSON: '+ARequest.Content+' but error parsing/processing: '+E.Message);
-                IsValidRequest:=false;
+                ImageArray.Clear;
+                ImageArray.Add(TJSONSTring.Create('listRequest: exception ' +
+                  E.Message));
+                AResponse.Contents.Insert(0, ImageArray.AsJSON);
               end;
-            end;
-          finally
-            Parser.Free;
-            ContentStream.Free;
-            InputJSON.Free;
-          end;
-        end
-        else
-        begin
-          // No JSON data in request; assume list of all images
-          IsValidRequest := True;
-          DocumentID:=InvalidID;
-          ImageArray := TJSONArray.Create();
-          try
-            FTigerCore.ListImages(DocumentID, InvalidID, ImageArray);
-            AResponse.ContentType := 'application/json';
-            AResponse.Contents.Add(ImageArray.AsJSON);
-          except
-            on E: Exception do
-            begin
-              ImageArray.Clear;
-              ImageArray.Add(TJSONSTring.Create('listRequest: exception ' +
-                E.Message));
-              AResponse.Contents.Insert(0, ImageArray.AsJSON);
             end;
           end;
         end;
