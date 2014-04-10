@@ -149,7 +149,7 @@ begin
                 ImageOrder := InputJSON.Integers['imageorder']
               else //take first one - or perhaps should have taken all using invalidid?
                 ImageOrder := 1;
-              IsValidRequest:=true;
+              IsValidRequest := true;
               ImageArray := TJSONArray.Create();
               try
                 FTigerCore.ListImages(DocumentID, ImageOrder, ImageArray);
@@ -206,9 +206,13 @@ begin
         // Still 'GET':
         2: //http://server/cgi-bin/tigercgi/image/304 get specific image
         begin
+          //todo: debug
+          tigerlog.writelog('image get: first word is '+lowercase(extractword(1,strippedpath,['/'])));
           if lowercase(ExtractWord(1, StrippedPath, ['/'])) = 'image' then
           begin
             ImageID := StrToIntDef(ExtractWord(2, StrippedPath, ['/']), INVALIDID);
+            //todo: debug
+            tigerlog.writelog('image get: client is asking for image '+extractword(2,strippedpath,['/']));
             if ImageID <> INVALIDID then
             begin
               IsValidRequest := True;
@@ -285,7 +289,6 @@ begin
               begin
                 TigerLog.WriteLog(etDebug,'Module image: error calling ScanSinglePage for document '+inttostr(DocumentID));
                 IsValidRequest := False; //for extra clarity, not really needed
-                DocumentID := INVALIDID; //don't process the upload new image part
               end;
             end;
           end
