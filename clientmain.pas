@@ -86,6 +86,8 @@ type
     function AddDocument: integer;
     // Refresh list of documents in grid
     procedure RefreshDocuments;
+    // Show image for relevant image
+    procedure ShowImage(ImageID: integer);
     // Shows pdf for relevant document
     procedure ShowPDF(DocumentID: integer);
     {$IFDEF WINDOWS}
@@ -412,10 +414,12 @@ end;
 
 procedure TForm1.ShowImageButtonClick(Sender: TObject);
 var
-  DocumentID, ImageOrder: integer;
+  DocumentID, ImageID, ImageOrder: integer;
+  InputJSON,InputRecord: TJSONObject;
   RequestResult: THTTPResult;
   ResponseStream: TMemoryStream;
   VData: TJSONData;
+  Parser: TJSONParser;
 begin
   // Check for selected document
   if DocumentsGrid.Row < 1 then
@@ -438,33 +442,35 @@ begin
       ShowMessage('Error getting image from server. HTTP result code: ' + IntToStr(RequestResult.Code) + '/' + RequestResult.Text);
       exit;
     end;
+
     //todo: now we've got image id, get the associated image
-    do the above
-    imageform.Hide;
-    if ResponseStream.Size = 0 then
-    begin
-      ShowMessage('Got an empty image from server.');
-      exit;
-    end
-    else
-    begin
-      ResponseStream.Position := 0;
+    ResponseStream.Position := 0;
+    Parser := TJSONParser.Create(ResponseStream);
+    try
       try
-        {$IF FPC_FULLVERSION>=20701}
-        // 1 bit tiff support has been added.
-        Imageform.ScanImage.Picture.LoadFromStreamWithFileExt(ResponseStream, '.tif');
-        {$ELSE}
-        // Convert to a viewable bitmap with our modified FPC tiff routines supporting black & white tiff
-        Imageform.ScanImage.Picture.LoadFromStreamWithFileExt(TIFFStream, '.tiffcustom1bit');
-        {$ENDIF}
-        ImageForm.Show;
+        // Expect array of image data; we're only interested in id (imageid)
+        // [{ "id" : 8, "imageorder" : 1, "documentid" : 8, "path" : "\/home\/pascaldev\/papertiger\/images\/SomeImage.tiff", "imagehash" : "9551a3ae49593413a5b06e6b11631cee" }]
+        //todo: we need to parse out the array and get the first record
+        InputJSON := TJSONObject(Parser.Parse);
+        if InputJSON.JSONType <> jtArray then
+          raise Exception.Create('Asked for image ID array but received invalid JSON data instead.');
+        InputRecord := TJSONObject(InputJSON.Items[0]); //get first record out of array
+        if (InputRecord.Find('id',jtNumber)<>nil) then
+          ImageID := InputRecord.Integers['id']
+        else
+          raise Exception.Create('Could not find image ID when asking for it.');
       except
+        // error occurred, e.g. we have regular HTML instead of JSON
         on E: Exception do
         begin
-          ShowMessage('Error showing image' + LineEnding + 'Technical details: ' + E.Message);
+          ShowMessage('Image retrieval error. Technical details: '+E.Message);
+          exit;
         end;
       end;
+    finally
+      Parser.Free;
     end;
+    ShowImage(ImageID);
   finally
     VData.Free;
     ResponseStream.Free;
@@ -572,6 +578,55 @@ begin
   end;
 end;
 
+procedure TForm1.ShowImage(ImageID: integer);
+var
+  RequestResult: THTTPResult;
+  ImageStream: TMemoryStream;
+  VData: TJSONData;
+begin
+  ImageStream := TMemoryStream.Create;
+  VData:=TJSONString.Create(''); //dummy value
+  try
+    // post a request to get the image; expect an application/pdf result
+    RequestResult:=HttpRequestWithDataStream(VData,
+    FSettings.CGIURL + 'image/' +
+      IntToStr(ImageID),
+      ImageStream,
+      rmGet,
+      '');
+    if RequestResult.Code <> 200 then
+    begin
+      ShowMessage('Error getting image from server. HTTP result code: ' + IntToStr(RequestResult.Code) + '/' + RequestResult.Text);
+      exit;
+    end;
+    if ImageStream.Size=0 then
+    begin
+      ShowMessage('Error getting image from server: received empty file.');
+      exit;
+    end;
+    ImageStream.Position := 0;
+    try
+      ImageForm.Hide;
+      {$IF FPC_FULLVERSION>=20701}
+      // 1 bit tiff support has been added to default FPC units.
+      Imageform.ScanImage.Picture.LoadFromStreamWithFileExt(ImageStream, '.tif');
+      {$ELSE}
+      // Convert to a viewable bitmap with our modified FPC tiff routines supporting black & white tiff
+      Imageform.ScanImage.Picture.LoadFromStreamWithFileExt(ImageStream, '.tiffcustom1bit');
+      {$ENDIF}
+      ImageForm.Show;
+    except
+      on E: Exception do
+      begin
+        ShowMessage('Error showing image' + LineEnding + 'Technical details: ' + E.Message);
+      end;
+    end;
+  finally
+    ImageStream.Free;
+    VData.Free;
+  end;
+end;
+
 procedure TForm1.ShowPDF(DocumentID: integer);
 var
   RequestResult: THTTPResult;
@@ -594,8 +649,12 @@ begin
       ShowMessage('Error getting PDF from server. HTTP result code: ' + IntToStr(RequestResult.Code) + '/' + RequestResult.Text);
       exit;
     end;
-    imageform.Hide;
-    //todo: verify this works
+    if PDFStream.Size=0 then
+    begin
+      ShowMessage('Error getting PDF from server: received empty file.');
+      exit;
+    end;
+    //imageform.Hide;
     PDFStream.Position := 0;
     try
       PDFFile := ChangeFileExt(SysUtils.GetTempFileName('', 'tpdf'), '.pdf');
