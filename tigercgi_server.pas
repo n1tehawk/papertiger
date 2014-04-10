@@ -141,12 +141,12 @@ begin
     if ARequest.QueryString <> '' then
       TigerLog.WriteLog(etWarning, 'Server module: invalid request; got query: ' +
         ARequest.QueryString);
-    TigerLog.WriteLog(etWarning,
+    TigerLog.WriteLog(etDebug,
       'Server module: invalid request; got URL interesting wordcount: ' +
       IntToStr(WordCount(StrippedPath, ['/'])));
     AResponse.Code := 404;
-    AResponse.CodeText := 'Image not found.';
-    AResponse.Contents.Add('<p>Image not found/invalid request</p>');
+    AResponse.CodeText := 'File not found.';
+    AResponse.Contents.Add('<p>Server module: file not found/invalid request</p>');
   end;
   Handled := True;
 end;

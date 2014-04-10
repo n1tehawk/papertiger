@@ -74,7 +74,6 @@ Handled URLs/methods:
 DELETE http://server/cgi-bin/tigercgi/image/               //delete all images?!?!
 GET    http://server/cgi-bin/tigercgi/image/               //list of images
 GET    http://server/cgi-bin/tigercgi/image/ with documentid, imageorder in JSON: get imageID of requested image
-GET    http://server/cgi-bin/tigercgi/image/304            // get specific image
 POST   http://server/cgi-bin/tigercgi/image?documentid=55  // let server scan new image, return imageid
 POST   http://server/cgi-bin/tigercgi/image?documentid=55  // with image posted as form data: upload image, return imageid
 DELETE http://server/cgi-bin/tigercgi/image/304            //remove image with id 304
@@ -90,7 +89,7 @@ var
   InputJSON: TJSONObject;
   IsValidRequest: boolean;
   OutputJSON: TJSONObject;
-  StrippedPath: string;
+  StrippedPath: string; // e.g. http://server/cgi-bin/tigercgi/image/123 becomes image/123
   Parser: TJSONParser;
 begin
   IsValidRequest := False;
@@ -204,31 +203,35 @@ begin
           end;
         end;
 
+        // Still 'GET':
         2: //http://server/cgi-bin/tigercgi/image/304 get specific image
         begin
-          ImageID := StrToIntDef(ExtractWord(2, StrippedPath, ['/']), INVALIDID);
-          if ImageID <> INVALIDID then
+          if lowercase(ExtractWord(1, StrippedPath, ['/'])) = 'image' then
           begin
-            IsValidRequest := True;
-            //retrieve tiff and put in output stream
-            AResponse.ContentStream := TMemoryStream.Create;
-            try
-              // Load tiff into content stream:
-              //todo: replace this with image id => then add a call getimageid from document input documentid, order output imageid
-              if FTigerCore.GetImage(DocumentID, 1, AResponse.ContentStream) then
-              begin
-                // Indicate papertiger should be able to deal with this data:
-                AResponse.ContentType := 'image/tiff; application=papertiger';
-                AResponse.ContentLength := AResponse.ContentStream.Size;
-                //apparently doesn't happen automatically?
-                AResponse.SendContent;
-              end
-              else
-              begin
-                ISValidRequest := False; //ask follow up code to return 404 error
+            ImageID := StrToIntDef(ExtractWord(2, StrippedPath, ['/']), INVALIDID);
+            if ImageID <> INVALIDID then
+            begin
+              IsValidRequest := True;
+              //retrieve tiff and put in output stream
+              AResponse.ContentStream := TMemoryStream.Create;
+              try
+                // Load tiff into content stream:
+                //todo: replace this with image id => then add a call getimageid from document input documentid, order output imageid
+                if FTigerCore.GetImage(DocumentID, 1, AResponse.ContentStream) then
+                begin
+                  // Indicate papertiger should be able to deal with this data:
+                  AResponse.ContentType := 'image/tiff; application=papertiger';
+                  AResponse.ContentLength := AResponse.ContentStream.Size;
+                  //apparently doesn't happen automatically?
+                  AResponse.SendContent;
+                end
+                else
+                begin
+                  ISValidRequest := False; //ask follow up code to return 404 error
+                end;
+              finally
+                AResponse.ContentStream.Free;
               end;
-            finally
-              AResponse.ContentStream.Free;
             end;
           end;
         end;
@@ -325,7 +328,7 @@ begin
     if ARequest.QueryString <> '' then
       TigerLog.WriteLog(etWarning, 'Image module: invalid request; got query: ' +
         ARequest.QueryString);
-    TigerLog.WriteLog(etWarning,
+    TigerLog.WriteLog(etDebug,
       'Image module: invalid request; got URL interesting wordcount: ' +
       IntToStr(WordCount(StrippedPath, ['/'])));
     AResponse.Code := 404;

@@ -297,7 +297,7 @@ begin
     if ARequest.QueryString <> '' then
       TigerLog.WriteLog(etWarning, 'Document module: invalid request; got query: ' +
         ARequest.QueryString);
-    TigerLog.WriteLog(etWarning,
+    TigerLog.WriteLog(etDebug,
       'Document module: invalid request; got URL interesting wordcount: ' +
       IntToStr(WordCount(StrippedPath, ['/'])));
     AResponse.Code := 404;
