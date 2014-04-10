@@ -32,7 +32,7 @@ function HttpRequestWithData(var AData: TJSONData; const AUrl: string;
 function HttpRequestWithDataStream(var AData: TJSONData; const AUrl: string;
   const ReturnStream: TMemoryStream;
   const AMethod: TRequestMethod = rmPost;
-  AContentType: string = 'application/json'
+  var AContentType: string = 'application/json'
   ): THttpResult;
 
 
@@ -219,7 +219,7 @@ end;
 function HttpRequestWithDataStream(var AData: TJSONData; const AUrl: string;
   const ReturnStream: TMemoryStream;
   const AMethod: TRequestMethod;
-  AContentType: string): THttpResult;
+  var AContentType: string): THttpResult;
 var
   VMethod: string;
   VHttp: TFPHTTPClient;
@@ -246,8 +246,8 @@ begin
     VHttp.HTTPMethod(VMethod, AUrl, ReturnStream, []);
     Result.Code := VHttp.ResponseStatusCode;
     Result.Text := VHttp.ResponseStatusText;
-    VHTTP.ResponseHeaders.NameValueSeparator:=':'; //needt to catch e.g. Content-Type: application/json
-    AContentType:= VHttp.ResponseHeaders[VHttp.ResponseHeaders.IndexOfName('Content-Type')];
+    VHTTP.ResponseHeaders.NameValueSeparator := ':'; //needt to catch e.g. Content-Type: application/json
+    AContentType := VHttp.ResponseHeaders[VHttp.ResponseHeaders.IndexOfName('Content-Type')];
   finally
     VHttp.RequestBody.Free;
     VHttp.RequestBody := nil;

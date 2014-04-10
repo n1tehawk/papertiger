@@ -136,7 +136,7 @@ begin
         if (ARequest.ContentType='application/json') and
           (ARequest.Content<>'') then
         // Specific image (imageorder is optional; take first one if missing
-        //{ "documentid" : 2103354, "imageorder" : 1 }
+        // { "documentid" : 2103354, "imageorder" : 1 }
         begin
           ContentStream := TStringStream.Create(ARequest.Content);
           Parser := TJSONParser.Create(ContentStream);
@@ -215,6 +215,7 @@ begin
                 if FTigerCore.GetImage(ImageID, AResponse.ContentStream) then
                 begin
                   // Indicate papertiger should be able to deal with this data:
+                  // todo: add support for jpg images
                   AResponse.ContentType := 'image/tiff; application=papertiger';
                   AResponse.ContentLength := AResponse.ContentStream.Size;
                   //apparently doesn't happen automatically?
