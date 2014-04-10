@@ -85,6 +85,10 @@ type
     FSettings: TTigerSettings;
     // Asks the server to add a new document and returns the document ID. Returns INVALIDID on error.
     function AddDocument: integer;
+    // Delete specified document
+    // If Silent specified, don't show errors/warnings
+    // Returns true if succesful; false if errors
+    function DeleteSingleDocument(DocumentID: integer; Silent: boolean=false): boolean;
     // Refresh list of documents in grid
     procedure RefreshDocuments;
     // Show image for relevant image
@@ -260,6 +264,45 @@ begin
   end;
 end;
 
+function TForm1.DeleteSingleDocument(DocumentID: integer; Silent: boolean): boolean;
+var
+  CommJSON: TJSONData;
+  RequestResult: THttpResult;
+begin
+  result := false;
+  CommJSON:=TJSONString.Create(''); //dummy content
+  try
+    Screen.Cursor := crHourglass;
+    try
+      RequestResult := HTTPRequest(FSettings.CGIURL + 'document/' + IntToStr(DocumentID), CommJSON, rmDelete);
+      if RequestResult.Code = 200 then
+      begin
+        result := true;
+        if not(Silent) then
+          RefreshDocuments; //update grid because one has been deleted
+      end
+      else
+      begin
+        Screen.Cursor := crDefault;
+        if not(Silent) then
+          ShowMessage('Error from server. HTTP result code: ' + IntToStr(RequestResult.Code) + '/' + RequestResult.Text);
+        exit;
+      end;
+    except
+      on E: Exception do
+      begin
+        Screen.Cursor := crDefault;
+        if not(Silent) then
+          ShowMessage('Error interpreting response from server. Technical details: ' + E.Message);
+        exit;
+      end;
+    end;
+  finally
+    Screen.Cursor := crDefault;
+    CommJSON.Free;
+  end;
+end;
+
 procedure TForm1.ScanButtonClick(Sender: TObject);
 var
   CurrentPage: integer;
@@ -415,6 +458,7 @@ end;
 
 procedure TForm1.ShowImageButtonClick(Sender: TObject);
 var
+  ContentType: string;
   DocumentID, ImageID, ImageOrder: integer;
   InputJSON,InputRecord: TJSONObject;
   RequestResult: THTTPResult;
@@ -423,6 +467,21 @@ var
   Parser: TJSONParser;
 begin
   // Check for selected document
+  fix this in tigercgi!
+  //todo: fix error on server last doc I get the wrong images:
+  {
+  Client:
+  GET /cgi-bin/tigercgi/image HTTP/1.1
+  { "documentid" : 83, "imageorder" : 1 }HTTP/1.1 200 OK
+
+  Server:
+  Content-Type: application/json
+  [{ "id" : 3, "imageorder" : 1, "documentid" : 3, "path" : "\/home\/pascaldev\/papertiger\/images\/someimage.tiff", "imagehash" : "0df3e790471cbbb8ca500a7489517363" },
+   { "id" : 4, "imageorder" : 1, "documentid" : 4, "path" : "\/home\/pascaldev\/papertiger\/images\/someimage2.tiff", "imagehash" : "0de38790471cbbb8ca500a7489517363" },
+   { "id" : 7, "imageorder" : 1, "documentid" : 7, "path" : "\/home\/pascaldev\/papertiger\/images\/someimage3.tif", "imagehash" : "8de98c70d5561d399827c3dcf671e6b7" },
+   { "id" : 8, "imageorder" : 1, "documentid" : 8, "path" : "\/home\/pascaldev\/papertiger\/images\/someimage4.tiff", "imagehash" : "9551e3ee49593433a5b06e6b11631cee" },
+   ....
+  }
   if DocumentsGrid.Row < 1 then
   begin
     ShowMessage('No document selected. Please select a document in the grid first.');
@@ -437,14 +496,15 @@ begin
     (VData as TJSONObject).Add('documentid', DocumentID);
     (VData as TJSONObject).Add('imageorder', ImageOrder); //sort order number
     // Get a request to get the image ID
-    RequestResult := HttpRequestWithDataStream(VData, FSettings.CGIURL + 'image', ResponseStream, rmGet);
+    ContentType := ''; //default works here
+    RequestResult := HttpRequestWithDataStream(VData, FSettings.CGIURL + 'image', ResponseStream, rmGet, ContentType);
     if RequestResult.Code <> 200 then
     begin
       ShowMessage('Error getting image from server. HTTP result code: ' + IntToStr(RequestResult.Code) + '/' + RequestResult.Text);
       exit;
     end;
 
-    //todo: now we've got image id, get the associated image
+    // Now we've got image id, get the associated image
     ResponseStream.Position := 0;
     Parser := TJSONParser.Create(ResponseStream);
     try
@@ -580,6 +640,7 @@ end;
 
 procedure TForm1.ShowImage(ImageID: integer);
 var
+  ContentType: string;
   RequestResult: THTTPResult;
   ImageStream: TMemoryStream;
   VData: TJSONData;
@@ -588,12 +649,13 @@ begin
   VData:=TJSONString.Create(''); //dummy value
   try
     // post a request to get the image; expect an application/tiff result
+    ContentType:=''; //doesn't really matter for sending
     RequestResult:=HttpRequestWithDataStream(VData,
     FSettings.CGIURL + 'image/' +
       IntToStr(ImageID),
       ImageStream,
       rmGet,
-      '');
+      ContentType);
     if RequestResult.Code <> 200 then
     begin
       ShowMessage('Error getting image from server. HTTP result code: ' + IntToStr(RequestResult.Code) + '/' + RequestResult.Text);
@@ -607,19 +669,39 @@ begin
     ImageStream.Position := 0;
     try
       ImageForm.Hide;
-      {$IFDEF USEMAGICK}
-      // Use imagemagick to load tiff
-      LoadMagickBitmap(ImageStream.Memory,ImageStream.Size,ImageForm.ScanImage.Picture.Bitmap);
-      {$ELSE}
-      // Built in TIFF support
-      {$IF FPC_FULLVERSION>=20701}
-      // 1 bit tiff support has been added to default FPC units.
-      Imageform.ScanImage.Picture.LoadFromStreamWithFileExt(ImageStream, '.tif');
-      {$ELSE}
-      // Convert to a viewable bitmap with our modified FPC tiff routines supporting black & white tiff
-      Imageform.ScanImage.Picture.LoadFromStreamWithFileExt(ImageStream, '.tiffcustom1bit');
-      {$ENDIF}
-      {$ENDIF} //usemagick
+      if (pos('image/tiff',ContentType)>0) then
+      begin
+        // TIFF image
+        {$IFDEF USEMAGICK}
+        // Use imagemagick to load tiff
+        LoadMagickBitmap(ImageStream.Memory,ImageStream.Size,ImageForm.ScanImage.Picture.Bitmap);
+        {$ELSE}
+        // Built in TIFF support
+        {$IF FPC_FULLVERSION>=20701}
+        // 1 bit tiff support has been added to default FPC units.
+        Imageform.ScanImage.Picture.LoadFromStreamWithFileExt(ImageStream, '.tif');
+        {$ELSE}
+        // Convert to a viewable bitmap with our modified FPC tiff routines supporting black & white tiff
+        Imageform.ScanImage.Picture.LoadFromStreamWithFileExt(ImageStream, '.tiffcustom1bit');
+        {$ENDIF}
+        {$ENDIF} //usemagick
+      end
+      else if (pos('image/jpeg',ContentType)>0) then
+      begin
+        // JPG image
+        {$IFDEF USEMAGICK}
+        // Use imagemagick to load tiff
+        LoadMagickBitmap(ImageStream.Memory,ImageStream.Size,ImageForm.ScanImage.Picture.Bitmap);
+        {$ELSE}
+        // Built in JPEG support
+        Imageform.ScanImage.Picture.LoadFromStreamWithFileExt(ImageStream, '.jpg');
+        {$ENDIF} //usemagick
+      end
+      else
+      begin
+        ShowMessage('Asked for image; received unknown file type. Technical details: '+ContentType);
+        exit;
+      end;
       ImageForm.Show;
     except
       on E: Exception do
@@ -635,6 +717,7 @@ end;
 
 procedure TForm1.ShowPDF(DocumentID: integer);
 var
+  ContentType: string;
   RequestResult: THTTPResult;
   PDFFile: string;
   PDFStream: TMemoryStream;
@@ -644,12 +727,13 @@ begin
   VData:=TJSONString.Create(''); //dummy value
   try
     // post a request to get the PDF; expect an application/pdf result
+    ContentType := '';
     RequestResult:=HttpRequestWithDataStream(VData,
     FSettings.CGIURL + 'document/' +
       IntToStr(DocumentID) + '/pdf',
       PDFStream,
       rmGet,
-      '');
+      ContentType);
     if RequestResult.Code <> 200 then
     begin
       ShowMessage('Error getting PDF from server. HTTP result code: ' + IntToStr(RequestResult.Code) + '/' + RequestResult.Text);
@@ -699,11 +783,10 @@ end;
 
 procedure TForm1.DeleteButtonClick(Sender: TObject);
 var
-  CommJSON: TJSONData;
   DocumentID: integer;
   DocumentPrompt: string;
-  ImageFile: string;
-  RequestResult: THttpResult;
+  i: integer;
+  MultipleFailure: boolean;
 begin
   if DocumentsGrid.Row < 1 then
   begin
@@ -714,39 +797,32 @@ begin
     DocumentID := StrToInt(DocumentsGrid.Cells[0, DocumentsGrid.Row]);
   end;
 
-  // Create new document if user wants to
-  if DocumentsGrid.Cells[1, DocumentsGrid.Row] = '' then
-    DocumentPrompt := 'ID ' + IntToStr(DocumentID) + '?'
+  // Ask user if he is sure, using document name instead of ID if possible
+  if (DocumentsGrid.Selection.Bottom-DocumentsGrid.Selection.Top)>1 then
+    DocumentPrompt := 'multiple documents'
+  else if DocumentsGrid.Cells[1, DocumentsGrid.Row] = '' then
+    DocumentPrompt := 'document ID ' + IntToStr(DocumentID) + '?'
   else
-    DocumentPrompt := '"' + DocumentsGrid.Cells[1, DocumentsGrid.Row] + '"?';
-
-  if (MessageDlg('Delete document?', 'Are you sure you want to delete document ' + DocumentPrompt,
+    DocumentPrompt := 'document "' + DocumentsGrid.Cells[1, DocumentsGrid.Row] + '"?';
+  if (MessageDlg('Delete document?', 'Are you sure you want to delete ' + DocumentPrompt,
     mtConfirmation, [mbOK, mbCancel], 0, mbCancel) = mrCancel) then
     exit;
 
-  CommJSON:=TJSONString.Create(''); //dummy content
-  try
-    Screen.Cursor := crHourglass;
-    try
-      RequestResult := HTTPRequest(FSettings.CGIURL + 'document/' + IntToStr(DocumentID), CommJSON, rmDelete);
-      if RequestResult.Code <> 200 then
-      begin
-        Screen.Cursor := crDefault;
-        ShowMessage('Error from server. HTTP result code: ' + IntToStr(RequestResult.Code) + '/' + RequestResult.Text);
-        exit;
-      end;
-    except
-      on E: Exception do
-      begin
-        Screen.Cursor := crDefault;
-        ShowMessage('Error interpreting response from server. Technical details: ' + E.Message);
-        exit;
-      end;
+  if (DocumentsGrid.Selection.Bottom-DocumentsGrid.Selection.Top)>1 then
+  begin
+    MultipleFailure := false;
+    for i:=DocumentsGrid.Selection.Bottom downto DocumentsGrid.Selection.Top do
+    begin
+      DocumentID := StrToInt(DocumentsGrid.Cells[0,i]);
+      if not(DeleteSingleDocument(DocumentID,true)) then
+        MultipleFailure := true;
     end;
-  finally
-    Screen.Cursor := crDefault;
-    CommJSON.Free;
-  end;
+    RefreshDocuments;
+    if MultipleFailure then
+      ShowMessage('Error deleting 1 or more documents.');
+  end
+  else
+    DeleteSingleDocument(DocumentID,false);
 end;
 
 end.
