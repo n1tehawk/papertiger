@@ -134,9 +134,6 @@ begin
         begin
           // - list of images
           // - a specific imageID based on document id, imageorder
-          //todo:debug
-          TigerLog.WriteLog(etDebug,'image get: content type: '+ARequest.ContentType);
-          TigerLog.WriteLog(etDebug,'image get: content: '+ARequest.Content );
           if (ARequest.ContentType='application/json') and
             (ARequest.Content<>'') then
           // Specific image (imageorder is optional; show all if missing

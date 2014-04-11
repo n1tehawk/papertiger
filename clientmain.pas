@@ -467,20 +467,6 @@ var
   Parser: TJSONParser;
 begin
   // Check for selected document
-  //todo: fix error on server last doc I get the wrong images:
-  {
-  Client:
-  GET /cgi-bin/tigercgi/image HTTP/1.1
-  { "documentid" : 83, "imageorder" : 1 }HTTP/1.1 200 OK
-
-  Server:
-  Content-Type: application/json
-  [{ "id" : 3, "imageorder" : 1, "documentid" : 3, "path" : "\/home\/pascaldev\/papertiger\/images\/someimage.tiff", "imagehash" : "0df3e790471cbbb8ca500a7489517363" },
-   { "id" : 4, "imageorder" : 1, "documentid" : 4, "path" : "\/home\/pascaldev\/papertiger\/images\/someimage2.tiff", "imagehash" : "0de38790471cbbb8ca500a7489517363" },
-   { "id" : 7, "imageorder" : 1, "documentid" : 7, "path" : "\/home\/pascaldev\/papertiger\/images\/someimage3.tif", "imagehash" : "8de98c70d5561d399827c3dcf671e6b7" },
-   { "id" : 8, "imageorder" : 1, "documentid" : 8, "path" : "\/home\/pascaldev\/papertiger\/images\/someimage4.tiff", "imagehash" : "9551e3ee49593433a5b06e6b11631cee" },
-   ....
-  }
   if DocumentsGrid.Row < 1 then
   begin
     ShowMessage('No document selected. Please select a document in the grid first.');
@@ -495,7 +481,7 @@ begin
     (VData as TJSONObject).Add('documentid', DocumentID);
     (VData as TJSONObject).Add('imageorder', ImageOrder); //sort order number
     // Get a request to get the image ID
-    ContentType := 'application/json';
+    ContentType := 'application/json'; //server requires this
     RequestResult := HttpRequestWithDataStream(VData, FSettings.CGIURL + 'image', ResponseStream, rmGet, ContentType);
     if RequestResult.Code <> 200 then
     begin
@@ -648,7 +634,7 @@ begin
   VData:=TJSONString.Create(''); //dummy value
   try
     // post a request to get the image; expect an application/tiff result
-    ContentType:='application/json';
+    ContentType:='application/json'; //server expects this
     RequestResult:=HttpRequestWithDataStream(VData,
     FSettings.CGIURL + 'image/' +
       IntToStr(ImageID),
