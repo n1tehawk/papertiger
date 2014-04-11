@@ -237,10 +237,17 @@ begin
     end;
     if Assigned(AData) then
     begin
+       if AContentType='' then
+         AContentType:='application/json';
       VHttp.RequestBody := TMemoryStream.Create;
       VJSON := AData.AsJSON;
       VHttp.RequestBody.Write(Pointer(VJSON)^, Length(VJSON));
       VHttp.RequestBody.Position := 0;
+    end
+    else
+    begin
+      if AContentType='' then
+        AContentType:='text/plain';
     end;
     VHttp.AddHeader('Content-Type', AContentType);
     VHttp.HTTPMethod(VMethod, AUrl, ReturnStream, []);
