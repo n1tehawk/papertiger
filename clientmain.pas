@@ -467,7 +467,6 @@ var
   Parser: TJSONParser;
 begin
   // Check for selected document
-  fix this in tigercgi!
   //todo: fix error on server last doc I get the wrong images:
   {
   Client:
@@ -496,7 +495,7 @@ begin
     (VData as TJSONObject).Add('documentid', DocumentID);
     (VData as TJSONObject).Add('imageorder', ImageOrder); //sort order number
     // Get a request to get the image ID
-    ContentType := ''; //default works here
+    ContentType := 'application/json';
     RequestResult := HttpRequestWithDataStream(VData, FSettings.CGIURL + 'image', ResponseStream, rmGet, ContentType);
     if RequestResult.Code <> 200 then
     begin
@@ -649,7 +648,7 @@ begin
   VData:=TJSONString.Create(''); //dummy value
   try
     // post a request to get the image; expect an application/tiff result
-    ContentType:=''; //doesn't really matter for sending
+    ContentType:='application/json';
     RequestResult:=HttpRequestWithDataStream(VData,
     FSettings.CGIURL + 'image/' +
       IntToStr(ImageID),
@@ -727,7 +726,7 @@ begin
   VData:=TJSONString.Create(''); //dummy value
   try
     // post a request to get the PDF; expect an application/pdf result
-    ContentType := '';
+    ContentType := 'application/json';
     RequestResult:=HttpRequestWithDataStream(VData,
     FSettings.CGIURL + 'document/' +
       IntToStr(DocumentID) + '/pdf',
