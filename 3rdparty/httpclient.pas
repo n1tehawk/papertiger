@@ -45,21 +45,22 @@ const
   CRLF=#13+#10;
   VMethod='POST';
 var
+  BoundaryMarker: string;
   VHttp: TFPHTTPClient;
   VJSON: TJSONStringType;
-  S, Sep : string;
+  S : string;
   SS : TStringStream;
   F : TFileStream;
   VData: TMemoryStream; //result
 begin
+  BoundaryMarker:=Format('%.8x_multipart_boundary',[Random($ffffff)]);
   VHttp := TFPHTTPClient.Create(nil);
   VData := TMemoryStream.Create;
   try
     VHttp.RequestHeaders.Add('Connection: Close');
     // File part
-    Sep:=Format('%.8x_multipart_boundary',[Random($ffffff)]);
-    VHTTP.AddHeader('Content-Type','multipart/form-data; boundary='+Sep);
-    S:='--'+Sep+CRLF;
+    VHTTP.AddHeader('Content-Type','multipart/form-data; boundary='+BoundaryMarker);
+    S:='--'+BoundaryMarker+CRLF; //only last one has trailing --
     s:=s+Format('Content-Disposition: form-data; name="%s"; filename="%s"'+CRLF,
       [AFieldName,ExtractFileName(AFileName)]);
     s:=s+'Content-Type: application/octet-string'+CRLF+CRLF;
@@ -70,22 +71,21 @@ begin
       SS.Seek(0,soFromEnd);
       SS.CopyFrom(AFile,AFile.Size);
       // ... then separator
-      S:=CRLF+'--'+Sep+'--'+CRLF;
-      SS.WriteBuffer(S[1],Length(S));
       if Assigned(AData) then
       begin
+        S:=CRLF+'--'+BoundaryMarker+CRLF; //only last one has trailing --
+        SS.WriteBuffer(S[1],Length(S));
         // Add JSON part
         //todo move json part up front before file?
-        Sep:=Format('%.8x_multipart_boundary',[Random($ffffff)]);
-        S:='--'+Sep+CRLF;
+        S:='--'+BoundaryMarker+CRLF;
         s:=s+'Content-Disposition: form-data; name="JSON"'+CRLF;
         s:=s+'Content-Type: application/json'+CRLF+CRLF;
         SS.Seek(0,soFromEnd);
         SS.WriteBuffer(s[1],Length(S));
-        SS.WriteBuffer(AData.AsJson,Length(AData.AsJSON));
-        S:=CRLF+'--'+Sep+'--'+CRLF;
-        SS.WriteBuffer(S[1],Length(S));
+        SS.WriteBuffer(AData.AsJSON,Length(AData.AsJSON));
       end;
+      S:=CRLF+'--'+BoundaryMarker+'--'+CRLF; //final separator has trailing --
+      SS.WriteBuffer(S[1],Length(S));
       SS.Position:=0;
       VHttp.RequestBody:=SS;
       VHttp.HTTPMethod(VMethod, AUrl, VData, []);
