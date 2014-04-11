@@ -75,6 +75,7 @@ begin
       if Assigned(AData) then
       begin
         // Add JSON part
+        //todo move json part up front before file?
         Sep:=Format('%.8x_multipart_boundary',[Random($ffffff)]);
         S:='--'+Sep+CRLF;
         s:=s+'Content-Disposition: form-data; name="JSON"'+CRLF;
