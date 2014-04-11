@@ -75,7 +75,8 @@ DELETE http://server/cgi-bin/tigercgi/image/               //delete all images?!
 GET    http://server/cgi-bin/tigercgi/image/               //list of images
 GET    http://server/cgi-bin/tigercgi/image/ with documentid, imageorder in JSON: get imageID of requested image
 POST   http://server/cgi-bin/tigercgi/image?documentid=55  // let server scan new image, return imageid
-POST   http://server/cgi-bin/tigercgi/image?documentid=55  // with image posted as form data: upload image, return imageid
+POST   http://server/cgi-bin/tigercgi/image with document id in JSON, with image posted as form data: upload image, return imageid
+alternative                                ?documentid=55  //as above but documentid in query field
 DELETE http://server/cgi-bin/tigercgi/image/304            //remove image with id 304
 GET    http://server/cgi-bin/tigercgi/image/304            //get image with id 304
 PUT    http://server/cgi-bin/tigercgi/image/304            //edit image with id 304
@@ -243,16 +244,40 @@ begin
     begin
       {
       POST   http://server/cgi-bin/tigercgi/image?documentid=55 // let server scan new image, return imageid
-      POST   http://server/cgi-bin/tigercgi/image?documentid=55 // with image posted as form data: upload image, return imageid
+      POST   http://server/cgi-bin/tigercgi/image with document id in JSON, with image posted as form data: upload image, return imageid
+      fallback: specify ?documentid=55 in URL
       }
       // Note we don't allow empty images to be created: either scan or upload image
       if WordCount(StrippedPath, ['/']) = 1 then
       begin
         // Check if user wants to add image/scan to existing document, by a query field or...
         DocumentID := INVALIDID;
+
+        // Figure out document ID from query fields or JSON content
         if (ARequest.QueryFields.Values['documentid'] <> '') then
         begin
           DocumentID := StrToIntDef(ARequest.QueryFields.Values['documentid'], INVALIDID);
+        end
+        else
+        begin
+          // todo: make sure we do not get the file part of the multipart post!!
+          Tigerlog.WriteLog(etDebug,'post image: no documentid found in url; fields count: '+inttostr(ARequest.FieldCount));
+          Parser := TJSONParser.Create(ContentStream);
+          try
+            try
+              // expect
+              // { "documentid" : 55 }
+              InputJSON := TJSONObject(Parser.Parse);
+              if (InputJSON.Find('documentid',jtNumber)<>nil) then
+                DocumentID := InputJSON.Integers['documentid'];
+            finally
+            end;
+          finally
+            Parser.Free;
+          end;
+        end;
+
+        begin
           if DocumentID <> INVALIDID then
           begin
             // Check for uploaded image file
@@ -269,7 +294,6 @@ begin
             begin
               // Scan.
               TigerLog.WriteLog(etDebug,'Module image: going to start scan for document id '+inttostr(DocumentID));
-              // todo: add support for uploading image
               ImageID := FTigerCore.ScanSinglePage(DocumentID);
               if ImageID <> INVALIDID then
               begin

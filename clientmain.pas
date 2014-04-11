@@ -450,7 +450,7 @@ begin
     end;
   end;
 
-  //When succesful, add docs to list
+  // When succesful, add docs to list
   RefreshDocuments;
   ShowPDF(DocumentID);
   ShowMessage('Scan complete.');
@@ -558,18 +558,25 @@ begin
     DocumentID := StrToInt(DocumentsGrid.Cells[0, DocumentsGrid.Row]);
   end;
 
+  if DocumentID=INVALIDID then
+  begin
+    ShowMessage('Error getting correct document ID. Stopping.');
+    exit;
+  end;
 
   OpenDialog1.Execute;
   ImageFile := OpenDialog1.FileName;
-  if ImageFile <> '' then
+  if (ImageFile <> '') and
+    (FileExistsUTF8(ImageFile)) then
   begin
     CommJSON := TJSONObject.Create;
     MemStream := TMemoryStream.Create;
     try
       MemStream.LoadFromFile(ImageFile);
       MemStream.Position := 0;
-      // Upload image as form data
-      RequestResult := FileFormPostWithDataStream(CommJSON,FSettings.CGIURL + 'image/',
+      // Upload image as form data, attach to specified document
+      RequestResult := FileFormPostWithDataStream(CommJSON,FSettings.CGIURL +
+        'image/?documentid=' + inttostr(DocumentID),
         'image',MemStream,ImageFile);
       if RequestResult.Code <> 200 then
       begin
@@ -578,7 +585,7 @@ begin
       end
       else
       begin
-        //do something
+        ShowMessage('Image succesfully uploaded.');
       end;
     finally
       MemStream.Free;
