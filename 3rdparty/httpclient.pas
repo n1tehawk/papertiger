@@ -73,16 +73,17 @@ begin
       // ... then separator
       if Assigned(AData) then
       begin
-        S:=CRLF+'--'+BoundaryMarker+CRLF; //only last one has trailing --
+        s:=CRLF+'--'+BoundaryMarker+CRLF; //only last one has trailing --
         SS.WriteBuffer(S[1],Length(S));
         // Add JSON part
         //todo move json part up front before file?
-        S:='--'+BoundaryMarker+CRLF;
+        s:='--'+BoundaryMarker+CRLF;
         s:=s+'Content-Disposition: form-data; name="JSON"'+CRLF;
         s:=s+'Content-Type: application/json'+CRLF+CRLF;
         SS.Seek(0,soFromEnd);
-        SS.WriteBuffer(s[1],Length(S));
-        SS.WriteBuffer(AData.AsJSON,Length(AData.AsJSON));
+        SS.WriteBuffer(s[1],Length(s));
+        s:=AData.AsJSON;
+        SS.WriteBuffer(s[1],Length(s));
       end;
       S:=CRLF+'--'+BoundaryMarker+'--'+CRLF; //final separator has trailing --
       SS.WriteBuffer(S[1],Length(S));

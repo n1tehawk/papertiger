@@ -569,14 +569,16 @@ begin
   if (ImageFile <> '') and
     (FileExistsUTF8(ImageFile)) then
   begin
-    CommJSON := TJSONObject.Create;
+    // Specify documentid to attach the image to
+    CommJSON := TJSONObject.Create(['documentid', DocumentID]);
     MemStream := TMemoryStream.Create;
     try
       MemStream.LoadFromFile(ImageFile);
       MemStream.Position := 0;
+
       // Upload image as form data, attach to specified document
       RequestResult := FileFormPostWithDataStream(CommJSON,FSettings.CGIURL +
-        'image/?documentid=' + inttostr(DocumentID),
+        'image' + inttostr(DocumentID),
         'image',MemStream,ImageFile);
       if RequestResult.Code <> 200 then
       begin
