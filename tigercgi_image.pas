@@ -254,6 +254,8 @@ begin
         // todo: make sure we do not get the file part of the multipart post!!
         //todo: debug
         TigerLog.WriteLog(etDebug,'content fields: '+Arequest.contentfields.text);
+        tigerlog.writelog(etdebug,'content: '+Arequest.Content);
+        ContentStream.Position:=0;
         Parser := TJSONParser.Create(ContentStream);
         try
           try
