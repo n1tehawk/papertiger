@@ -578,8 +578,7 @@ begin
 
       // Upload image as form data, attach to specified document
       RequestResult := FileFormPostWithDataStream(CommJSON,FSettings.CGIURL +
-        'image' + inttostr(DocumentID),
-        'image',MemStream,ImageFile);
+        'image', 'image',MemStream,ImageFile);
       if RequestResult.Code <> 200 then
       begin
         ShowMessageFmt('Error adding image to document %d. HTTP result code: %d/%s',[DocumentID,RequestResult.Code,RequestResult.Text]);

@@ -60,21 +60,11 @@ begin
     VHttp.RequestHeaders.Add('Connection: Close');
     // File part
     VHTTP.AddHeader('Content-Type','multipart/form-data; boundary='+BoundaryMarker);
-    S:='--'+BoundaryMarker+CRLF; //only last one has trailing --
-    s:=s+Format('Content-Disposition: form-data; name="%s"; filename="%s"'+CRLF,
-      [AFieldName,ExtractFileName(AFileName)]);
-    s:=s+'Content-Type: application/octet-string'+CRLF+CRLF;
-    // Start with form-data filename
-    SS:=TStringStream.Create(s);
+    SS:=TStringStream.Create('');
     try
-      // then add file part...
-      SS.Seek(0,soFromEnd);
-      SS.CopyFrom(AFile,AFile.Size);
-      // ... then separator
+      // First JSON
       if Assigned(AData) then
       begin
-        s:=CRLF+'--'+BoundaryMarker+CRLF; //only last one has trailing --
-        SS.WriteBuffer(S[1],Length(S));
         // Add JSON part
         //todo move json part up front before file?
         s:='--'+BoundaryMarker+CRLF;
@@ -82,9 +72,18 @@ begin
         s:=s+'Content-Type: application/json'+CRLF+CRLF;
         SS.Seek(0,soFromEnd);
         SS.WriteBuffer(s[1],Length(s));
-        s:=AData.AsJSON;
+        s:=AData.AsJSON+CRLF;
         SS.WriteBuffer(s[1],Length(s));
       end;
+      // ... then with filename part
+      S:='--'+BoundaryMarker+CRLF; //only last one has trailing --
+      s:=s+Format('Content-Disposition: form-data; name="%s"; filename="%s"'+CRLF,
+        [AFieldName,ExtractFileName(AFileName)]);
+      s:=s+'Content-Type: application/octet-string'+CRLF+CRLF;
+      SS.WriteBuffer(s[1],Length(S));
+      SS.Seek(0,soFromEnd);
+      SS.CopyFrom(AFile,AFile.Size);
+
       S:=CRLF+'--'+BoundaryMarker+'--'+CRLF; //final separator has trailing --
       SS.WriteBuffer(S[1],Length(S));
       SS.Position:=0;
