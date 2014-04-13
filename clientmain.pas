@@ -70,6 +70,8 @@ type
     DocumentsGrid: TStringGrid;
     ShowPDFButton: TButton;
     DeleteButton: TButton;
+    AddImageButton: TButton;
+    procedure AddImageButtonClick(Sender: TObject);
     procedure DeleteButtonClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -99,6 +101,7 @@ type
     // Callback for acquisition
     procedure TwainTwainAcquire(Sender: TObject; const {%H-}Index: Integer;
       Image: TBitmap; var Cancel: Boolean);
+    procedure UploadImage(const DocumentID: integer);
     {$ENDIF}
   public
     { public declarations }
@@ -540,64 +543,10 @@ end;
 procedure TForm1.UploadImageButtonClick(Sender: TObject);
 var
   DocumentID: integer;
-  ImageFile: string;
-  RequestResult: THTTPResult;
-  CommJSON: TJSONData;
-  MemStream: TMemoryStream;
 begin
-  if DocumentsGrid.Row < 1 then
-  begin
-    // Create new document if user wants to
-    if (MessageDlg('Create document?', 'No document selected. Create a new document for this image?',
-      mtConfirmation, [mbOK, mbCancel], 0, mbOK) = mrCancel) then
-      exit;
-    DocumentID := AddDocument;
-  end
-  else
-  begin
-    DocumentID := StrToInt(DocumentsGrid.Cells[0, DocumentsGrid.Row]);
-  end;
+  DocumentID := AddDocument;
 
-  if DocumentID=INVALIDID then
-  begin
-    ShowMessage('Error getting correct document ID. Stopping.');
-    exit;
-  end;
-
-  OpenDialog1.Execute;
-  ImageFile := OpenDialog1.FileName;
-  if (ImageFile <> '') and
-    (FileExistsUTF8(ImageFile)) then
-  begin
-    // Specify documentid to attach the image to
-    CommJSON := TJSONObject.Create(['documentid', DocumentID]);
-    MemStream := TMemoryStream.Create;
-    try
-      MemStream.LoadFromFile(ImageFile);
-      MemStream.Position := 0;
-
-      // Upload image as form data, attach to specified document
-      RequestResult := FileFormPostWithDataStream(CommJSON,FSettings.CGIURL +
-        'image', 'image',MemStream,ImageFile);
-      if RequestResult.Code <> 200 then
-      begin
-        ShowMessageFmt('Error adding image to document %d. HTTP result code: %d/%s',[DocumentID,RequestResult.Code,RequestResult.Text]);
-        exit;
-      end
-      else
-      begin
-        ShowMessage('Image succesfully uploaded.');
-      end;
-    finally
-      MemStream.Free;
-      CommJSON.Free;
-    end;
-  end
-  else
-  begin
-    ShowMessage('No valid image selected. Aborting.');
-    exit;
-  end;
+  UploadImage(DocumentID);
 end;
 
 procedure TForm1.RefreshDocuments;
@@ -762,6 +711,57 @@ begin
   Image.SaveToFile('twainimage.bmp'); //todo: adjust for multipage, format etc
   Cancel:=true; //only want 1 image!??
 end;
+
+procedure TForm1.UploadImage(const DocumentID: integer);
+var
+  MemStream: TMemoryStream;
+  CommJSON: TJSONData;
+  RequestResult: THTTPResult;
+  ImageFile: string;
+begin
+  if DocumentID=INVALIDID then
+  begin
+    ShowMessage('Error getting correct document ID. Stopping.');
+    exit;
+  end;
+
+  OpenDialog1.Execute;
+  ImageFile := OpenDialog1.FileName;
+  if (ImageFile <> '') and
+    (FileExistsUTF8(ImageFile)) then
+  begin
+    // Specify documentid to attach the image to
+    CommJSON := TJSONObject.Create(['documentid', DocumentID]);
+    MemStream := TMemoryStream.Create;
+    try
+      MemStream.LoadFromFile(ImageFile);
+      MemStream.Position := 0;
+
+      // Upload image as form data, attach to specified document
+      RequestResult := FileFormPostWithDataStream(CommJSON, FSettings.CGIURL +
+        'image', 'image', MemStream, ImageFile);
+      if RequestResult.Code <> 200 then
+      begin
+        ShowMessageFmt('Error adding image to document %d. HTTP result code: %'
+          +'d/%s', [DocumentID, RequestResult.Code, RequestResult.Text]);
+        exit;
+      end
+      else
+      begin
+        ShowMessage('Image succesfully uploaded.');
+      end;
+    finally
+      MemStream.Free;
+      CommJSON.Free;
+    end;
+  end
+  else
+  begin
+    ShowMessage('No valid image selected. Aborting.');
+    exit;
+  end;
+end;
+
 {$ENDIF}
 
 procedure TForm1.FormCreate(Sender: TObject);
@@ -816,6 +816,23 @@ begin
   end
   else
     DeleteSingleDocument(DocumentID,false);
+end;
+
+procedure TForm1.AddImageButtonClick(Sender: TObject);
+var
+  DocumentID: integer;
+begin
+  if DocumentsGrid.Row < 1 then
+  begin
+    ShowMessage('Please select a document first to which the image can be added.');
+    Exit;
+  end
+  else
+  begin
+    DocumentID := StrToInt(DocumentsGrid.Cells[0, DocumentsGrid.Row]);
+  end;
+
+  UploadImage(DocumentID);
 end;
 
 end.
