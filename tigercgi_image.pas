@@ -253,8 +253,10 @@ begin
 
         // todo: make sure we do not get the file part of the multipart post!!
         //todo: debug
-        TigerLog.WriteLog(etDebug,'content fields: '+Arequest.contentfields.text);
-        tigerlog.writelog(etdebug,'content: '+Arequest.Content);
+        //empty: Arequest.contentfields.text
+        tigerlog.writelog(etdebug,'contentfields is: '+ARequest.ContentFields.Text);
+        //arequest.content has  --008C7F0A_multipart_boundary#015#012Content-Disposition: form-data; name="JSO...until the end
+
         ContentStream.Position:=0;
         Parser := TJSONParser.Create(ContentStream);
         try

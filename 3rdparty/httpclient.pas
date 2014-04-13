@@ -66,7 +66,6 @@ begin
       if Assigned(AData) then
       begin
         // Add JSON part
-        //todo move json part up front before file?
         s:='--'+BoundaryMarker+CRLF;
         s:=s+'Content-Disposition: form-data; name="JSON"'+CRLF;
         s:=s+'Content-Type: application/json'+CRLF+CRLF;
