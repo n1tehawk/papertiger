@@ -245,68 +245,86 @@ begin
       POST   http://server/cgi-bin/tigercgi/image?documentid=55 // let server scan new image, return imageid
       POST   http://server/cgi-bin/tigercgi/image with document id in JSON, with image posted as form data: upload image, return imageid
       }
+      //todo: deal with http://server/cgi-bin/tigercgi/image?documentid=55
       // Note we don't allow empty images to be created: either scan or upload image
       if WordCount(StrippedPath, ['/']) = 1 then
       begin
         // Check if user wants to add image/scan to existing document, by a query field or...
         DocumentID := INVALIDID;
 
-        // todo: make sure we do not get the file part of the multipart post!!
         //todo: debug
-        //empty: Arequest.contentfields.text
         tigerlog.writelog(etdebug,'contentfields is: '+ARequest.ContentFields.Text);
         //arequest.content has  --008C7F0A_multipart_boundary#015#012Content-Disposition: form-data; name="JSO...until the end
-
-        ContentStream.Position:=0;
-        Parser := TJSONParser.Create(ContentStream);
-        try
+        ARequest.ContentFields.NameValueSeparator:='=';
+        if ARequest.ContentFields.Values['JSON']<>'' then //found form part with JSON data
+        begin
+          Parser := TJSONParser.Create(ARequest.ContentFields.Values['JSON'], true);
           try
-            // expect
-            // { "documentid" : 55 }
-            InputJSON := TJSONObject(Parser.Parse);
-            if (InputJSON.Find('documentid',jtNumber)<>nil) then
-              DocumentID := InputJSON.Integers['documentid'];
-          except
-            DocumentID := INVALIDID;
+            try
+              // expect
+              // { "documentid" : 55 }
+              InputJSON := TJSONObject(Parser.Parse);
+              if (InputJSON.Find('documentid',jtNumber)<>nil) then
+              begin
+                DocumentID := InputJSON.Integers['documentid'];
+                IsValidRequest:=true; //preliminary; will be tested below
+              end;
+            except
+              DocumentID := INVALIDID;
+            end;
+          finally
+            Parser.Free;
           end;
-        finally
-          Parser.Free;
+        end
+        else
+        begin
+          // No valid JSON - perhaps specified in URL
+          if ARequest.QueryFields.Values['documentid']<>'' then
+            DocumentID:=StrToIntDef(ARequest.QueryFields.Values['documentid'],INVALIDID);
+          if DocumentID=INVALIDID then
+          begin
+            TigerLog.WriteLog(etDebug,'Module image: upload image attempt without valid JSON part (with documentid).');
+            IsValidRequest:=false;
+          end;
         end;
 
         begin
-          if DocumentID <> INVALIDID then
+          if IsValidRequest then
           begin
-            // Check for uploaded image file
-            if ARequest.Files.Count > 0 then
+            if (DocumentID <> INVALIDID) then
             begin
-              ImageID := FTigerCore.AddImage(ARequest.Files[0].Stream,
-                ARequest.Files[0].FileName, DocumentID, -1);
-              if ImageID <> INVALIDID then
-                IsValidRequest := True
-              else
-                TigerLog.WriteLog(etDebug,'Module image: upload image attempt resulted in error.');
-            end
-            else
-            begin
-              // Scan.
-              TigerLog.WriteLog(etDebug,'Module image: going to start scan for document id '+inttostr(DocumentID));
-              ImageID := FTigerCore.ScanSinglePage(DocumentID);
-              if ImageID <> INVALIDID then
+              // Check for uploaded image file
+              if ARequest.Files.Count > 0 then
               begin
-                IsValidRequest := True;
-                AResponse.ContentType := 'application/json';
-                OutputJSON := TJSONObject.Create();
-                try
-                  OutputJSON.Add('imageid', ImageID);
-                  AResponse.Contents.Add(OutputJSON.AsJSON);
-                finally
-                  OutputJSON.Free;
-                end;
+                ImageID := FTigerCore.AddImage(ARequest.Files[0].Stream,
+                  ARequest.Files[0].FileName, DocumentID, -1);
+                if ImageID <> INVALIDID then
+                  IsValidRequest := True
+                else
+                  TigerLog.WriteLog(etDebug,'Module image: upload image attempt resulted in error.');
               end
               else
               begin
-                TigerLog.WriteLog(etDebug,'Module image: error calling ScanSinglePage for document '+inttostr(DocumentID));
-                IsValidRequest := False; //for extra clarity, not really needed
+                // Scan.
+                TigerLog.WriteLog(etDebug,'Module image: going to start scan for document id '+inttostr(DocumentID));
+                ImageID := FTigerCore.ScanSinglePage(DocumentID);
+                if ImageID <> INVALIDID then
+                begin
+                  IsValidRequest := True;
+                  AResponse.ContentType := 'application/json';
+                  OutputJSON := TJSONObject.Create();
+                  try
+                    OutputJSON.Add('imageid', ImageID);
+                    AResponse.Contents.Add(OutputJSON.AsJSON);
+                  finally
+                    OutputJSON.Free;
+                  end;
+                end
+                else
+                begin
+                  TigerLog.WriteLog(etDebug,'Module image: error calling ScanSinglePage for document '+inttostr(DocumentID));
+                  IsValidRequest := False; //for extra clarity, not really needed
+                end;
               end;
             end;
           end
