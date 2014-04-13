@@ -245,7 +245,6 @@ begin
       POST   http://server/cgi-bin/tigercgi/image?documentid=55 // let server scan new image, return imageid
       POST   http://server/cgi-bin/tigercgi/image with document id in JSON, with image posted as form data: upload image, return imageid
       }
-      //todo: deal with http://server/cgi-bin/tigercgi/image?documentid=55
       // Note we don't allow empty images to be created: either scan or upload image
       if WordCount(StrippedPath, ['/']) = 1 then
       begin
@@ -278,7 +277,7 @@ begin
         end
         else
         begin
-          // No valid JSON - perhaps specified in URL
+          // No valid JSON - perhaps specified in URL as a query?
           if ARequest.QueryFields.Values['documentid']<>'' then
             DocumentID:=StrToIntDef(ARequest.QueryFields.Values['documentid'],INVALIDID);
           if DocumentID=INVALIDID then
@@ -296,6 +295,8 @@ begin
               // Check for uploaded image file
               if ARequest.Files.Count > 0 then
               begin
+                //todo: debug
+                TigerLog.WriteLog(etDebug,'Module image: going to add file named '+ARequest.Files[0].FileName);
                 ImageID := FTigerCore.AddImage(ARequest.Files[0].Stream,
                   ARequest.Files[0].FileName, DocumentID, -1);
                 if ImageID <> INVALIDID then

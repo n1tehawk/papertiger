@@ -271,7 +271,8 @@ begin
     end;
 
     // Insert image reference into database
-    Result := FTigerDB.InsertImage(DocumentID, ImageOrder, ImageFile, ImageHash);
+    if FileExists(ImageFile) then
+      Result := FTigerDB.InsertImage(DocumentID, ImageOrder, ImageFile, ImageHash);
   except
     on E: Exception do
     begin
