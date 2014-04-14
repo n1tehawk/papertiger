@@ -101,7 +101,12 @@ type
     // Callback for acquisition
     procedure TwainTwainAcquire(Sender: TObject; const {%H-}Index: Integer;
       Image: TBitmap; var Cancel: Boolean);
-    procedure UploadImage(const DocumentID: integer);
+    // Uploads image to server for given documentid.
+    // If Quiet, will only give error messages.
+    // Returns success status
+    function UploadImage(const DocumentID: integer;
+      ImageFile: string;
+      Quiet: boolean=false): boolean;
     {$ENDIF}
   public
     { public declarations }
@@ -376,8 +381,12 @@ begin
             begin
               ShowMessage('Please put page ' + IntToStr(CurrentPage) + ' in the scanner.');
             end;
-            WIAScanner.Scan;
-            //todo: upload images to server
+            if NumberPages>1 then
+              WiaScanner.FilePart:='page'+inttostr(currentpage);
+            if not(WIAScanner.Scan) then
+              raise Exception.Create('Scan aborted.');
+            if not(UploadImage(DocumentID,WIAScanner.FileName,true)) then
+              raise Exception.Create('Error uploading image to server.');
           end;
         except
           on E: Exception do
@@ -543,10 +552,12 @@ end;
 procedure TForm1.UploadImageButtonClick(Sender: TObject);
 var
   DocumentID: integer;
+  ImageFile: string;
 begin
   DocumentID := AddDocument;
-
-  UploadImage(DocumentID);
+  OpenDialog1.Execute;
+  ImageFile := OpenDialog1.FileName;
+  UploadImage(DocumentID, ImageFile);
 end;
 
 procedure TForm1.RefreshDocuments;
@@ -712,21 +723,21 @@ begin
   Cancel:=true; //only want 1 image!??
 end;
 
-procedure TForm1.UploadImage(const DocumentID: integer);
+function TForm1.UploadImage(const DocumentID: integer;
+  ImageFile: string;
+  Quiet: boolean=false): boolean;
 var
   MemStream: TMemoryStream;
   CommJSON: TJSONData;
   RequestResult: THTTPResult;
-  ImageFile: string;
 begin
+  result:=false;
   if DocumentID=INVALIDID then
   begin
     ShowMessage('Error getting correct document ID. Stopping.');
     exit;
   end;
 
-  OpenDialog1.Execute;
-  ImageFile := OpenDialog1.FileName;
   if (ImageFile <> '') and
     (FileExistsUTF8(ImageFile)) then
   begin
@@ -748,7 +759,9 @@ begin
       end
       else
       begin
-        ShowMessage('Image succesfully uploaded.');
+        result:=true;
+        if not(Quiet) then
+          ShowMessage('Image succesfully uploaded.');
       end;
     finally
       MemStream.Free;
@@ -823,6 +836,7 @@ end;
 procedure TForm1.AddImageButtonClick(Sender: TObject);
 var
   DocumentID: integer;
+  ImageFile: string;
 begin
   if DocumentsGrid.Row < 1 then
   begin
@@ -834,12 +848,11 @@ begin
     DocumentID := StrToInt(DocumentsGrid.Cells[0, DocumentsGrid.Row]);
   end;
 
-  UploadImage(DocumentID);
+  OpenDialog1.Execute;
+  ImageFile := OpenDialog1.FileName;
+  UploadImage(DocumentID, ImageFile);
 end;
 
 end.
-
-
-
 
 
