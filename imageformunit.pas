@@ -5,14 +5,19 @@ unit imageformunit;
 interface
 
 uses
-  Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, ExtCtrls;
+  Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, ExtCtrls,
+  StdCtrls;
 
 type
 
   { TImageForm }
 
   TImageForm = class(TForm)
+    btnPrevious: TButton;
+    btnNext: TButton;
     ScanImage: TImage;
+    procedure btnNextClick(Sender: TObject);
+    procedure btnPreviousClick(Sender: TObject);
   private
     { private declarations }
   public
@@ -25,6 +30,18 @@ var
 implementation
 
 {$R *.lfm}
+
+{ TImageForm }
+
+procedure TImageForm.btnPreviousClick(Sender: TObject);
+begin
+
+end;
+
+procedure TImageForm.btnNextClick(Sender: TObject);
+begin
+
+end;
 
 end.
 
