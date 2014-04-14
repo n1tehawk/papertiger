@@ -42,6 +42,7 @@ type
   TTigerSettings = class(TObject)
   private
     FCGIURL: string;
+    FClientCertificate: string;
     FImageDirectory: string;
     FLanguage: string;
     FPDFDirectory: string;
@@ -52,9 +53,12 @@ type
   public
     // Client config: the URL that points to the tiger server
     property CGIURL: string read FCGIURL write FCGIURL;
+    // Use this certificate if using client side certificates with TLS/SSL,
+    // Note: client side certificates are not required for TLS/SSL, but your server may require them for security reasons.
+    property ClientCertificate: string read FClientCertificate write FClientCertificate;
     // Directory where scanned images must be/are stored; Has trailing path delimiter.
     property ImageDirectory: string read FImageDirectory write FImageDirectory;
-    //Language used for text recognition. Use Tesseract notation. Default English.
+    // Language used for text recognition. Use Tesseract notation. Default English.
     property Language: string read FLanguage write FLanguage;
     // Directory where resulting PDFs must be stored; Has trailing path delimiter.
     property PDFDirectory: string read FPDFDirectory write FPDFDirectory;
@@ -81,12 +85,14 @@ begin
   FSettings := TINIFile.Create(FSettingsFileName);
   // Default for Apache localhost:
   FCGIURL := 'http://127.0.0.1/cgi-bin/tigercgi/';
+  FClientCertificate:='';
   FImageDirectory := '';
   FLanguage := 'eng'; //Default to English
   FPDFDirectory := '';
   FScanDevice := ''; //todo: find if there is some SANE default device name
   try
     FCGIURL := FSettings.ReadString('General', 'CGIURL', FCGIURL);
+    FClientCertificate := FSettings.ReadString('General', 'ClientCertificate', '');;
 
     // When reading the settings, expand ~ to home directory etc
     // Default to current directory

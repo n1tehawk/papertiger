@@ -1,12 +1,16 @@
 unit HttpClient;
 
 {$mode objfpc}{$H+}
-{ Adapted from original httpclient}
+{ Adapted from original httpclient
+- Has support for TLS/SSL encryption using openssl - have openssl library(ies)
+e.g. ssleay32.dll,libeay32.dll installed or in your program directory.
+- Adds support for client side certificates; see SSLHelper variable below
+}
 
 interface
 
 uses
-  FPHTTPClient, FPJSON, JSONParser, SysUtils, Classes;
+  FPHTTPClient, FPJSON, JSONParser, SysUtils, Classes, ssockets, sslsockets, fpopenssl;
 
 type
   THttpResult = record
@@ -16,6 +20,23 @@ type
 
   TRequestMethod = (rmGet, rmHead, rmOptions, rmPost, rmPut, rmDelete);
 
+  { TSSLHelper }
+
+  TSSLHelper = class(TObject)
+  private
+    FClientCertificate: string;
+  public
+    // Creates TFPHTTPClient including correct settings for certificate file if used
+    function CreateHTTPClient: TFPHTTPClient;
+    // Callback for setting up SSL client certificate
+    procedure SSLClientCertSetup(Sender : TObject; Const UseSSL : Boolean; Out AHandler : TSocketHandler);
+    //TLS/SSL client certificate if used
+    property ClientCertificate: string read FClientCertificate write FClientCertificate;
+    constructor Create;
+    destructor Destroy; override;
+  end;
+
+  //todo: make everything a descendent of fphttpclient or something
   //todo: add timeout support
   // Perform a POST with JSON data and a file in multipart/form data. Return response in Response
 function FileFormPostWithDataStream(const AData: TJSONData; const AURL, AFieldName: String;
@@ -34,9 +55,11 @@ function HttpRequestWithDataStream(var AData: TJSONData; const AUrl: string;
   const AMethod: TRequestMethod = rmPost;
   var AContentType: string = 'application/json'
   ): THttpResult;
-
+var
+  SSLHelper: TSSLHelper;
 
 implementation
+
 
 // adapted from TFPCustomHTTPClient
 function FileFormPostWithDataStream(const AData: TJSONData; const AURL, AFieldName: String;
@@ -54,7 +77,7 @@ var
   VData: TMemoryStream; //result
 begin
   BoundaryMarker:=Format('%.8x_multipart_boundary',[Random($ffffff)]);
-  VHttp := TFPHTTPClient.Create(nil);
+  VHttp := SSLHelper.CreateHTTPClient; //includes client cert support
   VData := TMemoryStream.Create;
   try
     VHttp.RequestHeaders.Add('Connection: Close');
@@ -109,7 +132,7 @@ var
   VHttp: TFPHTTPClient;
   VData: TMemoryStream;
 begin
-  VHttp := TFPHTTPClient.Create(nil);
+  VHttp := SSLHelper.CreateHTTPClient; //includes client cert support
   VData := TMemoryStream.Create;
   try
     case AMethod of
@@ -162,7 +185,7 @@ var
   VData: TMemoryStream;
   VJSON: TJSONStringType;
 begin
-  VHttp := TFPHTTPClient.Create(nil);
+  VHttp := SSLHelper.CreateHTTPClient; //includes client cert support
   VData := TMemoryStream.Create;
   try
     case AMethod of
@@ -225,7 +248,7 @@ var
   VHttp: TFPHTTPClient;
   VJSON: TJSONStringType;
 begin
-  VHttp := TFPHTTPClient.Create(nil);
+  VHttp := SSLHelper.CreateHTTPClient; //includes client cert support
   try
     case AMethod of
       rmDelete: VMethod := 'DELETE';
@@ -260,6 +283,55 @@ begin
     VHttp.RequestBody := nil;
     VHttp.Free;
   end;
+end;
+
+{ TSSLHelper }
+
+// Sets up http client; if ClientCertificate is used,
+// initialize SSL support with that certificate.
+// Note: SSL traffic does not need a client certificate;
+// this is just if added security is required.
+function TSSLHelper.CreateHTTPClient: TFPHTTPClient;
+begin
+  result:=TFPHTTPClient.Create(nil);
+  if FClientCertificate<>'' then
+  begin
+    result.OnGetSocketHandler:=@SSLClientCertSetup;
+  end;
+end;
+
+procedure TSSLHelper.SSLClientCertSetup(Sender: TObject; const UseSSL: Boolean;
+  out AHandler: TSocketHandler);
+begin
+  AHandler:=nil;
+  if UseSSL and (FClientCertificate<>'') then
+  begin
+    // Only set up client certificate if needed.
+    // If not, let normal fphttpclient flow create
+    // required socket handler
+    AHandler:=TSSLSocketHandler.Create;
+    (AHandler as TSSLSocketHandler).Certificate.FileName:=FClientCertificate;
+  end;
+end;
+
+constructor TSSLHelper.Create;
+begin
+  FClientCertificate:='';
+end;
+
+destructor TSSLHelper.Destroy;
+begin
+  inherited Destroy;
+end;
+
+initialization
+begin
+  SSLHelper:=TSSLHelper.Create;
+end;
+
+finalization
+begin
+  SSLHelper.Free;
 end;
 
 end.

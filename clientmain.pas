@@ -767,6 +767,8 @@ end;
 procedure TForm1.FormCreate(Sender: TObject);
 begin
   FSettings := TTigerSettings.Create('tigerclient.ini');
+  // Set up client side certificate support if needed
+  httpclient.SSLHelper.ClientCertificate:=FSettings.ClientCertificate;
 end;
 
 procedure TForm1.FormDestroy(Sender: TObject);
