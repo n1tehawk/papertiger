@@ -3,7 +3,8 @@ Paper Tiger
 Scanning, text recognition and archiving of paper documents... 
 with GUI clients but from the command line if necessary 
 
-The Paper Tiger code has a liberal MIT license. It uses various other open-source programs.
+The Paper Tiger code has a liberal MIT license. 
+It uses various other open-source programs.
 
 Functionality
 =============
@@ -15,7 +16,8 @@ Architecture/functionality:
 - server component written in FreePascal, so no X Windows required.
 - command line control on server
 - CGI REST server component
-- GUI viewer/scanner controls written in Lazarus+FreePascal; communicates using REST
+- GUI viewer/scanner controls written in Lazarus+FreePascal; 
+  communicates using REST
 
 
 Further possible refinements:
@@ -37,16 +39,18 @@ Architecture and development principles
 - this means synchronizing PDF text with the full text archive may be required
 - develop towards a single point of control: 
   tigerservercore, which may speak multiple protocols, e.g. via plugins
-- however, use standard methods of storing data (e.g. full text search components), 
-  normalized database schema in order to allow programs/tools that don't speak 
-	the protocols mentioned above to get data easily
+- however, use standard methods of storing data (e.g. full text search 
+  components), normalized database schema in order to allow programs/tools that 
+	don't speak the protocols mentioned above to get data easily
 - these 2 principles clash; the code will need to stabilize until it is wise to 
   directly try to access e.g. the database.
-	Even then, breaking changes will not be avoided if e.g. cleanness of design would be compromised
+	Even then, breaking changes will not be avoided if e.g. cleanness of design 
+	would be compromised
 
 Compilation instructions
 ========================
-FPC 2.7.1/trunk is required for the server/CGI programs because 2.6.2 fpweb does not accept the DELETE method.
+FPC 2.7.1/trunk is preferred for the server/CGI programs.
+At least FPC 2.6.2 fpweb does not accept the DELETE method.
 For the client program, Lazarus trunk has been used for development.
 
 1. Compile hgversion.pas, e.g.:
@@ -69,7 +73,8 @@ Installation instructions
   aptitude install sane-utils
 - prerequisites: have tesseract installed and configured. E.g.:
   aptitude install tesseract-ocr tesseract-ocr-eng #for English language support
-  Note: we need version 3 because of hOCR support needed for getting searchable PDFs.
+  Note: we need version 3 because of hOCR support needed for getting searchable 
+	PDFs.
 - prerequisites: have exactimage installed (for hocr2pdf), e.g.:
   aptitude install exactimage
 - Tesseract must/can then be configured to output hocr, e.g.:
@@ -79,7 +84,8 @@ Installation instructions
   cat >> /usr/local/share/tessdata/configs/hocr << "EOF_DOCUMENT"
   tessedit_create_hocr 1
   EOF_DOCUMENT
-- nice to have: have scantailor installed (for aligning/cleaning up the tiff images before OCR)
+- nice to have: have scantailor installed (for aligning/cleaning up the tiff 
+  images before OCR).
   see installation notes below
 	
   
@@ -87,12 +93,14 @@ Installing the command line server:
 - copy hocrwrap.sh to server directory (e.g. /opt/tigerserver/)
 - copy scanwrap.sh to server directory
 - copy tigerserver to server directory
-- go to the server directory and make files executable, e.g. (replace directory with your own if necessary):
+- go to the server directory and make files executable, e.g. (replace 
+  directory with your own if necessary):
   cd /opt/tigerserver/
   chmod u+rx hocrwrap.sh
   chmod u+rx scanwrap.sh
   chmod u+rx tigerserver
-- copy tigerserver.ini.template to tigerserver.ini and edit settings to match your environment
+- copy tigerserver.ini.template to tigerserver.ini and edit settings to match 
+  your environment
 
 Test by running ./tigerserver --help
 
@@ -100,26 +108,36 @@ Installing the cgi application:
 - prerequisites: apache2 or another HTTP server that supports cgi
   aptitude install apache2
 -	copy tigercgi to cgi directory (e.g. /usr/lib/cgi-bin). 
-	Make sure the user Apache runs under may read and execute the file (e.g. chmod ugo+rx tigercgi)
+	Make sure the user Apache runs under may read and execute the file (e.g. 
+	chmod ugo+rx tigercgi)
 - copy hocrwrap.sh to cgi directory (e.g. /usr/lib/cgi-bin/)
 - copy scanwrap.sh to cgi directory
 - copy tigercgi to cgi directory
-- copy tigerserver.ini.template to tigerserver.ini in the cgi directory and edit settings to match your environment
-- go to the cgi directory and make files executable for the apache/www user, e.g. (replace directory with your own if necessary):
+- copy tigerserver.ini.template to tigerserver.ini in the cgi directory and edit
+  settings to match your environment
+- go to the cgi directory and make files executable for the apache/www user, 
+  e.g. (replace directory with your own if necessary):
   cd /usr/lib/cgi-bin/
-  chown www-data:www-data hocrwrap.sh #replace with correct user/group if needed, e.g. apache2
-  chown www-data:www-data scanwrap.sh #replace with correct user/group if needed, e.g. apache2
-  chown www-data:www-data tigercgi #replace with correct user/group if needed, e.g. apache2 
-  chown www-data:www-data tigerserver.ini #replace with correct user/group if needed, e.g. apache2   
+	# replace user/groups below with correct user/group if needed, e.g. apache2
+  chown www-data:www-data hocrwrap.sh 
+  chown www-data:www-data scanwrap.sh
+  chown www-data:www-data tigercgi
+  chown www-data:www-data tigerserver.ini
+	# make scripts executable:
   chmod u+rx hocrwrap.sh
   chmod u+rx scanwrap.sh
   chmod u+rx tigercgi
   chmod u+r  tigerserver.ini
   
 Installing the client:
-- prerequisites: *nix: imagemagick dev libraries installed: e.g. aptitude install imagemagick
-- prerequisites: Windows: imagemagick DLLs e.g. Q16 x86 or x64 (depending on papertiger client bitness) version downloaded from http://www.imagemagick.org/script/binary-releases.php in client directory or in path
-- copy tigerclient.ini.template to tigerclient.ini and edit settings to match your environment
+- prerequisites: *nix: imagemagick dev libraries installed: e.g. 
+  aptitude install imagemagick
+- prerequisites: Windows: imagemagick DLLs e.g. Q16 x86 or x64 (depending on 
+  papertiger client bitness) version downloaded from 
+	http://www.imagemagick.org/script/binary-releases.php in client directory or 
+	in path
+- copy tigerclient.ini.template to tigerclient.ini and edit settings to match 
+  your environment
 
 
 Building Tesseract 3
@@ -128,7 +146,8 @@ If tesseract 3 is not available for your platform, you will need to build it.
 Preliminary notes for building Tesseract 3 on Debian aqueeze
 sources:
 http://ubuntuforums.org/showthread.php?t=1647350
-aptitude install build-essential leptonica libleptonica-dev libpng-dev libjpeg-dev libtiff-dev zlib1g-dev
+aptitude install build-essential leptonica libleptonica-dev libpng-dev 
+libjpeg-dev libtiff-dev zlib1g-dev
 
 # as root:
 cd ~
@@ -138,7 +157,8 @@ cd tesseract-3.01
 ./runautoconf
 ./configure
 make
-checkinstall (follow the prompts and type "y" to create documentation directory. Enter a brief description then press enter twice)
+checkinstall #follow the prompts and type "y" to create documentation directory.
+# Enter a brief description then press enter twice
 ldconfig
 
 #language/training data, e.g. for Dutch and English:
@@ -159,7 +179,9 @@ https://sourceforge.net/apps/mediawiki/scantailor/index.php?title=Building_from_
 Notes for Debian below.
 
 # get compilers and dependencies
-aptitude install build-essential cmake libqt4-dev libjpeg-dev zlib1g-dev libpng-dev libtiff-dev libtiff5-alt-dev  libboost-dev libxrender-dev #libtiff5-alt-dev for good measure; hope it improves tiff support
+aptitude install build-essential cmake libqt4-dev libjpeg-dev zlib1g-dev \
+libpng-dev libtiff-dev libtiff5-alt-dev  libboost-dev libxrender-dev \
+#libtiff5-alt-dev for good measure; hope it improves tiff support
 
 Get source from git repository:
 cd ~
@@ -185,11 +207,13 @@ SumatraPDF
 https://code.google.com/p/sumatrapdf/wiki/CommandLineArguments
 sumatrapdf -reuse-instance -page <pageNo>
 Scrolls the first indicated file to the indicated page.
-Tells an already open SumatraPDF to load the indicated files. If there are several running instances, behavior is undefined.
+Tells an already open SumatraPDF to load the indicated files. If there are 
+several running instances, behaviour is undefined.
 
 ImageMagick DLLs on Windows
 ===========================
-The following dlls seem sufficient for converting TIFF images for the client - I just copied all dlls:
+The following dlls seem sufficient for converting TIFF images for the client - 
+I just copied all dlls:
 CORE_RL_bzlib_.dll
 CORE_RL_jbig_.dll
 CORE_RL_jp2_.dll
