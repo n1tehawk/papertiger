@@ -35,12 +35,12 @@ implementation
 
 procedure TImageForm.btnPreviousClick(Sender: TObject);
 begin
-
+  showmessage('todo: implement me');
 end;
 
 procedure TImageForm.btnNextClick(Sender: TObject);
 begin
-
+  showmessage('todo: implement me');
 end;
 
 end.

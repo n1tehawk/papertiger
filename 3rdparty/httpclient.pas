@@ -10,7 +10,7 @@ e.g. ssleay32.dll,libeay32.dll installed or in your program directory.
 interface
 
 uses
-  FPHTTPClient, FPJSON, JSONParser, SysUtils, Classes, ssockets, sslsockets, fpopenssl;
+  FPHTTPClient, FPJSON, JSONParser, SysUtils, Classes, ssockets, sslsockets;
 
 type
   THttpResult = record
