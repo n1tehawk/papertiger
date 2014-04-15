@@ -75,12 +75,12 @@ const
   WIA_VERTICAL_SCAN_RESOLUTION_DPI: widestring = '6148';
   WIA_HORIZONTAL_SCAN_START_PIXEL: widestring = '6149';
   WIA_VERTICAL_SCAN_START_PIXEL: widestring = '6150';
-  WIA_HORIZONTAL_SCAN_SIZE_PIXELS: widestring = '6151';
-  WIA_VERTICAL_SCAN_SIZE_PIXELS: widestring = '6152';
+  WIA_HORIZONTAL_SCAN_SIZE_PIXELS: widestring = '6151'; //scan size in pixels
+  WIA_VERTICAL_SCAN_SIZE_PIXELS: widestring = '6152'; //scan size in pixels
   WIA_SCAN_BRIGHTNESS_PERCENTS: widestring = '6154';
   WIA_SCAN_CONTRAST_PERCENTS: widestring = '6155';
-  WIA_SCAN_ORIENTATION: widestring = '6156';
-  WIA_SCAN_ROTATION: widestring = '6157';
+  WIA_SCAN_ORIENTATION: widestring = '6156'; //Specifies the current orientation of the document to be scanned.
+  WIA_SCAN_ROTATION: widestring = '6157'; //Indicates WIA should rotate the scanned image
 
 
 function TLocalWIAScanner.Scan: boolean;
@@ -175,6 +175,7 @@ begin
     InVar2:=WIA_INTENT_IMAGE_TYPE_TEXT;
     SetScannerProperty(Invar,Invar2);
     CommonDial:=CoCommonDialog.Create; //todo: free when done? release when done?
+    //todo: seems to scan only part of the entire surface
     OutVar:=CommonDial.ShowTransfer(ScannerItem, wiaFormatTIFF, false);
     {
     to do: perhaps replace with Item.Transfer which does not show the GUI
