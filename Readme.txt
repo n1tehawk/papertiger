@@ -16,8 +16,7 @@ Architecture/functionality:
 - server component written in FreePascal, so no X Windows required.
 - command line control on server
 - CGI REST server component
-- GUI viewer/scanner controls written in Lazarus+FreePascal; 
-  communicates using REST
+- Viewer/scanner GUI written in Lazarus+FreePascal
 
 
 Further possible refinements:
@@ -32,8 +31,8 @@ Architecture and development principles
 - if possible, build using modules: 
   e.g. allow use of multiple OCR engines etc
 - store OCR text in the PDF, and store the image tiff.
-  This enables external tools to work with the PDFs, 
-	use the PDFs in other applications etc.
+  This enables external tools to work with the PDFs,
+  use the PDFs in other applications etc.
 - save all OCR text in database or file 
   (e.g. a Lucene index) in order to allow fast search across all documents
 - this means synchronizing PDF text with the full text archive may be required

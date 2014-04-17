@@ -56,6 +56,8 @@ implementation
 { TLocalWIAScanner }
 
 const
+  A4HeightAt300dpi = 3508; //easier than having to deal with WIA 2.0 page size
+  A4WidthAt300dpi = 2480;
   wiaCommandTakePicture: widestring = '{AF933CAC-ACAD-11D2-A093-00C04F72DC3C}'; //CommandID for Take Picture. Causes a WIA device to acquire an image.
 //  http://msdn.microsoft.com/en-us/library/windows/desktop/ms630829%28v=vs.85%29.aspx
   wiaConvertFilterID: widestring = '{42A6E907-1D2F-4b38-AC50-31ADBE2AB3C2}';
@@ -65,12 +67,17 @@ const
   wiaFormatJPEG: widestring = '{B96B3CAE-0728-11D3-9D7B-0000F81EF32E}';
   wiaFormatTIFF: widestring = '{B96B3CB1-0728-11D3-9D7B-0000F81EF32E}';
   wiaCurrentIntent: widestring = '6146';
+  WIA_PAGE_ISO_A4=&0; //WIA 2.0 page size eg for WIA_IPS_PAGE_SIZE; same as WIA 1 WIA_PAGE_A4
   WIA_INTENT_IMAGE_TYPE_COLOR=&00000001;
   WIA_INTENT_IMAGE_TYPE_GRAYSCALE=&00000002;
   WIA_INTENT_IMAGE_TYPE_TEXT=&00000004;
   WIA_INTENT_MINIMIZE_SIZE=&00010000;
   WIA_INTENT_MAXIMIZE_QUALITY=&00020000;
   WIA_INTENT_BEST_PREVIEW=&00040000;
+  { which one should be used? Neither one seems to work: cannot find property
+  WIA_IPS_PAGE_SIZE: widestring = '3079'; //apparently WIA 2
+  WIA_DPS_PAGE_SIZE: widestring = '3097'; //apparently WIA 1
+  }
   WIA_HORIZONTAL_SCAN_RESOLUTION_DPI: widestring = '6147';
   WIA_VERTICAL_SCAN_RESOLUTION_DPI: widestring = '6148';
   WIA_HORIZONTAL_SCAN_START_PIXEL: widestring = '6149';
@@ -100,6 +107,7 @@ var
   ImageProcess: IImageProcess;
   InVar: OleVariant; //temp var used for passing values
   InVar2: OleVariant;
+  PropList: TSTringList;
   ScannerItem: IItem;
   StringVar: OleVariant;
   OutVar: OLEVariant; //temp var used for passing values
@@ -162,14 +170,47 @@ begin
     InVar:=1;
     ScannerItem:=Scanner.Items[Invar];
 
+    {
+    //Try to get all supported properties from the scanner
+    // doesn't work; properties apparently only enumerate by name, not value
+    PropList:=TStringList.Create; //stringlist
+    for i:=1 to ScannerItem.Properties.Count do
+    begin
+      InVar:=i;
+      OutVar:=ScannerItem.Properties[@InVar].Get_Name;
+      InVar:=ScannerItem.Properties[@InVar].Get_Value;
+      if ScannerItem.Properties[@InVar].IsReadOnly then
+        PropList.Add(UTF8Encode(OutVar)+'='+UTF8Encode(InVar)+' (read-only')
+      else
+        PropList.Add(UTF8Encode(OutVar)+'='+UTF8Encode(InVar));
+    end;
+    PropList.SaveToFile('wiaproperties.txt');
+    PropList.Free;
+    }
+
     // Set up scanner for OCR oriented tasks: black & white
+    // dpi both directions
     Invar:=WIA_HORIZONTAL_SCAN_RESOLUTION_DPI;
     InVar2:=Resolution;
     SetScannerProperty(Invar,Invar2);
     Invar:=WIA_VERTICAL_SCAN_RESOLUTION_DPI;
     InVar2:=Resolution;
     SetScannerProperty(Invar,Invar2);
-    InVar:=wiaCurrentIntent; //what type of image we want to sacn
+    Invar:=WIA_HORIZONTAL_SCAN_START_PIXEL;
+    InVar2:=0;
+    SetScannerProperty(Invar,InVar2);
+    Invar:=WIA_VERTICAL_SCAN_START_PIXEL;
+    InVar2:=0;
+    SetScannerProperty(Invar,InVar2);
+    InVar:=WIA_HORIZONTAL_SCAN_SIZE_PIXELS;
+    Invar2:=(A4WidthAt300dpi*(Resolution div 300));
+    SetScannerProperty(Invar,Invar2);
+    InVar:=WIA_VERTICAL_SCAN_SIZE_PIXELS;
+    // I get an error here for my scanner unless I subtract 7 at 300 dpi...
+    Invar2:=(A4HeightAt300dpi*(Resolution div 300)-7);
+    SetScannerProperty(Invar,Invar2);
+    // Color mode
+    InVar:=wiaCurrentIntent;
     //todo: this won't work gives invalid parameter!!
     //InVar2:=(WIA_INTENT_IMAGE_TYPE_TEXT or WIA_INTENT_MAXIMIZE_QUALITY); // black & white; good quality for given resolution
     InVar2:=WIA_INTENT_IMAGE_TYPE_TEXT;
