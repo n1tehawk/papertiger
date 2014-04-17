@@ -29,8 +29,7 @@ unit wia;
 interface
 
 uses
-  Classes, SysUtils, WIA_1_0_TLB,
-  forms, controls, dialogs {todo: debug: temporarily added for troubleshooting output};
+  Classes, SysUtils, WIA_1_0_TLB;
 
 type
 
@@ -122,150 +121,144 @@ var
 begin
   //todo: allow specifying specific scanner device name
   FFile:='';
-  try
-    // List of devices is a 1 based array
-    //showmessage('number of devices: '+inttostr(FDevMgr.DeviceInfos.Count));
-    Found:=false;
-    for DevNo:=1 to FDevMgr.DeviceInfos.Count do
+
+  // List of devices is a 1 based array
+  //showmessage('number of devices: '+inttostr(FDevMgr.DeviceInfos.Count));
+  Found:=false;
+  for DevNo:=1 to FDevMgr.DeviceInfos.Count do
+  begin
+    InVar:=DevNo;
+    // Only check scanners (ignore cameras etc)
+    StringVar:='Type';
+    OutVar:=FDevMgr.DeviceInfos[@InVar].Properties[@StringVar].get_Value;
+    // Apparently need to force result to 4 bytes to compare to constant:
+    if word(OutVar)=ScannerDeviceType then
     begin
-      InVar:=DevNo;
-      // Only check scanners (ignore cameras etc)
-      StringVar:='Type';
-      OutVar:=FDevMgr.DeviceInfos[@InVar].Properties[@StringVar].get_Value;
-      // Apparently need to force result to 4 bytes to compare to constant:
-      if word(OutVar)=ScannerDeviceType then
+      StringVar:='Name';
+      if FDevMgr.DeviceInfos[@InVar].Properties.Exists(StringVar) then
       begin
-        StringVar:='Name';
-        if FDevMgr.DeviceInfos[@InVar].Properties.Exists(StringVar) then
-        begin
-          ReturnString:=FDevMgr.DeviceInfos[@InVar].Properties[@StringVar].get_Value;
-          //showmessage('Device: '+utf8encode(ReturnString));
-          Found:=true;
-          break;
-        end
-        else
-        begin
-          ShowMessage('Name property does not exist. Aborting.');
-          exit;
-        end;
+        ReturnString:=FDevMgr.DeviceInfos[@InVar].Properties[@StringVar].get_Value;
+        //showmessage('Device: '+utf8encode(ReturnString));
+        Found:=true;
+        break;
       end
       else
       begin
-        showmessage('Found a device but it is not a scanner');
-        OutVar:=FDevMgr.DeviceInfos[@InVar].Properties[@StringVar].get_Value;
-        showmessage('got device type '+utf8encode(OutVar));
+        raise Exception.Create('Name property does not exist. Aborting.');
       end;
-    end;
-
-    if not(Found) then
-    begin
-      ShowMessage('No compatible scanner found. Aborting.');
-      exit;
-    end;
-
-    // Connect to detected scanner
-    InVar:=DevNo;
-    Scanner:=FDevMgr.DeviceInfos.Item[@InVar].Connect;
-
-    InVar:=1;
-    ScannerItem:=Scanner.Items[Invar];
-
-    {
-    //Try to get all supported properties from the scanner
-    // doesn't work; properties apparently only enumerate by name, not value
-    PropList:=TStringList.Create; //stringlist
-    for i:=1 to ScannerItem.Properties.Count do
-    begin
-      InVar:=i;
-      OutVar:=ScannerItem.Properties[@InVar].Get_Name;
-      InVar:=ScannerItem.Properties[@InVar].Get_Value;
-      if ScannerItem.Properties[@InVar].IsReadOnly then
-        PropList.Add(UTF8Encode(OutVar)+'='+UTF8Encode(InVar)+' (read-only')
-      else
-        PropList.Add(UTF8Encode(OutVar)+'='+UTF8Encode(InVar));
-    end;
-    PropList.SaveToFile('wiaproperties.txt');
-    PropList.Free;
-    }
-
-    // Set up scanner for OCR oriented tasks: black & white
-    // dpi both directions
-    Invar:=WIA_HORIZONTAL_SCAN_RESOLUTION_DPI;
-    InVar2:=Resolution;
-    SetScannerProperty(Invar,Invar2);
-    Invar:=WIA_VERTICAL_SCAN_RESOLUTION_DPI;
-    InVar2:=Resolution;
-    SetScannerProperty(Invar,Invar2);
-    Invar:=WIA_HORIZONTAL_SCAN_START_PIXEL;
-    InVar2:=0;
-    SetScannerProperty(Invar,InVar2);
-    Invar:=WIA_VERTICAL_SCAN_START_PIXEL;
-    InVar2:=0;
-    SetScannerProperty(Invar,InVar2);
-    InVar:=WIA_HORIZONTAL_SCAN_SIZE_PIXELS;
-    Invar2:=(A4WidthAt300dpi*(Resolution div 300));
-    SetScannerProperty(Invar,Invar2);
-    InVar:=WIA_VERTICAL_SCAN_SIZE_PIXELS;
-    // I get an error here for my scanner unless I subtract 7 at 300 dpi...
-    Invar2:=(A4HeightAt300dpi*(Resolution div 300)-7);
-    SetScannerProperty(Invar,Invar2);
-    // Color mode
-    InVar:=wiaCurrentIntent;
-    //todo: this won't work gives invalid parameter!!
-    //InVar2:=(WIA_INTENT_IMAGE_TYPE_TEXT or WIA_INTENT_MAXIMIZE_QUALITY); // black & white; good quality for given resolution
-    InVar2:=WIA_INTENT_IMAGE_TYPE_TEXT;
-    SetScannerProperty(Invar,Invar2);
-    CommonDial:=CoCommonDialog.Create; //todo: free when done? release when done?
-    //todo: seems to scan only part of the entire surface
-    OutVar:=CommonDial.ShowTransfer(ScannerItem, wiaFormatTIFF, false);
-    {
-    to do: perhaps replace with Item.Transfer which does not show the GUI
-    however, visual confirmation is nice, too
-    }
-    if OutVar=null then
-    begin
-      // User cancelled
-      exit(false);
     end
     else
     begin
-      TheImageFile:=ImageFile(OutVar); //is this the right translation?
-      // While we may have requested a certain format, some scanners/drivers only implement e.g.
-      // bmp format, so the file format is not certain at this point.
-      // Therefore, convert if needed - adapted from
-      // http://msdn.microsoft.com/en-us/library/ms630826%28v=VS.85%29.aspx#SharedSample002
-      if TheImageFile.FormatID<>wiaFormatTIFF then
-      begin
-        ImageProcess:=CoImageProcess.Create;
-        i:=ImageProcess.Filters.Count;
-        ImageProcess.Filters.Add(wiaConvertFilterID,i); //the i is just guessing
-        StringVar:='FormatID';
-        Invar:=1;
-        InVar2:=wiaFormatTiff;
-        ImageProcess.Filters[InVar].Properties[@StringVar].Set_Value(@InVar2);
-        TheImageFile:=ImageProcess.Apply(TheImageFile);
-      end;
-      // note: there may be a file already present which shouldn't be overwritten...
-      FFile:= IncludeTrailingPathDelimiter(GetTempDir(false))+FFilePart+'.'+TheImageFile.FileExtension;
-      if FileExists(FFile) then
-      begin
-        DeleteFile(FFile);
-        sleep(20); //give filesystem time to process
-      end;
-      TheImageFile.SaveFile(FFile);
-      {todo: replace with in memory manipulation
-      IImageFile has a property FileData with provides access to the binary image data, via IVector.BinaryData
-      via vector binarydata - an array of bytes
-      http://msdn.microsoft.com/en-us/library/windows/desktop/ms630518%28v=vs.85%29.aspx
+      raise Exception.Create('Found a device but it is not a scanner');
+      {
+      OutVar:=FDevMgr.DeviceInfos[@InVar].Properties[@StringVar].get_Value;
+      device type: OutVar
       }
     end;
-  except
-    //for now
-    on E: Exception do
-    begin
-      ShowMessage('Error scanning: '+E.Message);
-    end;
   end;
+
+  if not(Found) then
+  begin
+    raise Exception.Create('No compatible scanner found. Aborting.');
+  end;
+
+  // Connect to detected scanner
+  InVar:=DevNo;
+  Scanner:=FDevMgr.DeviceInfos.Item[@InVar].Connect;
+
+  InVar:=1;
+  ScannerItem:=Scanner.Items[Invar];
+
+  {
+  //Try to get all supported properties from the scanner
+  // doesn't work; properties apparently only enumerate by name, not value
+  PropList:=TStringList.Create; //stringlist
+  for i:=1 to ScannerItem.Properties.Count do
+  begin
+    InVar:=i;
+    OutVar:=ScannerItem.Properties[@InVar].Get_Name;
+    InVar:=ScannerItem.Properties[@InVar].Get_Value;
+    if ScannerItem.Properties[@InVar].IsReadOnly then
+      PropList.Add(UTF8Encode(OutVar)+'='+UTF8Encode(InVar)+' (read-only')
+    else
+      PropList.Add(UTF8Encode(OutVar)+'='+UTF8Encode(InVar));
+  end;
+  PropList.SaveToFile('wiaproperties.txt');
+  PropList.Free;
+  }
+
+  // Set up scanner for OCR oriented tasks: black & white
+  // dpi both directions
+  Invar:=WIA_HORIZONTAL_SCAN_RESOLUTION_DPI;
+  InVar2:=Resolution;
+  SetScannerProperty(Invar,Invar2);
+  Invar:=WIA_VERTICAL_SCAN_RESOLUTION_DPI;
+  InVar2:=Resolution;
+  SetScannerProperty(Invar,Invar2);
+  Invar:=WIA_HORIZONTAL_SCAN_START_PIXEL;
+  InVar2:=0;
+  SetScannerProperty(Invar,InVar2);
+  Invar:=WIA_VERTICAL_SCAN_START_PIXEL;
+  InVar2:=0;
+  SetScannerProperty(Invar,InVar2);
+  InVar:=WIA_HORIZONTAL_SCAN_SIZE_PIXELS;
+  Invar2:=(A4WidthAt300dpi*(Resolution div 300));
+  SetScannerProperty(Invar,Invar2);
+  InVar:=WIA_VERTICAL_SCAN_SIZE_PIXELS;
+  // I get an error here for my scanner unless I subtract 7 at 300 dpi...
+  Invar2:=(A4HeightAt300dpi*(Resolution div 300)-7);
+  SetScannerProperty(Invar,Invar2);
+  // Color mode
+  InVar:=wiaCurrentIntent;
+  //todo: this won't work gives invalid parameter!!
+  //InVar2:=(WIA_INTENT_IMAGE_TYPE_TEXT or WIA_INTENT_MAXIMIZE_QUALITY); // black & white; good quality for given resolution
+  InVar2:=WIA_INTENT_IMAGE_TYPE_TEXT;
+  SetScannerProperty(Invar,Invar2);
+  CommonDial:=CoCommonDialog.Create; //todo: free when done? release when done?
+  //todo: seems to scan only part of the entire surface
+  OutVar:=CommonDial.ShowTransfer(ScannerItem, wiaFormatTIFF, false);
+  {
+  to do: perhaps replace with Item.Transfer which does not show the GUI
+  however, visual confirmation is nice, too
+  }
+  if OutVar=null then
+  begin
+    // User cancelled
+    exit(false);
+  end
+  else
+  begin
+    TheImageFile:=ImageFile(OutVar); //is this the right translation?
+    // While we may have requested a certain format, some scanners/drivers only implement e.g.
+    // bmp format, so the file format is not certain at this point.
+    // Therefore, convert if needed - adapted from
+    // http://msdn.microsoft.com/en-us/library/ms630826%28v=VS.85%29.aspx#SharedSample002
+    if TheImageFile.FormatID<>wiaFormatTIFF then
+    begin
+      ImageProcess:=CoImageProcess.Create;
+      i:=ImageProcess.Filters.Count;
+      ImageProcess.Filters.Add(wiaConvertFilterID,i); //the i is just guessing
+      StringVar:='FormatID';
+      Invar:=1;
+      InVar2:=wiaFormatTiff;
+      ImageProcess.Filters[InVar].Properties[@StringVar].Set_Value(@InVar2);
+      TheImageFile:=ImageProcess.Apply(TheImageFile);
+    end;
+    // note: there may be a file already present which shouldn't be overwritten...
+    FFile:= IncludeTrailingPathDelimiter(GetTempDir(false))+FFilePart+'.'+TheImageFile.FileExtension;
+    if FileExists(FFile) then
+    begin
+      DeleteFile(FFile);
+      sleep(20); //give filesystem time to process
+    end;
+    TheImageFile.SaveFile(FFile);
+    {todo: replace with in memory manipulation
+    IImageFile has a property FileData with provides access to the binary image data, via IVector.BinaryData
+    via vector binarydata - an array of bytes
+    http://msdn.microsoft.com/en-us/library/windows/desktop/ms630518%28v=vs.85%29.aspx
+    }
+  end;
+end;
 {
 http://stackoverflow.com/questions/721948/delphi-twain-issue-help
 and
@@ -301,7 +294,7 @@ private void ScanDoc()
     }
   }
 }
-end;
+
 
 constructor TLocalWIAScanner.Create;
 begin
