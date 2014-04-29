@@ -1,6 +1,9 @@
 DELPHITWAIN CHANGE LOG
 ======================
 
+2013/04/29
+Lazarus fixes
+
 2013/12/21
 
 Default TransferMode set to ttmNative.
