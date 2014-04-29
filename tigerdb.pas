@@ -78,6 +78,8 @@ type
     function GetImagePath(DocumentID: integer; ImageOrder: integer): string;
     // Retruns path+filename for requested image
     function GetImagePath(ImageID: integer): string;
+    // Returns whether document needs OCR to be done or not
+    function GetNeedsOCR(DocumentID: integer): boolean;
     // Returns path+filename for PDF associated with document
     function GetPDFPath(DocumentID: integer): string;
     // Inserts a new scan record in database; retruns scan ID.
@@ -95,8 +97,9 @@ type
     procedure ListImages(const DocumentID, ImageOrder: integer; var ImagesArray: TJSONArray);
     // Purge database of image/document records without existing files
     function Purge: boolean;
-    // Mark OCR as done for specified document
-    function SetOCRDone(DocumentID: integer): boolean;
+    // Set NeedsOCR to true or false for specified document, indicating
+    // OCR needs to be performed (or not).
+    function SetNeedsOCR(DocumentID: integer; Setting: boolean): boolean;
     // Sets path+filename for PDF associated with document. Returns result.
     function SetPDFPath(DocumentID: integer; PDFPath: string): boolean;
     constructor Create;
@@ -312,6 +315,31 @@ begin
     on F: Exception do
     begin
       TigerLog.WriteLog(etError, 'ImagePath: exception: ' + F.Message);
+    end;
+  end;
+end;
+
+function TTigerDB.GetNeedsOCR(DocumentID: integer): boolean;
+begin
+  result:=true; //fail safe
+  if FReadTransaction.Active = false then
+    FReadTransaction.StartTransaction;
+  try
+    FReadQuery.SQL.Text := 'SELECT NEEDSOCR FROM DOCUMENTS WHERE ID=' + IntToStr(DocumentID);
+    FReadQuery.Open;
+    if not (FReadQuery.EOF) then
+      Result := FReadQuery.FieldByName('NEEDSOCR').AsBoolean;
+    FReadQuery.Close;
+    FReadTransaction.Commit;
+  except
+    on E: EDatabaseError do
+    begin
+      TigerLog.WriteLog(etError, 'GetNeedsOCR: db exception: ' + E.Message);
+      FReadTransaction.RollBack;
+    end;
+    on F: Exception do
+    begin
+      TigerLog.WriteLog(etError, 'GetNeedsOCR: exception: ' + F.Message);
     end;
   end;
 end;
@@ -608,14 +636,15 @@ begin
   end;
 end;
 
-function TTigerDB.SetOCRDone(DocumentID: integer): boolean;
+function TTigerDB.SetNeedsOCR(DocumentID: integer; Setting: boolean): boolean;
 begin
   result:= false;
   try
     if FReadWriteTransaction.Active = false then
       FReadWriteTransaction.StartTransaction;
     FWriteQuery.Close;
-    FWriteQuery.SQL.Text := 'UPDATE DOCUMENTS SET NEEDSOCR=0 WHERE ID=' + IntToStr(DocumentID);
+    FWriteQuery.SQL.Text := 'UPDATE DOCUMENTS SET NEEDSOCR=:SETTING WHERE ID=' + IntToStr(DocumentID);
+    FWriteQuery.Params.ParamByName('SETTING').AsBoolean:=Setting;
     FWriteQuery.ExecSQL;
     FWriteQuery.Close;
     FReadWriteTransaction.Commit;

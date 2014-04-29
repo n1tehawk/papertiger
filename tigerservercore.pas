@@ -147,11 +147,14 @@ type
     // Lists specified image for documentid if valid imageorder given; all images if ImageOrder=INVALIDID
     // Image path contains full path+file name.
     procedure ListImages(const DocumentID, ImageOrder: integer; var ImagesArray: TJSONArray);
-    // Process (set of) existing (TIFF) image(s) for specified document
+    // Runs processimages for all documents that need it
+    function ProcessAllDocuments: boolean;
+    // Process (set of) existing (TIFF) image(s) for specified document (OCR etc)
     // Specify resolution override to indicate image resolution to hocr2pdf
     // Specify 0 to leave alone and let hocr detect resolution or fallback to 300dpi
+    // Unless force is specified, only process if NeedsOCR is set in the db for the document
     // Returns resulting pdf file (including path) or empty if error
-    function ProcessImages(DocumentID: integer; Resolution: integer): string;
+    function ProcessImages(DocumentID: integer; Resolution: integer; Force: boolean): string;
     // Cleans up database by removing empty image/document records and
     // removing records with invalid files
     function PurgeDB: boolean;
@@ -578,7 +581,61 @@ begin
   FTigerDB.ListImages(DocumentID, ImageOrder, ImagesArray);
 end;
 
-function TTigerServerCore.ProcessImages(DocumentID: integer; Resolution: integer): string;
+function TTigerServerCore.ProcessAllDocuments: boolean;
+var
+  Document: TJSONObject;
+  DocumentsArray: TJSONArray;
+  DocumentID: integer;
+  DocNo: integer;
+begin
+  result:=false;
+  DocumentsArray := TJSONArray.Create();
+  try
+    ListDocuments(INVALIDID, DocumentsArray);
+  except
+    on E: Exception do
+    begin
+      TigerLog.WriteLog(etError, 'ProcessAllDocuments: error running ListDocuments. ' + E.Message);
+      exit;
+    end;
+  end;
+  {$IFDEF DEBUG}
+    // Extra troubleshooting; useful in client/server environment
+    if DocumentsArray.JSONType <> jtArray then
+      Exception.CreateFmt('ProcessAllDocuments error: Got "%s", expected "TJSONArray".',
+        [DocumentsArray.ClassName]);
+  {$ENDIF DEBUG}
+
+  // Check for empty array
+  if DocumentsArray.Count < 1 then
+  begin
+    TigerLog.WriteLog(etDebug, 'ProcessAllDocuments: ListDocuments returned no documents. ');
+    exit;
+  end;
+
+  // Check for empty object=>empty recordset
+  Document := TJSONObject(DocumentsArray.Items[0]);
+  if Document.JSONType <> jtObject then
+  begin
+    TigerLog.WriteLog(etDebug, 'ProcessAllDocuments: ListDocuments returned array with empty document object. ');
+    exit;
+  end;
+
+  for DocNo := 0 to DocumentsArray.Count - 1 do
+  begin
+    Document := (DocumentsArray[DocNo] as TJSONObject);
+    try
+      DocumentID := Document.Items[0].AsInteger; //document ID is first returned item
+      ProcessImages(DocumentID,0,false);
+    except
+      writeln('Error processing document. Aborting.');
+      exit;
+    end;
+  end;
+  result:=true;
+end;
+
+function TTigerServerCore.ProcessImages(DocumentID: integer; Resolution: integer; Force: boolean): string;
 var
   CleanImage: string;
   HOCRFile: string;
@@ -607,75 +664,83 @@ begin
     //raise Exception.Create(Message); rather pass back empty value to indicate failure
   end;
 
-  // todo: perhaps only continue if NEEDSOCR=1 for this document?
-
-  // Get images belonging to document
-  FTigerDB.ListImages(DocumentID, InvalidID, ImagesArray);
-  for i := 0 to ImagesArray.Count - 1 do
+  // Only continue if NEEDSOCR=1 for this document or
+  // if specifically requested by caller
+  if Force or FTigerDB.GetNeedsOCR(DocumentID) then
   begin
-    if (ImagesArray.Items[i].JSONType = jtObject) then
+    // Get images belonging to document
+    FTigerDB.ListImages(DocumentID, InvalidID, ImagesArray);
+    for i := 0 to ImagesArray.Count - 1 do
     begin
-      // path contain full image path, no need to add FSettings.ImageDirectory
-      ImageFile := (ImagesArray.Items[i] as TJSONObject).Elements['path'].AsString;
-      CleanImage := GetTempFileName('', 'TIFC');
-      // Clean up image, copy into temporary file
-      Success := CleanUpImage(ImageFile, CleanImage);
-
-      if Success then
+      if (ImagesArray.Items[i].JSONType = jtObject) then
       begin
-        OCR := TOCR.Create;
-        try
-          OCR.ImageFile := CleanImage;
-          OCR.Language := FCurrentOCRLanguage;
-          Success := OCR.RecognizeText;
-          HOCRFile := OCR.HOCRFile;
-          TigerLog.WriteLog(etDebug, 'ProcessImages: Got file '+HOCRFile+' with this text:' + OCR.Text);
-        finally
-          OCR.Free;
-        end;
-        {$IFNDEF DEBUG}
-        DeleteFile(CleanImage);
-        {$ENDIF}
-      end;
+        // path contain full image path, no need to add FSettings.ImageDirectory
+        ImageFile := (ImagesArray.Items[i] as TJSONObject).Elements['path'].AsString;
+        CleanImage := GetTempFileName('', 'TIFC');
+        // Clean up image, copy into temporary file
+        Success := CleanUpImage(ImageFile, CleanImage);
 
-      if Success then
-      begin
-        PDF := TPDF.Create;
-        try
-          // Only pass on overrides on resolution
-          if Resolution > 0 then
-            PDF.ImageResolution := Resolution;
-          // todo: read tiff file and extract resolution ourselves, pass it on
-          if not(FileExists(HOCRFile)) then
-            raise Exception.CreateFmt('OCR file %s does not exist',[HOCRFile]);
-          PDF.HOCRFile := HOCRFile;
-          PDF.ImageFile := ImageFile; // The original, unaltered image file
-          TigerLog.WriteLog(etDebug, 'pdfdirectory: ' + FSettings.PDFDirectory);
-          PDF.PDFFile := IncludeTrailingPathDelimiter(FSettings.PDFDirectory) + ChangeFileExt(
-            ExtractFileName(ImageFile), '.pdf');
-          //todo: add metadata stuff to pdf unit
-          Success := PDF.CreatePDF;
-          if Success then
-          begin
-            TigerLog.WriteLog(etDebug, 'ProcessImages: Got PDF: ' + PDF.PDFFile);
-            FTigerDB.SetPDFPath(DocumentID, PDF.PDFFile);
-            Result := PDF.PDFFile;
+        if Success then
+        begin
+          OCR := TOCR.Create;
+          try
+            OCR.ImageFile := CleanImage;
+            OCR.Language := FCurrentOCRLanguage;
+            Success := OCR.RecognizeText;
+            HOCRFile := OCR.HOCRFile;
+            TigerLog.WriteLog(etDebug, 'ProcessImages: Got file '+HOCRFile+' with this text:' + OCR.Text);
+          finally
+            OCR.Free;
           end;
-          //todo: update pdf name based on OCR?!?
-        finally
-          PDF.Free;
+          {$IFNDEF DEBUG}
+          DeleteFile(CleanImage);
+          {$ENDIF}
         end;
+
+        if Success then
+        begin
+          PDF := TPDF.Create;
+          try
+            // Only pass on overrides on resolution
+            if Resolution > 0 then
+              PDF.ImageResolution := Resolution;
+            // todo: read tiff file and extract resolution ourselves, pass it on
+            if not(FileExists(HOCRFile)) then
+              raise Exception.CreateFmt('OCR file %s does not exist',[HOCRFile]);
+            PDF.HOCRFile := HOCRFile;
+            PDF.ImageFile := ImageFile; // The original, unaltered image file
+            TigerLog.WriteLog(etDebug, 'pdfdirectory: ' + FSettings.PDFDirectory);
+            PDF.PDFFile := IncludeTrailingPathDelimiter(FSettings.PDFDirectory) + ChangeFileExt(
+              ExtractFileName(ImageFile), '.pdf');
+            //todo: add metadata stuff to pdf unit
+            Success := PDF.CreatePDF;
+            if Success then
+            begin
+              TigerLog.WriteLog(etDebug, 'ProcessImages: Got PDF: ' + PDF.PDFFile);
+              FTigerDB.SetPDFPath(DocumentID, PDF.PDFFile);
+              Result := PDF.PDFFile;
+            end;
+            //todo: update pdf name based on OCR?!?
+          finally
+            PDF.Free;
+          end;
+        end;
+      end
+      else
+      begin
+        TigerLog.WriteLog(etDebug, 'ProcessImages: got invalid json array item from ListImages; item number ' + IntToStr(i));
       end;
-    end
-    else
-    begin
-      TigerLog.WriteLog(etDebug, 'ProcessImages: got invalid json array item from ListImages; item number ' + IntToStr(i));
-    end;
-  end; //all images added
-       //todo: concatenate pdfs; we just add the last one for now
-  if Success then
-    FTigerDB.SetOCRDone(DocumentID)
+    end; //all images added
+    FTigerDB.SetNeedsOCR(DocumentID, true)
+    //todo: concatenate pdfs; we just add the last one for now
+  end
   else
+  begin
+    // No need to perform OCR, so report success
+    Success:=true;
+  end;
+
+  if not(Success) then
     TigerLog.WriteLog(etDebug, 'ProcessImages failed.');
 end;
 

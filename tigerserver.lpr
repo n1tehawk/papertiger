@@ -2,7 +2,7 @@ program tigerserver;
 
 { Paper Tiger paper scanning/OCR/archiving solution
 
-  Copyright (c) 2012-2013 Reinier Olislagers
+  Copyright (c) 2012-2014 Reinier Olislagers
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to
@@ -83,7 +83,7 @@ type
     Document := TJSONObject(DocumentsArray.Items[0]);
     if Document.JSONType <> jtObject then
     begin
-      writeln('*** no documents available ***');
+      writeln('*** no documents available (empty document object) ***');
       exit;
     end;
 
@@ -216,8 +216,8 @@ type
     PDF: string;
   begin
     // quick check parameters
-    ErrorMsg := CheckOptions('d:hi:l:p:r:sv',
-      'blackwhite color colour deletedocument: device: gray grayscale help image: language: lineart list pages: purge rotate: scan scanonly version');
+    ErrorMsg := CheckOptions('d:hi:l:op:r:sv',
+      'blackwhite color colour deletedocument: device: gray grayscale help image: language: lineart list ocr pages: purge rotate: scan scanonly version');
     if ErrorMsg <> '' then
     begin
       ShowException(Exception.Create(ErrorMsg));
@@ -304,6 +304,12 @@ type
       end;
     end;
 
+    if HasOption('o', 'ocr') then
+    begin
+      if not FTigerCore.ProcessAllDocuments then
+        writeln('Error trying to OCR all needed documents.');
+    end;
+
     if HasOption('purge') then
     begin
       if not FTigerCore.PurgeDB then
@@ -318,7 +324,7 @@ type
       begin
         if FTigerCore.AddImage(ExpandFileName(GetOptionValue('i', 'image')), DocumentID, 0) <> INVALIDID then
         begin
-          PDF := FTigerCore.ProcessImages(DocumentID, 0);
+          PDF := FTigerCore.ProcessImages(DocumentID, 0, true);
           if PDF = '' then
             writeln('Error creating PDF. Stopping.')
           else
@@ -357,7 +363,7 @@ type
               readln;
             end;
           end;
-          PDF := FTigerCore.ProcessImages(DocumentID, 0);
+          PDF := FTigerCore.ProcessImages(DocumentID, 0, true);
         end;
         if PDF = '' then
           writeln('Error while scanning')
