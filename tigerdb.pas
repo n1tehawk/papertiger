@@ -95,6 +95,8 @@ type
     procedure ListImages(const DocumentID, ImageOrder: integer; var ImagesArray: TJSONArray);
     // Purge database of image/document records without existing files
     function Purge: boolean;
+    // Mark OCR as done for specified document
+    function SetOCRDone(DocumentID: integer): boolean;
     // Sets path+filename for PDF associated with document. Returns result.
     function SetPDFPath(DocumentID: integer; PDFPath: string): boolean;
     constructor Create;
@@ -602,6 +604,34 @@ begin
         FReadWriteTransaction.Rollback;
       if FReadTransaction.Active then
         FReadTransaction.Rollback;
+    end;
+  end;
+end;
+
+function TTigerDB.SetOCRDone(DocumentID: integer): boolean;
+begin
+  result:= false;
+  try
+    if FReadWriteTransaction.Active = false then
+      FReadWriteTransaction.StartTransaction;
+    FWriteQuery.Close;
+    FWriteQuery.SQL.Text := 'UPDATE DOCUMENTS SET NEEDSOCR=0 WHERE ID=' + IntToStr(DocumentID);
+    FWriteQuery.ExecSQL;
+    FWriteQuery.Close;
+    FReadWriteTransaction.Commit;
+    result := true;
+  except
+    on E: EDatabaseError do
+    begin
+      if FReadWriteTransaction.Active then
+        FReadWriteTransaction.Rollback;
+      TigerLog.WriteLog(etError, 'SetOCRDone: Database error: ' + E.Message, true);
+    end;
+    on F: Exception do
+    begin
+      if FReadWriteTransaction.Active then
+        FReadWriteTransaction.Rollback;
+      TigerLog.WriteLog(etError, 'SetOCRDone: Exception: ' + F.Message, true);
     end;
   end;
 end;
