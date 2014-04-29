@@ -607,6 +607,8 @@ begin
     //raise Exception.Create(Message); rather pass back empty value to indicate failure
   end;
 
+  // todo: perhaps only continue if NEEDSOCR=1 for this document?
+
   // Get images belonging to document
   FTigerDB.ListImages(DocumentID, InvalidID, ImagesArray);
   for i := 0 to ImagesArray.Count - 1 do
@@ -671,7 +673,9 @@ begin
     end;
   end; //all images added
        //todo: concatenate pdfs; we just add the last one for now
-  if success = false then
+  if Success then
+    FTigerDB.SetOCRDone(DocumentID)
+  else
     TigerLog.WriteLog(etDebug, 'ProcessImages failed.');
 end;
 
