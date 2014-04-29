@@ -557,14 +557,14 @@ begin
     end;
     FWriteQuery.Close;
 
-    // Find all invalid document paths and reset them
+    // Find all invalid document paths and reset them; also mark document as needing OCR
     FReadQuery.SQL.Text := 'SELECT ID, PDFPATH FROM DOCUMENTS WHERE (PDFPATH IS NOT NULL) AND (PDFPATH<>'''') ';
     FReadQuery.Open;
     while not (FReadQuery.EOF) do
     begin
       if not (FileExists(FReadQuery.FieldByName('PDFPATH').AsString)) then
       begin
-        FWriteQuery.SQL.Text := 'UPDATE DOCUMENTS SET PDFPATH=NULL WHERE ID=' + FReadQuery.FieldByName('ID').AsString + ' ';
+        FWriteQuery.SQL.Text := 'UPDATE DOCUMENTS SET PDFPATH=NULL,NEEDSOCR=1 WHERE ID=' + FReadQuery.FieldByName('ID').AsString + ' ';
         FWriteQuery.ExecSQL;
       end;
       FReadQuery.Next;
