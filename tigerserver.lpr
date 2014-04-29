@@ -451,6 +451,9 @@ type
     writeln(' language codes (e.g. man tesseract)');
     writeln('--list');
     writeln(' List already scanned documents, including document IDs and images');
+    writeln('-o --ocr');
+    writeln(' OCR/process all images that still need to be processed to generate');
+    writeln(' pdfs.');
     writeln('-p <n> --pages=<n>');
     writeln(' Specify number of pages for processing/scanning multi page docs.');
     writeln('--purge');
