@@ -731,7 +731,7 @@ begin
         TigerLog.WriteLog(etDebug, 'ProcessImages: got invalid json array item from ListImages; item number ' + IntToStr(i));
       end;
     end; //all images added
-    FTigerDB.SetNeedsOCR(DocumentID, true)
+    FTigerDB.SetNeedsOCR(DocumentID, false);
     //todo: concatenate pdfs; we just add the last one for now
   end
   else
