@@ -70,14 +70,16 @@ type
     // Deletes image record from database (but leaves any image files intact)
     // Returns success value
     function DeleteImageRecord(const ImageID: integer): boolean;
+    // Returns ID of document associated with image imageid if any
+    function GetDocumentIDOfImage(ImageID: integer): integer;
     // Returns highest existing imageorder for images or 0 if error
     function GetHighestImageOrder(DocumentID: integer): integer;
+    // Returns path+filename for requested image - imageorder gives the sort order/image number
+    function GetImagePath(DocumentID: integer; ImageOrder: integer): string;
+    // Retruns path+filename for requested image
+    function GetImagePath(ImageID: integer): string;
     // Returns path+filename for PDF associated with document
     function GetPDFPath(DocumentID: integer): string;
-    // Returns path+filename for requested image - imageorder gives the sort order/image number
-    function ImagePath(DocumentID: integer; ImageOrder: integer): string;
-    // Retruns path+filename for requested image
-    function ImagePath(ImageID: integer): string;
     // Inserts a new scan record in database; retruns scan ID.
     // Keep string values empty to insert NULLs;
     // TheScanDate: please pass UTC date/time, pass a pre 1900 date to specify unknown date
@@ -145,6 +147,8 @@ begin
 end;
 
 function TTigerDB.DeleteImageRecord(const ImageID: integer): boolean;
+var
+  DocumentID: integer;
 begin
   Result := false;
   if ImageID = INVALIDID then
@@ -152,11 +156,20 @@ begin
     TigerLog.WriteLog(etWarning, 'DeleteImageRecord: invalid image ID requested.');
     exit;
   end;
+  DocumentID:=GetDocumentIDOfImage(ImageID);
   try
     if FReadWriteTransaction.Active = false then
       FReadWriteTransaction.StartTransaction;
     FWriteQuery.Close;
     FWriteQuery.SQL.Text := 'DELETE FROM IMAGES WHERE ID=' + IntToStr(ImageID);
+    FWriteQuery.ExecSQL;
+    // Deleting image from document means that any OCR done is invalid now
+    if DocumentID<>INVALIDID then
+    begin
+      FWriteQuery.SQL.Text := 'UPDATE DOCUMENTS SET NEEDSOCR=1 WHERE ID='+inttostr(DocumentID);
+      FWriteQuery.ExecSQL;
+    end;
+    FWriteQuery.SQL.Text := 'UPDATE DOCUMENTS SET NEEDSOCR=1 WHERE ID='+inttostr(DocumentID);
     FWriteQuery.ExecSQL;
     FWriteQuery.Close;
     FReadWriteTransaction.Commit;
@@ -173,6 +186,31 @@ begin
       if FReadWriteTransaction.Active then
         FReadWriteTransaction.Rollback;
       TigerLog.WriteLog(etError, 'DeleteImageRecord: Exception: ' + F.Message, true);
+    end;
+  end;
+end;
+
+function TTigerDB.GetDocumentIDOfImage(ImageID: integer): integer;
+begin
+  result:= INVALIDID;
+  if FReadTransaction.Active = false then
+    FReadTransaction.StartTransaction;
+  try
+    FReadQuery.SQL.Text := 'SELECT DOCUMENTID FROM IMAGES WHERE ID=' + IntToStr(ImageID);
+    FReadQuery.Open;
+    if not (FReadQuery.EOF) then
+      Result := FReadQuery.FieldByName('DOCUMENTID').AsInteger;
+    FReadQuery.Close;
+    FReadTransaction.Commit;
+  except
+    on E: EDatabaseError do
+    begin
+      TigerLog.WriteLog(etError, 'GetDocumentID: db exception: ' + E.Message);
+      FReadTransaction.RollBack;
+    end;
+    on F: Exception do
+    begin
+      TigerLog.WriteLog(etError, 'GetDocumentID: exception: ' + F.Message);
     end;
   end;
 end;
@@ -210,7 +248,7 @@ begin
   end;
 end;
 
-function TTigerDB.ImagePath(DocumentID: integer; ImageOrder: integer): string;
+function TTigerDB.GetImagePath(DocumentID: integer; ImageOrder: integer): string;
 begin
   Result := '';
   if DocumentID = INVALIDID then
@@ -244,7 +282,7 @@ begin
   end;
 end;
 
-function TTigerDB.ImagePath(ImageID: integer): string;
+function TTigerDB.GetImagePath(ImageID: integer): string;
 begin
   Result := '';
   if ImageID = INVALIDID then
@@ -314,7 +352,12 @@ begin
       FInsertImage.ParamByName('IMAGEHASH').AsString := ImageHash;
     FInsertImage.Open;
     if not (FInsertImage.EOF) then
+    begin
       Result := FInsertImage.Fields[0].AsInteger;
+      // Adding image to document means that any OCR done is invalid now
+      FWriteQuery.SQL.Text := 'UPDATE DOCUMENTS SET NEEDSOCR=1 WHERE ID='+inttostr(DocumentID);
+      FWriteQuery.ExecSQL;
+    end;
     FInsertImage.Close;
     FReadWriteTransaction.Commit;
   except
@@ -751,8 +794,9 @@ begin
   FInsertScan.Database := FDB;
   FInsertScan.Transaction := FReadWriteTransaction;
   FInsertScan.ParseSQL := false;
-  SQL := 'INSERT INTO DOCUMENTS (DOCUMENTNAME,PDFPATH,SCANDATE,DOCUMENTHASH) ' +
-    'VALUES (:DOCUMENTNAME,:PDFPATH,:SCANDATE,:DOCUMENTHASH) RETURNING ID';
+  // Inserting new documents always means it needs OCR...
+  SQL := 'INSERT INTO DOCUMENTS (DOCUMENTNAME,PDFPATH,SCANDATE,DOCUMENTHASH,NEEDSOCR) ' +
+    'VALUES (:DOCUMENTNAME,:PDFPATH,:SCANDATE,:DOCUMENTHASH,1) RETURNING ID';
   FInsertScan.SQL.Text := SQL;
   FInsertScan.Prepare;
 
