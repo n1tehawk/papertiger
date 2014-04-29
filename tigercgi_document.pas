@@ -245,7 +245,7 @@ begin
         DocumentID := StrToIntDef(ExtractWord(2, StrippedPath, ['/']), INVALIDID);
         if DocumentID <> INVALIDID then
         begin
-          if FTigerCore.ProcessImages(DocumentID, 0) <> '' then
+          if FTigerCore.ProcessImages(DocumentID, 0, true) <> '' then
           begin
             IsValidRequest := True;
             // we could return the pdf name etc but it doesn't make much sense
