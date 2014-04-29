@@ -81,6 +81,7 @@ type
     procedure ScanButtonClick(Sender: TObject);
     procedure ShowImageButtonClick(Sender: TObject);
     procedure ShowPDFButtonClick(Sender: TObject);
+    // Upload image to new document
     procedure UploadImageButtonClick(Sender: TObject);
   private
     { private declarations }
@@ -91,6 +92,8 @@ type
     // If Silent specified, don't show errors/warnings
     // Returns true if succesful; false if errors
     function DeleteSingleDocument(DocumentID: integer; Silent: boolean=false): boolean;
+    // Process document: OCR all images in document etc
+    function ProcessDocument(DocumentID: integer): boolean;
     // Refresh list of documents in grid
     procedure RefreshDocuments;
     // Show image for relevant image
@@ -311,6 +314,33 @@ begin
   end;
 end;
 
+function TForm1.ProcessDocument(DocumentID: integer): boolean;
+var
+  CommJSON: TJSONData;
+  RequestResult: THttpResult;
+begin
+  result := false;
+  // When succesful, OCR all images and generate PDF using processimage on server
+  try
+    RequestResult := HttpRequest(FSettings.CGIURL + 'document/' +
+      IntToStr(DocumentID) +
+      '?processdocument=true',
+      CommJSON, rmPost);
+    if RequestResult.Code <> 200 then
+    begin
+      ShowMessage('Error from server after OCR request. HTTP result code: ' + IntToStr(RequestResult.Code) + '/' + RequestResult.Text);
+      exit(false);
+    end;
+    result := true;
+  except
+    on E: Exception do
+    begin
+      ShowMessage('Error interpreting response from server after OCR request. Technical details: ' + E.Message);
+      exit(false);
+    end;
+  end;
+end;
+
 procedure TForm1.ScanButtonClick(Sender: TObject);
 var
   CurrentPage: integer;
@@ -447,25 +477,13 @@ begin
     end;
   end;
 
-  try
-    RequestResult := HttpRequest(FSettings.CGIURL + 'document/' + IntToStr(DocumentID) + '?processdocument=true', CommJSON, rmPost);
-    if RequestResult.Code <> 200 then
-    begin
-      ShowMessage('Error from server after OCR request. HTTP result code: ' + IntToStr(RequestResult.Code) + '/' + RequestResult.Text);
-      exit;
-    end;
-  except
-    on E: Exception do
-    begin
-      ShowMessage('Error interpreting response from server after OCR request. Technical details: ' + E.Message);
-      exit;
-    end;
+  if ProcessDocument(DocumentID) then
+  begin
+    // When succesful, add docs to list
+    RefreshDocuments;
+    ShowPDF(DocumentID);
+    ShowMessage('Scan complete.');
   end;
-
-  // When succesful, add docs to list
-  RefreshDocuments;
-  ShowPDF(DocumentID);
-  ShowMessage('Scan complete.');
 end;
 
 procedure TForm1.ShowImageButtonClick(Sender: TObject);
@@ -557,7 +575,9 @@ begin
   DocumentID := AddDocument;
   OpenDialog1.Execute;
   ImageFile := OpenDialog1.FileName;
-  UploadImage(DocumentID, ImageFile);
+  // Upload and OCR
+  if UploadImage(DocumentID, ImageFile) then
+    ProcessDocument(DocumentID);
 end;
 
 procedure TForm1.RefreshDocuments;
@@ -850,7 +870,9 @@ begin
 
   OpenDialog1.Execute;
   ImageFile := OpenDialog1.FileName;
-  UploadImage(DocumentID, ImageFile);
+  // Upload and OCR
+  if UploadImage(DocumentID, ImageFile) then
+    ProcessDocument(DocumentID);
 end;
 
 end.

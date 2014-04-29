@@ -109,16 +109,18 @@ type
     property CurrentOCRLanguage: string read FCurrentOCRLanguage write FCurrentOCRLanguage;
     // Number of pages to scan in one scan run.
     property Pages: integer read FPages write FPages;
-    // Device to be used to scan with in sane notation; e.g. genesys:libusb:001:002
+    // Device to be used to scan with.
+    // For sane driver: in sane notation; e.g. genesys:libusb:001:002
     // Specify e.g. net:192.168.0.4:genesys:libusb:001:002 for a sane network
     // scanner
     property ScanDevice: string read FScanDevice write FScanDevice;
-    // Cleans up image (postprocessing): straightens them up, despeckles etc. Returns true if succesful
+    // Cleans up image (postprocessing): straightens them up, despeckles etc.
+    // Returns true if succesful
     function CleanUpImage(const Source, Destination: string): boolean;
     // Delete document and associated images from DB
     // Deletes *all* documents if InvalidID specified as DocumentID
     // - if DeleteFromDisk, also delete from filesystem
-    // returns success or failure
+    // Returns success or failure
     function DeleteDocument(const DocumentID: integer; DeleteFromDisk: boolean): boolean;
     // Deletes all documents
     // Internally calls DeleteDocument
@@ -126,7 +128,7 @@ type
     // Delete image(s) from DB
     // Deletes *all* images if InvalidID specified as ImageID
     // - if DeleteFromDisk, also delete from filesystem
-    // returns success or failure
+    // Returns success or failure
     function DeleteImage(const ImageID: integer; DeleteFromDisk: boolean): boolean;
     // Deletes all images
     // Internally calls DeleteImage
@@ -138,14 +140,14 @@ type
     function GetImage(ImageID: integer; const ImageStream: TStream): boolean;
     // Get PDF identified by DocumentID
     function GetPDF(DocumentID: integer; const ImageStream: TStream): boolean;
+
     // Lists document specified by DocumentID or all documents (if DocumentID is INVALIDID)
     procedure ListDocuments(const DocumentID: integer; var DocumentsArray: TJSONArray);
     // List images specified DocumentID or all images (if DocumentID is INVALIDID).
     // Lists specified image for documentid if valid imageorder given; all images if ImageOrder=INVALIDID
     // Image path contains full path+file name.
     procedure ListImages(const DocumentID, ImageOrder: integer; var ImagesArray: TJSONArray);
-    // Process (set of) existing (TIFF) image(s); should be named <image>.tif
-    // Images are specified using the Images property
+    // Process (set of) existing (TIFF) image(s) for specified document
     // Specify resolution override to indicate image resolution to hocr2pdf
     // Specify 0 to leave alone and let hocr detect resolution or fallback to 300dpi
     // Returns resulting pdf file (including path) or empty if error
