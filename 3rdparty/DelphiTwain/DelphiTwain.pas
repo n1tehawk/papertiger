@@ -1,5 +1,5 @@
 {DELPHI IMPLEMENTATION OF TWAIN INTERFACE}
-{december 2003, initially created by Gustavo Daud}
+{Initially created by Gustavo Daud December 2003}
 
 {This is my newest contribution for Delphi comunity, a powerfull}
 {implementation of latest Twain features. As you know, twain is }
@@ -15,7 +15,7 @@
 {as it ships with Windows and later and with most of the }
 {acquisition device drivers (automatically with their installation)}
 {This library dynamically calls the library, avoiding the application}
-{hand when it is not present.}
+{hang when it is not present.}
 
 {Also, as in most of my other components, I included a trigger}
 {to allow the component to work without the heavy delphi VCL}
@@ -25,7 +25,8 @@
 {
 CHANGE LOG:
 
-2014/04/04 - Typo fixes in language constants
+2014/04/29 - Fix for unloading library cancelling acquire window on Lazarus
+             Typo fixes in language constants; cosmetic fixes.
 
 2013/12/18 - FireMonkey support, color bug fix.
 
@@ -193,10 +194,13 @@ type
     {Text values}
     property VersionInfo: String index 0 read GetString write
       SetString;
+    {Scanner manufacturer}
     property Manufacturer: String index 1 read GetString write
       SetString;
+    {Scanner product family}
     property ProductFamily: String index 2 read GetString write
       SetString;
+    {Scanner product name}
     property ProductName: String index 3 read GetString write
       SetString;
   end;
@@ -976,7 +980,7 @@ end;
 
 procedure TCustomDelphiTwain.DoDestroy;
 begin
-  {Full unload the library}
+  {Completely unload the library}
   LibraryLoaded := FALSE;
 
   {Free the object}

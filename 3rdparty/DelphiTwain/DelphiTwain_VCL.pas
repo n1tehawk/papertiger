@@ -136,7 +136,7 @@ end;
 
 destructor TDelphiTwain.Destroy;
 begin
-  fMessagesTimer.Free;
+  FreeAndNil(fMessagesTimer);
 
   inherited;
 end;
@@ -174,12 +174,14 @@ end;
 
 procedure TDelphiTwain.MessageTimer_Disable;
 begin
-  fMessagesTimer.Enabled := False;
+  if Assigned(fMessagesTimer) then
+    fMessagesTimer.Enabled := False;
 end;
 
 procedure TDelphiTwain.MessageTimer_Enable;
 begin
-  fMessagesTimer.Enabled := True;
+  if Assigned(fMessagesTimer) then
+    fMessagesTimer.Enabled := True;
 end;
 
 procedure TDelphiTwain.DoCreate;
