@@ -104,13 +104,13 @@ type
     // Callback for acquisition
     procedure TwainTwainAcquire(Sender: TObject; const {%H-}Index: Integer;
       Image: TBitmap; var Cancel: Boolean);
+    {$ENDIF}
     // Uploads image to server for given documentid.
     // If Quiet, will only give error messages.
     // Returns success status
     function UploadImage(const DocumentID: integer;
       ImageFile: string;
       Quiet: boolean=false): boolean;
-    {$ENDIF}
   public
     { public declarations }
   end;
