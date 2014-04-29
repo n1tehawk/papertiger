@@ -439,14 +439,15 @@ begin
             ShowMessage('Error: TWAIN is not installed.');
             exit;
           end;
-          //Load source manager
+          // Load source manager
           TwainScanner.SourceManagerLoaded := true;
 
           // Allow user to select source -> only the first time
           if not Assigned(TwainScanner.SelectedSource) then
             TwainScanner.SelectSource;
 
-          if Assigned(TwainScanner.SelectedSource) then begin
+          if Assigned(TwainScanner.SelectedSource) then
+          begin
             for CurrentPage := 1 to NumberPages do
             begin
               if CurrentPage > 1 then
@@ -458,7 +459,14 @@ begin
               TwainScanner.SelectedSource.Loaded := True;
               TwainScanner.SelectedSource.ShowUI := True;//display interface
               TwainScanner.SelectedSource.Enabled := True;
+
+//              TwainScanner.Sc
             end;
+          end
+          else
+          begin
+            ShowMessage('Scanning aborted.');
+            exit;
           end;
         finally
           TwainScanner.Free;
@@ -742,6 +750,7 @@ begin
   Image.SaveToFile('twainimage.bmp'); //todo: adjust for multipage, format etc
   Cancel:=true; //only want 1 image!??
 end;
+{$ENDIF}
 
 function TForm1.UploadImage(const DocumentID: integer;
   ImageFile: string;
@@ -794,8 +803,6 @@ begin
     exit;
   end;
 end;
-
-{$ENDIF}
 
 procedure TForm1.FormCreate(Sender: TObject);
 begin
