@@ -236,7 +236,7 @@ begin
       //raise Exception.CreateFmt('Image directory %s does not exist and cannot be created.', [FSettings.ImageDirectory]);
     end;
 
-    // Get image into file system
+    // Get image into file system; don't overwrite existing files
     // Extract only filename part from image name and add to storage path
     ImageFile := ExpandFileName(FSettings.ImageDirectory + ExtractFileName(ImageName));
 
@@ -462,7 +462,7 @@ begin
   Result := false;
   if DocumentID <> INVALIDID then
   begin
-    ImageFile := FTigerDB.ImagePath(DocumentID, ImageOrder);
+    ImageFile := FTigerDB.GetImagePath(DocumentID, ImageOrder);
     if ImageFile <> '' then
     begin
       try
@@ -501,7 +501,7 @@ begin
   Result := false;
   if ImageID <> INVALIDID then
   begin
-    ImageFile := FTigerDB.ImagePath(ImageID);
+    ImageFile := FTigerDB.GetImagePath(ImageID);
     if ImageFile <> '' then
     begin
       try
