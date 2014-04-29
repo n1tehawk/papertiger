@@ -84,6 +84,7 @@ type
     // Upload image to new document
     procedure UploadImageButtonClick(Sender: TObject);
   private
+    FAcquiredImage: string; // indicates file where scanner has acquired image. If empty, nothing acquired
     { private declarations }
     FSettings: TTigerSettings;
     // Asks the server to add a new document and returns the document ID. Returns INVALIDID on error.
@@ -450,6 +451,7 @@ begin
           begin
             for CurrentPage := 1 to NumberPages do
             begin
+              FAcquiredImage:='';
               if CurrentPage > 1 then
               begin
                 ShowMessage('Please put page ' + IntToStr(CurrentPage) + ' in the scanner.');
@@ -460,7 +462,16 @@ begin
               TwainScanner.SelectedSource.ShowUI := True;//display interface
               TwainScanner.SelectedSource.Enabled := True;
 
-//              TwainScanner.Sc
+              while FAcquiredImage='' do
+              begin
+                // Wait for scan to complete
+                // to do: build in timeout
+                Application.ProcessMessages;
+                Sleep(1000);
+              end;
+              // Document should be in FAcquiredImage
+              if not(UploadImage(DocumentID,FAcquiredImage,true)) then
+                raise Exception.Create('Error uploading image to server.');
             end;
           end
           else
@@ -746,9 +757,15 @@ end;
 {$IFDEF WINDOWS}
 procedure TForm1.TwainTwainAcquire(Sender: TObject; const Index: Integer;
   Image: TBitmap; var Cancel: Boolean);
+var
+  ImageFile: string;
 begin
-  Image.SaveToFile('twainimage.bmp'); //todo: adjust for multipage, format etc
+  FAcquiredImage:='';
+  ImageFile:=Sysutils.GetTempFilename('','scn');
+  ImageFile:=ChangeFileExt(ImageFile,'.tiff');
+  Image.SaveToFile(ImageFile); //todo: adjust for multipage, format etc
   Cancel:=true; //only want 1 image!??
+  FAcquiredImage:=ImageFile;
 end;
 {$ENDIF}
 
