@@ -2,7 +2,10 @@ DELPHITWAIN CHANGE LOG
 ======================
 
 2013/04/29
-Lazarus fixes
+
+Typo fixes in language constants; cosmetic fixes.
+Lazarus fixes: fix for unloading library cancelling acquire window on Lazarus
+             
 
 2013/12/21
 
