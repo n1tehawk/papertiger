@@ -145,7 +145,6 @@ var
   i: integer;
 begin
   Result:=0;
-  TigerLog.WriteLog(etDebug,'DetectRotation: started');
   //Tesseract since about 3.03 will print out orientation
   Command:=TesseractCommand+' "'+Source+'" "'+BogusFile+'" -l '+FLanguage + ' -psm 0';
 {
@@ -157,12 +156,10 @@ Orientation confidence: 15.33
   begin
     OutputList:=TStringList.Create;
     try
-      TigerLog.WriteLog(etDebug,'DetectRotation: command output is:'+CommandOutput);
       OutputList.Text:=CommandOutput;
       OutputList.NameValueSeparator:=':';
       if OutputList.Values['Orientation in degrees']<>'' then
       begin
-        TigerLog.WriteLog(etDebug,'DetectRotation: found rotation string'+OutputList.Values['Orientation in degrees']);
         Result:=StrToIntDef(OutputList.Values['Orientation in degrees'],0);
         TigerLog.WriteLog(etDebug,'DetectRotation: found rotation '+inttostr(Result));
       end;
@@ -224,9 +221,7 @@ end;
 
 function TImageCleaner.Rotate(Degrees: integer; SourceFile,
   DestinationFile: string): boolean;
-// Rotates uses exactimage tools (econvert); imagemagick
-// seems not to expect certain file types and we need
-// an exactimage dependency anyway for hocr2pdf
+// Rotates uses either exactimage tools econvert or imagemagick
 var
   ErrorCode: integer;
   Overwrite: boolean;
@@ -294,8 +289,13 @@ begin
   else
   if Overwrite then
   begin
-    // Copy over original file as requested
-    result:=FileCopy(TempFile,DestinationFile);
+    if FileExists(TempFile) then
+      // Copy over original file as requested
+      result:=FileCopy(TempFile,DestinationFile)
+    else
+      TigerLog.WriteLog(etError,
+        'TImageCleaner.Rotate: rotation failed; rotated temp file '+TempFile+
+        ' does not exist');
   end;
 end;
 
