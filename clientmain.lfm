@@ -18,23 +18,18 @@ object Form1: TForm1
     Columns = <    
       item
         Title.Caption = 'ID'
-        Title.MultiLine = False
       end    
       item
         Title.Caption = 'Name'
-        Title.MultiLine = False
       end    
       item
         Title.Caption = 'PDFPath'
-        Title.MultiLine = False
       end    
       item
         Title.Caption = 'ScanDate'
-        Title.MultiLine = False
       end    
       item
         Title.Caption = 'Hash'
-        Title.MultiLine = False
       end>
     FixedCols = 0
     Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRangeSelect, goColSizing, goSmoothScroll]

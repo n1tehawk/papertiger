@@ -77,7 +77,6 @@ begin
 
   // hocrwrap.sh expects hocr file as 1st parameter
   // Specifying --sloppy-text or not doesn't really seem to help; we get a lot of extraneous characters
-  // todo: check doing the text output with
   if FImageResolution > 0 then
     ResolutionOption := ' --resolution ' + IntToStr(FImageResolution);
   Options := ' "' + FHOCRFile + '" -i "' + FImageFile + '" -o "' + FPDFFile + '"' + ResolutionOption + ' --sloppy-text';

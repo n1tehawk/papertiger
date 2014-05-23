@@ -3,7 +3,7 @@ unit imagecleaner;
 { Image cleaning unit; to be used to straighten up/deskew, despeckle etc images
   so OCR is more accurate.
 
-  Copyright (c) 2012-2013 Reinier Olislagers
+  Copyright (c) 2012-2014 Reinier Olislagers
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to
@@ -51,10 +51,13 @@ type
     // Tests page layout by running a scan.
     // Returns OCR recognition score (percentage: correct/total words) as well as the
     // approximate number of correctly-detected words found
+    // todo: dead code but could be useful perhaps when autodetecting various languages?
     function CheckRecognition(ImageFile: string): integer;
     // Returns degrees image needs to be turned to end right-side-up
     // Currently based on Tesseract rotation detection functionality (added January 2014)
     function DetectRotation(Source: string): integer;
+    // Convert image to black and white TIFF image
+    function ToBlackWhiteTIFF(SourceFile,DestinationFile: string): boolean;
   public
     // Cleans up before scanning:
     // Converts image to black/white
@@ -67,8 +70,6 @@ type
     // Rotates source image to destination image over specified number of degrees clockwise
     // Returns true if succesful
     function Rotate(Degrees: integer; SourceFile, DestinationFile: string): boolean;
-    // Convert image to black and white TIFF image
-    function ToBlackWhiteTIFF(SourceFile,DestinationFile: string): boolean;
     // Language to use for OCR, e.g. eng for English, nld for Dutch
     property Language: string read FLanguage write FLanguage;
     constructor Create;
@@ -90,7 +91,7 @@ const
   NormalizeCommand='optimize2bw'; //exactimage's => black&white TIFF conversion tool
 
 function TImageCleaner.CheckRecognition(ImageFile: string): integer;
-{todo:  tesseract tries to output valid words in the selected language and
+{ Tesseract tries to output valid words in the selected language and
 will often falsely detect numbers instead of gibberish when scanning rotated text.
 Therefore remove all words containing only numbers before calculating statistics
 }
@@ -132,20 +133,41 @@ end;
 
 { TImageCleaner }
 function TImageCleaner.DetectRotation(Source: string): integer;
+// Requires Tesseract for now
 const
-  MinWords = 10; //Below this number, the image probably has no valid text
+  //todo: add support for windows
+  BogusFile = '/tmp/deleteme';
+  TesseractCommand = 'tesseract';
 var
-  DetectedRotation: integer=0;
-  RotatedImage: string;
-  Rotation: integer=0;
-  Score: integer=0;
-  TopScore: integer=0;
+  Command: string;
+  CommandOutput: string;
+  OutputList: TStringList;
+  i: integer;
 begin
   Result:=0;
-  Rotation:=0;
-  DetectedRotation:=0;
-  //todo: add tesseract recognition here
-  result := DetectedRotation;
+  TigerLog.WriteLog(etDebug,'DetectRotation: started');
+  //Tesseract since about 3.03 will print out orientation
+  Command:=TesseractCommand+' "'+Source+'" "'+BogusFile+'" -l '+FLanguage + ' - psm 0';
+{
+Orientation: 0
+Orientation in degrees: 0
+Orientation confidence: 15.33
+}
+  if ExecuteCommand(Command,CommandOutput,false)=0 then
+  begin
+    OutputList:=TStringList.Create;
+    try
+      OutputList.Text:=CommandOutput;
+      OutputList.NameValueSeparator:=':';
+      if OutputList.Values['Orientation in degrees']<>'' then
+      begin
+        Result:=StrToIntDef(OutputList.Values['Orientation in degrees'],0);
+        TigerLog.WriteLog(etDebug,'DetectRotation: found rotation '+inttostr(Result));
+      end;
+    finally
+      OutputList.Free;
+    end;
+  end;
 end;
 
 constructor TImageCleaner.Create;
@@ -201,7 +223,7 @@ end;
 function TImageCleaner.Rotate(Degrees: integer; SourceFile,
   DestinationFile: string): boolean;
 // Rotates uses exactimage tools (econvert); imagemagick
-// seems not to except certain file types and we need
+// seems not to expect certain file types and we need
 // an exactimage dependency anyway for hocr2pdf
 var
   ErrorCode: integer;
@@ -282,6 +304,7 @@ var
 begin
   Result:=INVALIDID;
   TempImage:=GetTempFileName('','BW');
+  // Convert to CCIT group IV fax compression
   ToBlackWhiteTIFF(Source,TempImage);
   if AutoRotate then
   begin

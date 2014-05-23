@@ -39,11 +39,6 @@ uses
   Classes, SysUtils, tigerutil;
 
 type
-  // Orientation of scanned image versus the "right side up".
-  // E.g. TurnedAntiClock means the scanned image should be rotated 90 degrees
-  // clockwise to get the correct orientation
-  Orientation=(orNormal,orUpsideDown,orTurnedClock,orTurnedAntiClock,orUnknown);
-
   { TOCR }
 
   TOCR = class(TObject)

@@ -446,7 +446,7 @@ type
     writeln('-i <image> --image=<image>');
     writeln(' Process image.');
     writeln('-l <lang> --language=<language>');
-    writeln(' Language to be used for OCR.');
+    writeln(' Language to be used for OCR, e.g. eng, nld');
     writeln(' eng (English) by default. See the OCR documentation for ');
     writeln(' language codes (e.g. man tesseract)');
     writeln('--list');

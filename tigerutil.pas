@@ -2,7 +2,7 @@ unit tigerutil;
 
 { Utility functions such as logging support.
 
-  Copyright (c) 2012-2013 Reinier Olislagers
+  Copyright (c) 2012-2014 Reinier Olislagers
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to
@@ -35,6 +35,12 @@ interface
 
 uses
   Classes, SysUtils, eventlog;
+
+type
+  // Orientation of scanned image versus the "right side up".
+  // E.g. TurnedAntiClock means the scanned image should be rotated 90 degrees
+  // clockwise to get the correct orientation
+  Orientation=(orNormal,orUpsideDown,orTurnedClock,orTurnedAntiClock,orUnknown);
 
 type
   { TLogger }
