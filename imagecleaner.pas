@@ -147,7 +147,7 @@ begin
   Result:=0;
   TigerLog.WriteLog(etDebug,'DetectRotation: started');
   //Tesseract since about 3.03 will print out orientation
-  Command:=TesseractCommand+' "'+Source+'" "'+BogusFile+'" -l '+FLanguage + ' - psm 0';
+  Command:=TesseractCommand+' "'+Source+'" "'+BogusFile+'" -l '+FLanguage + ' -psm 0';
 {
 Orientation: 0
 Orientation in degrees: 0
