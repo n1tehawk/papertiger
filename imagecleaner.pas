@@ -155,12 +155,14 @@ Orientation confidence: 15.33
 }
   if ExecuteCommand(Command,CommandOutput,false)=0 then
   begin
+    TigerLog.WriteLog(etDebug,'DetectRotation: command ran with exit code 0');
     OutputList:=TStringList.Create;
     try
       OutputList.Text:=CommandOutput;
       OutputList.NameValueSeparator:=':';
       if OutputList.Values['Orientation in degrees']<>'' then
       begin
+        TigerLog.WriteLog(etDebug,'DetectRotation: found rotation string'+OutputList.Values['Orientation in degrees']);
         Result:=StrToIntDef(OutputList.Values['Orientation in degrees'],0);
         TigerLog.WriteLog(etDebug,'DetectRotation: found rotation '+inttostr(Result));
       end;
