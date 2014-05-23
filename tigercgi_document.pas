@@ -259,6 +259,8 @@ begin
     end;
     'PUT':
     begin
+      todo: actually implement editing doc here via json properties or something?
+      //edit doc with id 304
       //http://server/cgi-bin/tigercgi/document/304
       if WordCount(StrippedPath, ['/']) = 2 then
       begin

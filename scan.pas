@@ -2,7 +2,7 @@ unit scan;
 
 { Paper scanning functionality
 
-  Copyright (c) 2012-2013 Reinier Olislagers
+  Copyright (c) 2012-2014 Reinier Olislagers
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to
@@ -31,6 +31,12 @@ uses
   Classes, SysUtils, tigerutil, tigersettings;
 //todo: add support for pascalsane/using libsane instead of wrapping sane command line?
 
+{$DEFINE USE_IMAGEMAGICK}
+{$IFDEF USE_IMAGEMAGICK}
+const
+ConvertCommand='convert'; //Imagemagick's version
+{$ENDIF}
+
 
 type
   // Colour/color, grayscale and lineart/black & white scan modes
@@ -49,6 +55,10 @@ type
     // sane inserts Failed cupsGetDevices and an LF before the tiff data
     // Useful both when scanning and when using ready made files
     procedure FixSaneBug313851(TIFFile: string);
+    // Compresses file with group 4 fax compression. Only useful for black and white/
+    // lineart images
+    // Returns success or failure
+    function CCITTGroup4Compress(FileName: string): boolean;
   public
     // Black & white, grayscale or colour scan?
     property ColorType: ScanType read FColorType write FColorType;
@@ -98,6 +108,26 @@ begin
   end;
 end;
 
+function TScanner.CCITTGroup4Compress(FileName: string): boolean;
+var
+  TempImage:string;
+begin
+  result:=false;
+  if ConvertCommand='' then
+  begin
+    TigerLog.WriteLog(etError, 'CCITTGroup4Compress: no conversion program available');
+    exit(false); //fail silently
+  end;
+
+  TempImage:=GetTempFileName('','FX');
+  //for now, imagemagick support only
+  if ExecuteCommand(ConvertCommand + ' -compress Group4 "'+FileName+'" "'+TempImage+'" ', false) = 0 then
+  begin
+    if FileCopy(TempImage,FileName) then
+      result:=true;
+  end;
+end;
+
 procedure TScanner.ShowDevices(var DeviceList: TStringList);
 const
   ScanListCommand = 'scanimage';
@@ -128,8 +158,8 @@ var
   ScanType: string;
 begin
   {Example call:
-  scanimage --device-name=genesys:libusb:001:002 --mode=Color --swdeskew=yes --swcrop=yes --format=tiff > /tmp/testscan.tiff
-  swdeskew, swcrop, color arguments are device dependent
+  scanimage --device-name=genesys:libusb:001:002 --mode=Color --resolution=300 --swdeskew=yes --swcrop=yes --format=tiff > /tmp/testscan.tiff
+  swdeskew, swcrop, mode(e.g. Color,Lineart) arguments are device dependent
   Network:
   scanimage --device-name=net:192.168.0.1:genesys:libusb:001:002
   and the arguments are the same
@@ -137,8 +167,7 @@ begin
   { Alternative: while scanadf has a file output option, you can't specify file format:
   scanadf --depth=8 --resolution=300 --mode=Gray --start-count=1 --end-count=1 --output-file=/tmp/scan.tiff
   }
-  //todo: device-specific parameters -> get from scanimage --help?
-  //Compress TIFF?? => no, not really useful, wil be compressed in PDF
+  //todo: device-specific parameters -> get from scanimage --device-name=... --all-options?
   Result := false;
   case FColorType of
     stLineArt: ScanType := 'Lineart';
@@ -166,6 +195,9 @@ begin
     if ExecuteCommand(ScanCommand + Options, false) = 0 then
     begin
       FixSaneBug313851(FFileName);
+      // Make sure we use CCITT Group 4 compression for lineart images
+      if FColorType=stLineArt then
+        CCITTGroup4Compress(FFileName);
       TigerLog.WriteLog(etDebug, 'Scan succeeded.');
       Result := true;
     end

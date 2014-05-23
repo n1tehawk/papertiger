@@ -336,7 +336,7 @@ begin
     end
     else
     begin
-      Cleaner.Clean(Source, Destination, true); //result in destination
+      Cleaner.Clean(Source, Destination, true); //autorotate, result in destination
     end;
     Result := true;
   finally

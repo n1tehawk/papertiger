@@ -355,7 +355,7 @@ var
   {$ENDIF}
 begin
   NumberPages := StrToIntDef(NumberPagesControl.Text, 1);
-
+  to do use editdocument and supply file name; first need to fix up cgi part
   DocumentID := AddDocument;
   if DocumentID = INVALIDID then
   begin
