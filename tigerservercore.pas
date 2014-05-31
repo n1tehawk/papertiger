@@ -60,7 +60,7 @@ uses
   tigerutil {put this first for logging support},
   tigerdb, tigersettings,
   scan, imagecleaner, ocr, pdf,
-  fpjson, dateutils, md5;
+  fpjson, dateutils, md5, processutils;
 
 // Common constants etc:
 {$i tigercommondefs.inc}
@@ -91,6 +91,9 @@ type
     FTigerDB: TTigerDB;
     procedure SetDesiredRotation(AValue: integer);
   protected
+    // Concatenates all pdf files in PDF list into OutputPDF
+    // Returns success or failure
+    function ConcatenatePDF(PDFList: TStrings; var OutputPDF: string): boolean;
   public
     // Adds new, empty document (with name if specified), returns document ID
     function AddDocument(DocumentName: string = ''): integer;
@@ -189,6 +192,53 @@ begin
   if FDesiredRotation < 0 then
     FDesiredRotation := 360 + FDesiredRotation; //...part 2
   FDesiredRotation := AValue;
+end;
+
+function TTigerServerCore.ConcatenatePDF(PDFList: TStrings;
+  var OutputPDF: string): boolean;
+const
+  Command = 'pdftk';
+var
+  ErrorCode: integer;
+  i: integer;
+  SourcePDFs: string;
+begin
+  result := false;
+  SourcePDFs := '';
+  for i:= 0 to PDFList.Count - 1 do
+  begin
+    if i=0 then
+      SourcePDFs := '"' + PDFList[i] + '"'
+    else
+      SourcePDFs := SourcePDFs + ' "' + PDFList[i] + '"';
+  end;
+
+  if OutputPDF='' then
+    OutputPDF:=IncludeTrailingPathDelimiter(FSettings.PDFDirectory) +
+      FormatDateTime(ISO8601FullDateFormat, now) + '.pdf';
+  try
+    ErrorCode:=ExecuteCommand(Command+ ' '+
+      SourcePDFs + ' ' +
+      ' cat output "'+OutputPDF+'"', false);
+  except
+    on E: Exception do
+    begin
+      TigerLog.WriteLog(etWarning,
+        'COncatenatePDF: got exception '+E.Message+
+        ' when calling '+Command+' for PDFs '+SourcePDFs);
+      ErrorCode:=processutils.PROC_INTERNALEXCEPTION;
+    end;
+  end;
+  if ErrorCode=0 then
+  begin
+    result:=true;
+  end
+  else
+  begin
+    TigerLog.WriteLog(etWarning,
+      'ConcatenatePDF: got result code '+inttostr(ErrorCode)+
+      ' when calling '+Command+' for PDFs '+SourcePDFs);
+  end;
 end;
 
 function TTigerServerCore.AddDocument(DocumentName: string = ''): integer;
@@ -644,6 +694,8 @@ var
   ImageFile: string;
   Message: string;
   OCR: TOCR;
+  OutputPDF: string; //resulting multipage pdf
+  PDFList: TStringList;
   PDF: TPDF;
   Success: boolean;
 begin
@@ -669,70 +721,79 @@ begin
   if Force or FTigerDB.GetNeedsOCR(DocumentID) then
   begin
     // Get images belonging to document
-    FTigerDB.ListImages(DocumentID, InvalidID, ImagesArray);
-    for i := 0 to ImagesArray.Count - 1 do
-    begin
-      if (ImagesArray.Items[i].JSONType = jtObject) then
+    PDFList := TStringList.Create;
+    try
+      FTigerDB.ListImages(DocumentID, InvalidID, ImagesArray);
+      for i := 0 to ImagesArray.Count - 1 do
       begin
-        // path contain full image path, no need to add FSettings.ImageDirectory
-        ImageFile := (ImagesArray.Items[i] as TJSONObject).Elements['path'].AsString;
-        CleanImage := GetTempFileName('', 'TIFC');
-        // Clean up image, copy into temporary file
-        Success := CleanUpImage(ImageFile, CleanImage);
-
-        if Success then
+        if (ImagesArray.Items[i].JSONType = jtObject) then
         begin
-          OCR := TOCR.Create;
-          try
-            OCR.ImageFile := CleanImage;
-            OCR.Language := FCurrentOCRLanguage;
-            Success := OCR.RecognizeText;
-            HOCRFile := OCR.HOCRFile;
-            TigerLog.WriteLog(etDebug, 'ProcessImages: Got file '+HOCRFile+' with this text:' + OCR.Text);
-          finally
-            OCR.Free;
-          end;
-          {$IFNDEF DEBUG}
-          DeleteFile(CleanImage);
-          {$ENDIF}
-        end;
+          // path contain full image path, no need to add FSettings.ImageDirectory
+          ImageFile := (ImagesArray.Items[i] as TJSONObject).Elements['path'].AsString;
+          CleanImage := GetTempFileName('', 'TIFC');
+          // Clean up image, copy into temporary file
+          Success := CleanUpImage(ImageFile, CleanImage);
 
-        if Success then
-        begin
-          PDF := TPDF.Create;
-          try
-            // Only pass on overrides on resolution
-            if Resolution > 0 then
-              PDF.ImageResolution := Resolution;
-            // todo: read tiff file and extract resolution ourselves, pass it on
-            if not(FileExists(HOCRFile)) then
-              raise Exception.CreateFmt('OCR file %s does not exist',[HOCRFile]);
-            PDF.HOCRFile := HOCRFile;
-            PDF.ImageFile := ImageFile; // The original, unaltered image file
-            TigerLog.WriteLog(etDebug, 'pdfdirectory: ' + FSettings.PDFDirectory);
-            PDF.PDFFile := IncludeTrailingPathDelimiter(FSettings.PDFDirectory) + ChangeFileExt(
-              ExtractFileName(ImageFile), '.pdf');
-            //todo: add metadata stuff to pdf unit
-            Success := PDF.CreatePDF;
-            if Success then
-            begin
-              TigerLog.WriteLog(etDebug, 'ProcessImages: Got PDF: ' + PDF.PDFFile);
-              FTigerDB.SetPDFPath(DocumentID, PDF.PDFFile);
-              Result := PDF.PDFFile;
+          if Success then
+          begin
+            OCR := TOCR.Create;
+            try
+              OCR.ImageFile := CleanImage;
+              OCR.Language := FCurrentOCRLanguage;
+              Success := OCR.RecognizeText;
+              HOCRFile := OCR.HOCRFile;
+              TigerLog.WriteLog(etDebug, 'ProcessImages: Got file '+HOCRFile+' with this text:' + OCR.Text);
+            finally
+              OCR.Free;
             end;
-            //todo: update pdf name based on OCR?!?
-          finally
-            PDF.Free;
+            {$IFNDEF DEBUG}
+            DeleteFile(CleanImage);
+            {$ENDIF}
           end;
+
+          if Success then
+          begin
+            PDF := TPDF.Create;
+            try
+              // Only pass on overrides on resolution
+              if Resolution > 0 then
+                PDF.ImageResolution := Resolution;
+              // todo: read tiff file and extract resolution ourselves, pass it on
+              if not(FileExists(HOCRFile)) then
+                raise Exception.CreateFmt('OCR file %s does not exist',[HOCRFile]);
+              PDF.HOCRFile := HOCRFile;
+              PDF.ImageFile := ImageFile; // The original, unaltered image file
+              TigerLog.WriteLog(etDebug, 'pdfdirectory: ' + FSettings.PDFDirectory);
+              PDF.PDFFile := IncludeTrailingPathDelimiter(FSettings.PDFDirectory) + ChangeFileExt(
+                ExtractFileName(ImageFile), '.pdf');
+              //todo: add metadata stuff to pdf unit
+              Success := PDF.CreatePDF;
+              if Success then
+              begin
+                TigerLog.WriteLog(etDebug, 'ProcessImages: Got PDF: ' + PDF.PDFFile);
+                PDFList.Add(PDF.PDFFile); //mark it for concatenation later
+              end;
+              //todo: update pdf name based on OCR?!?
+            finally
+              PDF.Free;
+            end;
+          end;
+        end
+        else
+        begin
+          TigerLog.WriteLog(etDebug, 'ProcessImages: got invalid json array item from ListImages; item number ' + IntToStr(i));
         end;
-      end
-      else
+      end; //all images added
+      Success:=ConcatenatePDF(PDFList, OutputPDF);
+      if Success then
       begin
-        TigerLog.WriteLog(etDebug, 'ProcessImages: got invalid json array item from ListImages; item number ' + IntToStr(i));
+        FTigerDB.SetPDFPath(DocumentID, OutputPDF);
+        Result := OutputPDF;
+        FTigerDB.SetNeedsOCR(DocumentID, false);
       end;
-    end; //all images added
-    FTigerDB.SetNeedsOCR(DocumentID, false);
-    //todo: concatenate pdfs; we just add the last one for now
+    finally
+      PDFList.Free;
+    end;
   end
   else
   begin

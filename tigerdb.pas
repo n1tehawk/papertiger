@@ -99,7 +99,7 @@ type
     function Purge: boolean;
     // Set NeedsOCR to true or false for specified document, indicating
     // OCR needs to be performed (or not).
-    function SetNeedsOCR(DocumentID: integer; Setting: boolean): boolean;
+    function SetNeedsOCR(DocumentID: integer; NeedsOCR: boolean): boolean;
     // Sets path+filename for PDF associated with document. Returns result.
     function SetPDFPath(DocumentID: integer; PDFPath: string): boolean;
     constructor Create;
@@ -510,6 +510,8 @@ var
   RecordObject: TJSONObject;
 begin
   //todo: convert to generic db query => json array function
+  if assigned(ImagesArray) then
+    ImagesArray.Free; //avoid memory leak
   ImagesArray := TJSONArray.Create; //clears any existing data at the same time
   if FReadTransaction.Active = false then
     FReadTransaction.StartTransaction;
@@ -636,7 +638,7 @@ begin
   end;
 end;
 
-function TTigerDB.SetNeedsOCR(DocumentID: integer; Setting: boolean): boolean;
+function TTigerDB.SetNeedsOCR(DocumentID: integer; NeedsOCR: boolean): boolean;
 begin
   result:= false;
   try
@@ -644,7 +646,7 @@ begin
       FReadWriteTransaction.StartTransaction;
     FWriteQuery.Close;
     FWriteQuery.SQL.Text := 'UPDATE DOCUMENTS SET NEEDSOCR=:SETTING WHERE ID=' + IntToStr(DocumentID);
-    FWriteQuery.Params.ParamByName('SETTING').AsBoolean:=Setting;
+    FWriteQuery.Params.ParamByName('SETTING').AsBoolean:=NeedsOCR;
     FWriteQuery.ExecSQL;
     FWriteQuery.Close;
     FReadWriteTransaction.Commit;
