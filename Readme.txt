@@ -83,6 +83,8 @@ Installation instructions
   cat >> /usr/local/share/tessdata/configs/hocr << "EOF_DOCUMENT"
   tessedit_create_hocr 1
   EOF_DOCUMENT
+- prerequisites: have pdftk installed (for concatenating pdfs), e.g.:
+  aptitude install pdftk
 - nice to have: have scantailor installed (for aligning/cleaning up the tiff 
   images before OCR).
   see installation notes below
