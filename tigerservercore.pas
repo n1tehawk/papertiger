@@ -788,7 +788,16 @@ begin
           TigerLog.WriteLog(etDebug, 'ProcessImages: got invalid json array item from ListImages; item number ' + IntToStr(i));
         end;
       end; //all images added
-      Success:=ConcatenatePDF(PDFList, OutputPDF);
+
+      // Merge all created pdfs
+      if Success then
+      begin
+        if PDFList.Count=1 then
+          OutputPDF:= PDFList[0]
+        else
+          Success:=ConcatenatePDF(PDFList, OutputPDF);
+      end;
+
       if Success then
       begin
         FTigerDB.SetPDFPath(DocumentID, OutputPDF);
