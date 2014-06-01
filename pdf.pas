@@ -89,14 +89,14 @@ begin
     raise Exception.Create('ConcatenatePDF: OutputPDF may not be empty.');
 
   try
-    ErrorCode:=ExecuteCommand(Command+ ' '+
+    ErrorCode:=ExecuteCommand(Command + ' ' +
       SourcePDFs + ' ' +
-      ' cat output "'+OutputPDF+'"', false);
+      ' cat output "'+OutputPDF+'" ', false);
   except
     on E: Exception do
     begin
       TigerLog.WriteLog(etWarning,
-        'COncatenatePDF: got exception '+E.Message+
+        'ConcatenatePDF: got exception '+E.Message+
         ' when calling '+Command+' for PDFs '+SourcePDFs);
       ErrorCode:=processutils.PROC_INTERNALEXCEPTION;
     end;
@@ -104,6 +104,9 @@ begin
   if ErrorCode=0 then
   begin
     result:=true;
+    TigerLog.WriteLog(etDebug,
+      'ConcatenatePDF: success '+
+      ' calling '+Command+' for PDFs '+SourcePDFs);
   end
   else
   begin
