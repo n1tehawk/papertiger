@@ -678,7 +678,7 @@ begin
       begin
         if (ImagesArray.Items[i].JSONType = jtObject) then
         begin
-          // path contains full image path, no need to add FSettings.ImageDirectory
+          // Path contains full image path, no need to add FSettings.ImageDirectory
           ImageFile := (ImagesArray.Items[i] as TJSONObject).Elements['path'].AsString;
           // Get PDF suggestion by using first image name
           // todo: instead of image name, perhaps use document name for pdf name?
@@ -719,8 +719,8 @@ begin
               PDF.HOCRFile := HOCRFile;
               PDF.ImageFile := ImageFile; // The original, unaltered image file
               TigerLog.WriteLog(etDebug, 'pdfdirectory: ' + FSettings.PDFDirectory);
-              PDF.PDFFile := IncludeTrailingPathDelimiter(FSettings.PDFDirectory) + ChangeFileExt(
-                ExtractFileName(ImageFile), '.pdf');
+              // Use a temporary file as we'll merge in the results anyway
+              PDF.PDFFile := GetTempFileName('', 'PDF');
               //todo: add metadata stuff to pdf unit
               Success := PDF.CreatePDF;
               if Success then
@@ -758,7 +758,6 @@ begin
             Success := false;
           end;
         end;
-        1: OutputPDF := PDFList[0]; // no need to concatenate
         else Success := ConcatenatePDF(PDFList, OutputPDF);
         end;
       end;

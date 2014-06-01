@@ -58,6 +58,7 @@ type
   end;
 
 // Concatenates all pdf files in PDF list into OutputPDF
+// If only one pdf, just copies to OutputPDF
 // Returns success or failure
 function ConcatenatePDF(PDFList: TStrings; var OutputPDF: string): boolean;
 
@@ -84,14 +85,6 @@ begin
     exit(false);
   end;
 
-  for i:= 0 to PDFList.Count - 1 do
-  begin
-    if i=0 then
-      SourcePDFs := '"' + PDFList[i] + '"'
-    else
-      SourcePDFs := SourcePDFs + ' "' + PDFList[i] + '"';
-  end;
-
   if OutputPDF='' then
   begin
     TigerLog.WriteLog(etError,'ConcatenatePDF: OutputPDF may not be empty.');
@@ -103,6 +96,21 @@ begin
     TigerLog.WriteLog(etWarning,'ConcatenatePDF: OutputPDF file '+OutputPDF+' already exists. Not going to overwrite it.');
     exit(false);
   end;
+
+  if PDFList.Count=1 then
+  begin
+    // Simply copy PDF instead of concatenating
+    exit(FileCopy(PDFList[0],OutputPDF));
+  end;
+
+  for i:= 0 to PDFList.Count - 1 do
+  begin
+    if i=0 then
+      SourcePDFs := '"' + PDFList[i] + '"'
+    else
+      SourcePDFs := SourcePDFs + ' "' + PDFList[i] + '"';
+  end;
+
 
   try
     ErrorCode:=ExecuteCommand(Command + ' ' +
