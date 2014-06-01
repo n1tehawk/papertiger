@@ -628,8 +628,11 @@ begin
       DocumentID := Document.Items[0].AsInteger; //document ID is first returned item
       ProcessImages(DocumentID,0,false);
     except
-      writeln('Error processing document. Aborting.');
-      exit;
+      on E: Exception do
+      begin
+        TigerLog.WriteLog(etError, 'Exception processing document: '+E.Message);
+        exit(false);
+      end;
     end;
   end;
   result:=true;
