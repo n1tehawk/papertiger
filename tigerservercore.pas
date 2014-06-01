@@ -746,12 +746,20 @@ begin
         case PDFList.Count of
         0:
         begin
-          TigerLog.WriteLog(etError, 'ProcessImages: no pdfs were created; there were '+
-            inttostr(ImagesArray.Count) + ' input images.');
-          Success:= false;
+          if ImagesArray.Count = 0 then
+          begin
+            // No input images, so no output pdf, but still valid
+            OutputPDF := '';
+          end
+          else
+          begin
+            TigerLog.WriteLog(etError, 'ProcessImages: no pdfs were created; there were '+
+              inttostr(ImagesArray.Count) + ' input images.');
+            Success := false;
+          end;
         end;
-        1: OutputPDF:= PDFList[0];
-        else Success:=ConcatenatePDF(PDFList, OutputPDF);
+        1: OutputPDF := PDFList[0]; // no need to concatenate
+        else Success := ConcatenatePDF(PDFList, OutputPDF);
         end;
       end;
 
