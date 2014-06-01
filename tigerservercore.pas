@@ -684,7 +684,7 @@ begin
           // todo: instead of image name, perhaps use document name for pdf name?
           if i = 0 then
             OutputPDF := IncludeTrailingPathDelimiter(FSettings.PDFDirectory) +
-              ChangeFileExt(ImageFile, '.pdf');
+              ChangeFileExt(sysutils.ExtractFileName(ImageFile), '.pdf');
           CleanImage := GetTempFileName('', 'TIFC');
           // Clean up image, copy into temporary file
           Success := CleanUpImage(ImageFile, CleanImage);
