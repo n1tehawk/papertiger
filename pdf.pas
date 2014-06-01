@@ -77,6 +77,10 @@ var
 begin
   result := false;
   SourcePDFs := '';
+
+  if PDFList.Count=0 then
+    raise Exception.Create('ConcatenatePDFs: no input pdfs specified.');
+
   for i:= 0 to PDFList.Count - 1 do
   begin
     if i=0 then
@@ -97,7 +101,7 @@ begin
     begin
       TigerLog.WriteLog(etWarning,
         'ConcatenatePDF: got exception '+E.Message+
-        ' when calling '+Command+' for PDFs '+SourcePDFs);
+        ' when calling '+Command+' for PDFs '+SourcePDFs+' to target PDF '+OutputPDF);
       ErrorCode:=processutils.PROC_INTERNALEXCEPTION;
     end;
   end;
@@ -106,13 +110,13 @@ begin
     result:=true;
     TigerLog.WriteLog(etDebug,
       'ConcatenatePDF: success '+
-      ' calling '+Command+' for PDFs '+SourcePDFs);
+      ' calling '+Command+' for PDFs '+SourcePDFs+' to target PDF '+OutputPDF);
   end
   else
   begin
     TigerLog.WriteLog(etWarning,
       'ConcatenatePDF: got result code '+inttostr(ErrorCode)+
-      ' when calling '+Command+' for PDFs '+SourcePDFs);
+      ' when calling '+Command+' for PDFs '+SourcePDFs+' to target PDF '+OutputPDF);
   end;
 end;
 

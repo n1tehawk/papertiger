@@ -743,10 +743,16 @@ begin
       // Merge all created pdfs
       if Success then
       begin
-        if PDFList.Count=1 then
-          OutputPDF:= PDFList[0]
-        else
-          Success:=ConcatenatePDF(PDFList, OutputPDF);
+        case PDFList.Count of
+        0:
+        begin
+          TigerLog.WriteLog(etError, 'ProcessImages: no pdfs were created; there were '+
+            inttostr(ImagesArray.Count) + ' input images.');
+          Success:= false;
+        end;
+        1: OutputPDF:= PDFList[0];
+        else Success:=ConcatenatePDF(PDFList, OutputPDF);
+        end;
       end;
 
       if Success then
