@@ -692,7 +692,11 @@ begin
           // Clean up image, copy into temporary file
           Success := CleanUpImage(ImageFile, CleanImage);
 
-          if Success then
+          if not Success then
+          begin
+            TigerLog.WriteLog(etDebug, 'ProcessImages: CleanUpImage from '+ImageFile+' to '+CleanImage+' failed.');
+          end
+          else
           begin
             OCR := TOCR.Create;
             try
@@ -700,7 +704,7 @@ begin
               OCR.Language := FCurrentOCRLanguage;
               Success := OCR.RecognizeText;
               HOCRFile := OCR.HOCRFile;
-              TigerLog.WriteLog(etDebug, 'ProcessImages: Got file '+HOCRFile+' with this text:' + OCR.Text);
+              TigerLog.WriteLog(etDebug, 'ProcessImages: Got HOCR file '+HOCRFile+' with this text:' + OCR.Text);
             finally
               OCR.Free;
             end;
@@ -746,8 +750,7 @@ begin
       // Merge all created pdfs
       if Success then
       begin
-        case PDFList.Count of
-        0:
+        if PDFList.Count = 0 then
         begin
           if ImagesArray.Count = 0 then
           begin
@@ -760,8 +763,10 @@ begin
               inttostr(ImagesArray.Count) + ' input images.');
             Success := false;
           end;
-        end;
-        else Success := ConcatenatePDF(PDFList, OutputPDF);
+        end
+        else
+        begin
+          Success := ConcatenatePDF(PDFList, OutputPDF);
         end;
       end;
 
