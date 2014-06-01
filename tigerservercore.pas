@@ -728,8 +728,12 @@ begin
       begin
         if (ImagesArray.Items[i].JSONType = jtObject) then
         begin
-          // path contain full image path, no need to add FSettings.ImageDirectory
+          // path contains full image path, no need to add FSettings.ImageDirectory
           ImageFile := (ImagesArray.Items[i] as TJSONObject).Elements['path'].AsString;
+          // Get PDF suggestion by using first image name
+          if i = 0 then
+            OutputPDF := IncludeTrailingPathDelimiter(FSettings.PDFDirectory) +
+              ChangeFileExt(ImageFile, '.pdf');
           CleanImage := GetTempFileName('', 'TIFC');
           // Clean up image, copy into temporary file
           Success := CleanUpImage(ImageFile, CleanImage);

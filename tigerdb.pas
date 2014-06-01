@@ -510,8 +510,10 @@ var
   RecordObject: TJSONObject;
 begin
   //todo: convert to generic db query => json array function
+  { apparently this doesn't work??!
   if assigned(ImagesArray) then
     ImagesArray.Free; //avoid memory leak
+  }
   ImagesArray := TJSONArray.Create; //clears any existing data at the same time
   if FReadTransaction.Active = false then
     FReadTransaction.StartTransaction;
