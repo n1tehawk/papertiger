@@ -768,8 +768,8 @@ begin
       if Success then
       begin
         FTigerDB.SetPDFPath(DocumentID, OutputPDF);
-        Result := OutputPDF;
         FTigerDB.SetNeedsOCR(DocumentID, false);
+        Result := OutputPDF;
       end;
     finally
       PDFList.Free;
@@ -782,7 +782,7 @@ begin
   end;
 
   if not(Success) then
-    TigerLog.WriteLog(etDebug, 'ProcessImages failed.');
+    TigerLog.WriteLog(etDebug, 'ProcessImages failed (document ID: '+inttostr(DocumentID)+')');
 end;
 
 function TTigerServerCore.PurgeDB: boolean;
