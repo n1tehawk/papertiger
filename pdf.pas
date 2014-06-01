@@ -2,7 +2,7 @@ unit pdf;
 
 { PDF generation functionality
 
-  Copyright (c) 2012-2013 Reinier Olislagers
+  Copyright (c) 2012-2014 Reinier Olislagers
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to
@@ -57,9 +57,62 @@ type
     destructor Destroy; override;
   end;
 
+// Concatenates all pdf files in PDF list into OutputPDF
+// Returns success or failure
+function ConcatenatePDF(PDFList: TStrings; var OutputPDF: string): boolean;
+
+
 implementation
 
 uses processutils;
+
+function ConcatenatePDF(PDFList: TStrings;
+  var OutputPDF: string): boolean;
+const
+  Command = 'pdftk';
+var
+  ErrorCode: integer;
+  i: integer;
+  SourcePDFs: string;
+begin
+  result := false;
+  SourcePDFs := '';
+  for i:= 0 to PDFList.Count - 1 do
+  begin
+    if i=0 then
+      SourcePDFs := '"' + PDFList[i] + '"'
+    else
+      SourcePDFs := SourcePDFs + ' "' + PDFList[i] + '"';
+  end;
+
+  if OutputPDF='' then
+    raise Exception.Create('ConcatenatePDF: OutputPDF may not be empty.');
+
+  try
+    ErrorCode:=ExecuteCommand(Command+ ' '+
+      SourcePDFs + ' ' +
+      ' cat output "'+OutputPDF+'"', false);
+  except
+    on E: Exception do
+    begin
+      TigerLog.WriteLog(etWarning,
+        'COncatenatePDF: got exception '+E.Message+
+        ' when calling '+Command+' for PDFs '+SourcePDFs);
+      ErrorCode:=processutils.PROC_INTERNALEXCEPTION;
+    end;
+  end;
+  if ErrorCode=0 then
+  begin
+    result:=true;
+  end
+  else
+  begin
+    TigerLog.WriteLog(etWarning,
+      'ConcatenatePDF: got result code '+inttostr(ErrorCode)+
+      ' when calling '+Command+' for PDFs '+SourcePDFs);
+  end;
+end;
+
 
 { TPDF }
 

@@ -60,7 +60,7 @@ uses
   tigerutil {put this first for logging support},
   tigerdb, tigersettings,
   scan, imagecleaner, ocr, pdf,
-  fpjson, dateutils, md5, processutils;
+  fpjson, dateutils, md5;
 
 // Common constants etc:
 {$i tigercommondefs.inc}
@@ -91,9 +91,6 @@ type
     FTigerDB: TTigerDB;
     procedure SetDesiredRotation(AValue: integer);
   protected
-    // Concatenates all pdf files in PDF list into OutputPDF
-    // Returns success or failure
-    function ConcatenatePDF(PDFList: TStrings; var OutputPDF: string): boolean;
   public
     // Adds new, empty document (with name if specified), returns document ID
     function AddDocument(DocumentName: string = ''): integer;
@@ -192,53 +189,6 @@ begin
   if FDesiredRotation < 0 then
     FDesiredRotation := 360 + FDesiredRotation; //...part 2
   FDesiredRotation := AValue;
-end;
-
-function TTigerServerCore.ConcatenatePDF(PDFList: TStrings;
-  var OutputPDF: string): boolean;
-const
-  Command = 'pdftk';
-var
-  ErrorCode: integer;
-  i: integer;
-  SourcePDFs: string;
-begin
-  result := false;
-  SourcePDFs := '';
-  for i:= 0 to PDFList.Count - 1 do
-  begin
-    if i=0 then
-      SourcePDFs := '"' + PDFList[i] + '"'
-    else
-      SourcePDFs := SourcePDFs + ' "' + PDFList[i] + '"';
-  end;
-
-  if OutputPDF='' then
-    OutputPDF:=IncludeTrailingPathDelimiter(FSettings.PDFDirectory) +
-      FormatDateTime(ISO8601FullDateFormat, now) + '.pdf';
-  try
-    ErrorCode:=ExecuteCommand(Command+ ' '+
-      SourcePDFs + ' ' +
-      ' cat output "'+OutputPDF+'"', false);
-  except
-    on E: Exception do
-    begin
-      TigerLog.WriteLog(etWarning,
-        'COncatenatePDF: got exception '+E.Message+
-        ' when calling '+Command+' for PDFs '+SourcePDFs);
-      ErrorCode:=processutils.PROC_INTERNALEXCEPTION;
-    end;
-  end;
-  if ErrorCode=0 then
-  begin
-    result:=true;
-  end
-  else
-  begin
-    TigerLog.WriteLog(etWarning,
-      'ConcatenatePDF: got result code '+inttostr(ErrorCode)+
-      ' when calling '+Command+' for PDFs '+SourcePDFs);
-  end;
 end;
 
 function TTigerServerCore.AddDocument(DocumentName: string = ''): integer;
@@ -731,6 +681,7 @@ begin
           // path contains full image path, no need to add FSettings.ImageDirectory
           ImageFile := (ImagesArray.Items[i] as TJSONObject).Elements['path'].AsString;
           // Get PDF suggestion by using first image name
+          // todo: instead of image name, perhaps use document name for pdf name?
           if i = 0 then
             OutputPDF := IncludeTrailingPathDelimiter(FSettings.PDFDirectory) +
               ChangeFileExt(ImageFile, '.pdf');
