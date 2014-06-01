@@ -79,7 +79,10 @@ begin
   SourcePDFs := '';
 
   if PDFList.Count=0 then
-    raise Exception.Create('ConcatenatePDFs: no input pdfs specified.');
+  begin
+    TigerLog.WriteLog(etWarning,'ConcatenatePDF: no input pdfs specified.');
+    exit(false);
+  end;
 
   for i:= 0 to PDFList.Count - 1 do
   begin
@@ -90,7 +93,16 @@ begin
   end;
 
   if OutputPDF='' then
-    raise Exception.Create('ConcatenatePDF: OutputPDF may not be empty.');
+  begin
+    TigerLog.WriteLog(etError,'ConcatenatePDF: OutputPDF may not be empty.');
+    exit(false);
+  end;
+
+  if FileExists(OutputPDF) then
+  begin
+    TigerLog.WriteLog(etWarning,'ConcatenatePDF: OutputPDF file '+OutputPDF+' already exists. Not going to overwrite it.');
+    exit(false);
+  end;
 
   try
     ErrorCode:=ExecuteCommand(Command + ' ' +
