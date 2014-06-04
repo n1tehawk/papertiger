@@ -691,8 +691,9 @@ begin
       begin
         if (ImagesArray.Items[i].JSONType = jtObject) then
         begin
-          //todo: debug
+          {$IFDEF NEVER}
           TigerLog.writelog(etDebug,'todo: debug: found an image');
+          {$ENDIF}
           // Path contains full image path, no need to add FSettings.ImageDirectory
           ImageFile := (ImagesArray.Items[i] as TJSONObject).Elements['path'].AsString;
           // Get PDF suggestion by using first image name
@@ -721,17 +722,14 @@ begin
               OCR.Free;
             end;
             {$IFNDEF DEBUG}
+            // Get rid of temporary file
             DeleteFile(CleanImage);
             {$ENDIF}
           end;
-          //todo: debug
-          TigerLog.writelog(etDebug,'todo: debug: after cleanimage');
 
           if Success then
           begin
             PDF := TPDF.Create;
-            //todo: debug
-            TigerLog.writelog(etDebug,'todo: debug: after pdf.create');
             try
               // Only pass on overrides on resolution
               if Resolution > 0 then
@@ -750,7 +748,9 @@ begin
               Success := PDF.CreatePDF;
               if Success then
               begin
+                {$IFDEF NEVER}
                 TigerLog.WriteLog(etDebug, 'ProcessImages: got PDF: ' + PDF.PDFFile);
+                {$ENDIF}
                 PDFList.Add(PDF.PDFFile); //mark it for concatenation later, using temp file
               end
               else
@@ -810,8 +810,9 @@ begin
         FTigerDB.SetPDFPath(DocumentID, OutputPDF);
         FTigerDB.SetNeedsOCR(DocumentID, false);
         Result := OutputPDF;
-        //todo debug
+        {$IFDEF NEVER}
         TigerLog.WriteLog(etDebug, 'ProcessImages: got pdf '+Result+' for documentid ' + IntToStr(DocumentID));
+        {$ENDIF}
       end;
     finally
       PDFList.Free;
@@ -820,8 +821,9 @@ begin
   else
   begin
     // No need to perform OCR, so report success
-    //todo: debug
+    {$IFDEF NEVER}
     TigerLog.WriteLog(etDebug, 'ProcessImages: force off and GetNeedsOCR false so no need to do OCR.');
+    {$ENDIF}
     Success := true;
   end;
 
