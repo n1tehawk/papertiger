@@ -654,8 +654,6 @@ var
 begin
   Result := '';
   Success := false;
-  //todo: debug
-  TigerLog.writelog(etDebug,'todo: debug: started for document id '+inttostr(documentid));
 
   if not (ForceDirectories(FSettings.PDFDirectory)) then
   begin

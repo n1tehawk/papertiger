@@ -98,8 +98,7 @@ Therefore remove all words containing only numbers before calculating statistics
 const
   DetectLog = '/tmp/detectlog.txt';
 var
-  i, LinesRead: integer;
-  Proc: TProcessEx;
+  i: integer;
   TempOCR: TOCR;
   ResList: TStringList;
   ResText: string;
@@ -142,16 +141,16 @@ var
   Command: string;
   CommandOutput: string;
   OutputList: TStringList;
-  i: integer;
 begin
   Result:=0;
-  //Tesseract since about 3.03 will print out orientation
+  {
+  Tesseract since about 3.03 will print out orientation:
+  Orientation: 0
+  Orientation in degrees: 0
+  Orientation confidence: 15.33
+  }
   Command:=TesseractCommand+' "'+Source+'" "'+BogusFile+'" -l '+FLanguage + ' -psm 0';
-{
-Orientation: 0
-Orientation in degrees: 0
-Orientation confidence: 15.33
-}
+  CommandOutput:='';
   if ExecuteCommand(Command,CommandOutput,false)=0 then
   begin
     OutputList:=TStringList.Create;
