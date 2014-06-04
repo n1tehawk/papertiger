@@ -681,6 +681,8 @@ begin
       begin
         if (ImagesArray.Items[i].JSONType = jtObject) then
         begin
+          //todo: debug
+          TigerLog.writelog(etDebug,'todo: debug: found an image');
           // Path contains full image path, no need to add FSettings.ImageDirectory
           ImageFile := (ImagesArray.Items[i] as TJSONObject).Elements['path'].AsString;
           // Get PDF suggestion by using first image name
