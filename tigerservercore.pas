@@ -733,7 +733,11 @@ begin
               if Success then
               begin
                 TigerLog.WriteLog(etDebug, 'ProcessImages: Got PDF: ' + PDF.PDFFile);
-                PDFList.Add(PDF.PDFFile); //mark it for concatenation later
+                PDFList.Add(PDF.PDFFile); //mark it for concatenation later, using temp file
+              end
+              else
+              begin
+                TigerLog.WriteLog(etDebug, 'ProcessImages: PDF.CreatePDF failed for documentid: ' + inttostr(DocumentID));
               end;
               //todo: update pdf name based on OCR?!?
             finally
@@ -755,7 +759,10 @@ begin
           if ImagesArray.Count = 0 then
           begin
             // No input images, so no output pdf, but still valid
+            TigerLog.WriteLog(etDebug, 'ProcessImages: non-fatal: no images for document '+
+              inttostr(DocumentID));
             OutputPDF := '';
+            Success := true;
           end
           else
           begin
@@ -772,6 +779,16 @@ begin
 
       if Success then
       begin
+        // Get rid of temp files
+        try
+          for i := 0 to PDFList.Count-1 do
+          begin
+            Sysutils.DeleteFile(PDFList[i]);
+          end;
+        except
+          TigerLog.WriteLog(etDebug, 'ProcessImages: could not delete temp file '+
+            PDFList[i]+'. Non-fatal; continuing.');
+        end;
         FTigerDB.SetPDFPath(DocumentID, OutputPDF);
         FTigerDB.SetNeedsOCR(DocumentID, false);
         Result := OutputPDF;
