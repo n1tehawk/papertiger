@@ -790,7 +790,7 @@ begin
           end;
         end
         else
-        begin
+        begin // there are pdfs to be concatenated
           Success := ConcatenatePDF(PDFList, OutputPDF);
         end;
       end;
@@ -810,6 +810,8 @@ begin
         FTigerDB.SetPDFPath(DocumentID, OutputPDF);
         FTigerDB.SetNeedsOCR(DocumentID, false);
         Result := OutputPDF;
+        //todo debug
+        TigerLog.WriteLog(etDebug, 'ProcessImages: got pdf '+Result+' for documentid ' + IntToStr(DocumentID));
       end;
     finally
       PDFList.Free;
