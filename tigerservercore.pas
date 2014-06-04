@@ -728,11 +728,13 @@ begin
               TigerLog.WriteLog(etDebug, 'pdfdirectory: ' + FSettings.PDFDirectory);
               // Use a temporary file as we'll merge in the results anyway
               PDF.PDFFile := GetTempFileName('', 'PDF');
+              //todo: debug
+              TigerLog.writelog(etDebug,'todo: debug: tempfile '+pdf.pdffile+' before pdf.createpdf');
               //todo: add metadata stuff to pdf unit
               Success := PDF.CreatePDF;
               if Success then
               begin
-                TigerLog.WriteLog(etDebug, 'ProcessImages: Got PDF: ' + PDF.PDFFile);
+                TigerLog.WriteLog(etDebug, 'ProcessImages: got PDF: ' + PDF.PDFFile);
                 PDFList.Add(PDF.PDFFile); //mark it for concatenation later, using temp file
               end
               else
