@@ -712,24 +712,28 @@ begin
             DeleteFile(CleanImage);
             {$ENDIF}
           end;
+          //todo: debug
+          TigerLog.writelog(etDebug,'todo: debug: after cleanimage');
 
           if Success then
           begin
             PDF := TPDF.Create;
+            //todo: debug
+            TigerLog.writelog(etDebug,'todo: debug: after pdf.create');
             try
               // Only pass on overrides on resolution
               if Resolution > 0 then
                 PDF.ImageResolution := Resolution;
               // todo: read tiff file and extract resolution ourselves, pass it on
               if not(FileExists(HOCRFile)) then
+              begin
+                TigerLog.writelog(etError,'ProcessImages: OCR file '+HOCRFile+' does not exist for document ID '+inttostr(DocumentID));
                 raise Exception.CreateFmt('OCR file %s does not exist',[HOCRFile]);
+              end;
               PDF.HOCRFile := HOCRFile;
               PDF.ImageFile := ImageFile; // The original, unaltered image file
-              TigerLog.WriteLog(etDebug, 'pdfdirectory: ' + FSettings.PDFDirectory);
               // Use a temporary file as we'll merge in the results anyway
               PDF.PDFFile := GetTempFileName('', 'PDF');
-              //todo: debug
-              TigerLog.writelog(etDebug,'todo: debug: tempfile '+pdf.pdffile+' before pdf.createpdf');
               //todo: add metadata stuff to pdf unit
               Success := PDF.CreatePDF;
               if Success then
