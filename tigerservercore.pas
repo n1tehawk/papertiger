@@ -680,6 +680,13 @@ begin
     PDFList := TStringList.Create;
     try
       FTigerDB.ListImages(DocumentID, InvalidID, ImagesArray);
+      if ImagesArray.Count=0 then
+      begin
+        Success:= true; //nothing to process, so sit back and report success.
+        //todo debug
+        TigerLog.WriteLog(etDebug, 'ProcessImages: ListImages returned no images for documentid ' + IntToStr(DocumentID));
+      end;
+
       for i := 0 to ImagesArray.Count - 1 do
       begin
         if (ImagesArray.Items[i].JSONType = jtObject) then
@@ -811,7 +818,9 @@ begin
   else
   begin
     // No need to perform OCR, so report success
-    Success:=true;
+    //todo: debug
+    TigerLog.WriteLog(etDebug, 'ProcessImages: force off and GetNeedsOCR false so no need to do OCR.');
+    Success := true;
   end;
 
   if not(Success) then
