@@ -17,12 +17,12 @@ Architecture/functionality:
 - command line control on server
 - CGI REST server component
 - Viewer/scanner GUI written in Lazarus+FreePascal
+- Initial support for WIA/TWAIN on Windows to support scanning from desktop
 
 
 Further possible refinements:
 - support for other databases (sqlite, PostgreSQL, MS SQL Server)
 - using image cleanup tools such as scantailor and unpaper
-- using WIA etc on Windows to support Windows scanners
 - write .deb install pacakge for easy installation on Debian servers
 - batch import of images/pdfs
 
@@ -137,6 +137,8 @@ Installing the client:
   papertiger client bitness) version downloaded from 
 	http://www.imagemagick.org/script/binary-releases.php in client directory or 
 	in path
+- compilation without imagemagick is possible (see source code for compiler 
+  define) but the program will be much slower
 - copy tigerclient.ini.template to tigerclient.ini and edit settings to match 
   your environment
 
