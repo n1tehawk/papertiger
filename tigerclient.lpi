@@ -47,11 +47,7 @@
             </Options>
           </Linking>
           <Other>
-            <CompilerMessages>
-              <MsgFileName Value=""/>
-            </CompilerMessages>
             <CustomOptions Value="-dDEBUG -O-1"/>
-            <CompilerPath Value="$(CompPath)"/>
             <ExecuteBefore>
               <Command Value="hgversion$(ExeExt)"/>
               <CompileReasons Run="False"/>
@@ -79,7 +75,6 @@
       <Unit0>
         <Filename Value="tigerclient.lpr"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="tigerclient"/>
       </Unit0>
       <Unit1>
         <Filename Value="clientmain.pas"/>
@@ -124,7 +119,6 @@
       <Unit8>
         <Filename Value="wia_1_0_tlb.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="WIA_1_0_TLB"/>
       </Unit8>
     </Units>
   </ProjectOptions>
@@ -156,10 +150,6 @@
       </Options>
     </Linking>
     <Other>
-      <CompilerMessages>
-        <MsgFileName Value=""/>
-      </CompilerMessages>
-      <CompilerPath Value="$(CompPath)"/>
       <ExecuteBefore>
         <Command Value="hgversion$(ExeExt)"/>
         <CompileReasons Run="False"/>

@@ -55,6 +55,7 @@ type
   { TForm1 }
 
   TForm1 = class(TForm)
+    mnuRefresh: TMenuItem;
     OpenDialog1: TOpenDialog;
     UploadImageButton: TButton;
     NumberPagesControl: TEdit;
@@ -73,10 +74,12 @@ type
     AddImageButton: TButton;
     procedure AddImageButtonClick(Sender: TObject);
     procedure DeleteButtonClick(Sender: TObject);
+    procedure DocumentsGridDblClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure mnuAboutClick(Sender: TObject);
     procedure mnuQuitClick(Sender: TObject);
+    procedure mnuRefreshClick(Sender: TObject);
     procedure RefreshDocumentsButtonClick(Sender: TObject);
     procedure ScanButtonClick(Sender: TObject);
     procedure ShowImageButtonClick(Sender: TObject);
@@ -228,6 +231,11 @@ begin
   Close;
 end;
 
+procedure TForm1.mnuRefreshClick(Sender: TObject);
+begin
+  RefreshDocuments;
+end;
+
 procedure TForm1.RefreshDocumentsButtonClick(Sender: TObject);
 begin
   RefreshDocuments;
@@ -313,6 +321,20 @@ begin
     Screen.Cursor := crDefault;
     CommJSON.Free;
   end;
+end;
+
+procedure TForm1.DocumentsGridDblClick(Sender: TObject);
+var
+  DocumentID: integer;
+begin
+  if DocumentsGrid.Row < 1 then
+  begin
+    // fail silently
+    exit;
+  end;
+  DocumentID := StrToIntDef(DocumentsGrid.Cells[0, DocumentsGrid.Row],-1);
+  if DocumentID>=0 then
+    ShowPDF(DocumentID);
 end;
 
 function TForm1.ProcessDocument(DocumentID: integer): boolean;
@@ -525,20 +547,20 @@ begin
   VData := TJSONObject.Create;
   ResponseStream := TMemoryStream.Create;
   try
-    DocumentID := StrToInt(DocumentsGrid.Cells[0, DocumentsGrid.Row]);
+    DocumentID := StrToIntDef(DocumentsGrid.Cells[0, DocumentsGrid.Row],-1);
     ImageOrder := 1; //todo: add support for multi tiff images, e.g. using next/previous button & capturing errors
     (VData as TJSONObject).Add('documentid', DocumentID);
     (VData as TJSONObject).Add('imageorder', ImageOrder); //sort order number
     // Get a request to get the image ID
     ContentType := 'application/json'; //server requires this
-    RequestResult := HttpRequestWithDataStream(VData, FSettings.CGIURL + 'image', ResponseStream, rmGet, ContentType);
+    RequestResult := HttpRequestWithDataStream(VData, FSettings.CGIURL + 'image', ContentType, ResponseStream, rmGet);
     if RequestResult.Code <> 200 then
     begin
       ShowMessage('Error getting image from server. HTTP result code: ' + IntToStr(RequestResult.Code) + '/' + RequestResult.Text);
       exit;
     end;
 
-    // Now we've got image id, get the associated image
+    // Now we've got an image id, get the associated image
     ResponseStream.Position := 0;
     Parser := TJSONParser.Create(ResponseStream);
     try
@@ -581,7 +603,7 @@ begin
     ShowMessage('No document selected. Please select a document in the grid first.');
     exit;
   end;
-  DocumentID := StrToInt(DocumentsGrid.Cells[0, DocumentsGrid.Row]);
+  DocumentID := StrToIntDef(DocumentsGrid.Cells[0, DocumentsGrid.Row],-1);
 
   ShowPDF(DocumentID);
 end;
@@ -645,9 +667,9 @@ begin
     RequestResult:=HttpRequestWithDataStream(VData,
     FSettings.CGIURL + 'image/' +
       IntToStr(ImageID),
+      ContentType,
       ImageStream,
-      rmGet,
-      ContentType);
+      rmGet);
     if RequestResult.Code <> 200 then
     begin
       ShowMessage('Error getting image from server. HTTP result code: ' + IntToStr(RequestResult.Code) + '/' + RequestResult.Text);
@@ -723,9 +745,9 @@ begin
     RequestResult:=HttpRequestWithDataStream(VData,
     FSettings.CGIURL + 'document/' +
       IntToStr(DocumentID) + '/pdf',
+      ContentType,
       PDFStream,
-      rmGet,
-      ContentType);
+      rmGet);
     if RequestResult.Code <> 200 then
     begin
       ShowMessage('Error getting PDF from server. HTTP result code: ' + IntToStr(RequestResult.Code) + '/' + RequestResult.Text);
@@ -846,7 +868,7 @@ begin
   end
   else
   begin
-    DocumentID := StrToInt(DocumentsGrid.Cells[0, DocumentsGrid.Row]);
+    DocumentID := StrToIntDef(DocumentsGrid.Cells[0, DocumentsGrid.Row],-1);
   end;
 
   // Ask user if he is sure, using document name instead of ID if possible
@@ -865,7 +887,7 @@ begin
     MultipleFailure := false;
     for i:=DocumentsGrid.Selection.Bottom downto DocumentsGrid.Selection.Top do
     begin
-      DocumentID := StrToInt(DocumentsGrid.Cells[0,i]);
+      DocumentID := StrToIntDef(DocumentsGrid.Cells[0,i],-1);
       if not(DeleteSingleDocument(DocumentID,true)) then
         MultipleFailure := true;
     end;
@@ -889,7 +911,7 @@ begin
   end
   else
   begin
-    DocumentID := StrToInt(DocumentsGrid.Cells[0, DocumentsGrid.Row]);
+    DocumentID := StrToIntDef(DocumentsGrid.Cells[0, DocumentsGrid.Row],-1);
   end;
 
   OpenDialog1.Execute;
