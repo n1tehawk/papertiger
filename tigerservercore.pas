@@ -89,6 +89,7 @@ type
     // Enables FDesiredRotation
     FUserSpecifiedRotation: boolean;
     FTigerDB: TTigerDB;
+    procedure SetCurrentOCRLanguage(AValue: string);
     procedure SetDesiredRotation(AValue: integer);
   protected
   public
@@ -106,7 +107,7 @@ type
     // Whether to scan in black and white, gray or colo(u)r.
     property ColorType: ScanType read FColorType write FColorType;
     // Language to be used for OCR. Will not be saved in settings
-    property CurrentOCRLanguage: string read FCurrentOCRLanguage write FCurrentOCRLanguage;
+    property CurrentOCRLanguage: string read FCurrentOCRLanguage write SetCurrentOCRLanguage;
     // Number of pages to scan in one scan run.
     property Pages: integer read FPages write FPages;
     // Device to be used to scan with.
@@ -239,7 +240,7 @@ begin
       //raise Exception.CreateFmt('Image directory %s does not exist and cannot be created.', [FSettings.ImageDirectory]);
     end;
 
-    // Get image into file system; don't overwrite existing files
+    // Get image into file system; don't overwrite existing files (see below)
     // Extract only filename part from image name and add to storage path
     ImageFile := ExpandFileName(FSettings.ImageDirectory + ExtractFileName(ImageName));
 
@@ -260,6 +261,8 @@ begin
         if (not (ImageData is TFileStream)) or ((ImageData is TFileStream) and
           (ExpandFileName((ImageData as TFileStream).FileName) <> ImageFile)) then
         begin
+          //todo: this more or less assumes the images are named intelligently.
+          // Client could just send the same image name every time...
           MemStream.Position := 0;
           MemStream.SaveToFile(ImageFile);
         end;
@@ -956,6 +959,33 @@ begin
     ) + ' on ' + lowercase(
 {$INCLUDE %FPCTARGETOS%}
     );
+end;
+
+procedure TTigerServerCore.SetCurrentOCRLanguage(AValue: string);
+const
+  // this list taken from tesseract 3.0.3 on Debian
+  Languages: array [0..67] of string = ('afr', 'ara', 'aze', 'bel', 'ben', 'bul', 'cat', 'ces', 'chi-sim',
+    'chi-tra', 'chr', 'dan', 'deu', 'deu-frak', 'dev', 'ell', 'eng', 'enm',
+    'epo', 'equ', 'est', 'eus', 'fin', 'fra', 'frk', 'frm', 'glg', 'grc', 'heb',
+    'hin', 'hrv', 'hun', 'ind', 'isl', 'ita', 'ita-old', 'jpn', 'kan', 'kor',
+    'lav', 'lit', 'mal', 'mkd', 'mlt', 'msa', 'nld', 'nor', 'osd', 'pol', 'por',
+    'ron', 'rus', 'slk', 'slk-frak', 'slv', 'spa', 'spa-old', 'sqi', 'srp',
+    'swa', 'swe', 'tam', 'tel', 'tgl', 'tha', 'tur', 'ukr', 'vie');
+var
+  i: integer;
+begin
+  if FCurrentOCRLanguage=AValue then Exit;
+
+  // Sanity check; please update with all tesseract languages
+  FCurrentOCRLanguage:='';
+  for i:=low(Languages) to high(Languages) do
+  begin
+    if Languages[i]=LowerCase(AValue) then
+      FCurrentOCRLanguage:=Languages[i];
+  end;
+
+  if FCurrentOCRLanguage='' then
+    raise Exception.CreateFmt('Language code %s not supported. Please use Tesseract language codes.',[AValue]);
 end;
 
 class function TTigerServerCore.TryParseDate(DateString: string; out ParseDate: TDateTime): boolean;

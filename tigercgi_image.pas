@@ -260,7 +260,7 @@ begin
           Parser := TJSONParser.Create(ARequest.ContentFields.Values['JSON'], true);
           try
             try
-              // expect
+              // expect this format:
               // { "documentid" : 55 }
               InputJSON := TJSONObject(Parser.Parse);
               if (InputJSON.Find('documentid',jtNumber)<>nil) then
