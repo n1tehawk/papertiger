@@ -219,7 +219,7 @@ begin
                 if FTigerCore.GetImage(ImageID, AResponse.ContentStream) then
                 begin
                   // Indicate papertiger should be able to deal with this data:
-                  // todo: add support for jpg images
+                  // todo: add support for jpg images?
                   AResponse.ContentType := 'image/tiff; application=papertiger';
                   AResponse.ContentLength := AResponse.ContentStream.Size;
                   //apparently doesn't happen automatically?

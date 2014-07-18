@@ -38,11 +38,7 @@
             </Checks>
           </CodeGeneration>
           <Other>
-            <CompilerMessages>
-              <MsgFileName Value=""/>
-            </CompilerMessages>
             <CustomOptions Value="-dDEBUG -dCGI"/>
-            <CompilerPath Value="$(CompPath)"/>
             <ExecuteBefore>
               <Command Value="hgversion$(ExeExt)"/>
               <CompileReasons Run="False"/>
@@ -70,7 +66,6 @@
       <Unit0>
         <Filename Value="tigercgi.lpr"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="tigercgi"/>
       </Unit0>
       <Unit1>
         <Filename Value="tigercgimain.pas"/>
@@ -98,7 +93,6 @@
       <Unit5>
         <Filename Value="ocr.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="ocr"/>
       </Unit5>
       <Unit6>
         <Filename Value="tigercgi_image.pas"/>
@@ -145,11 +139,7 @@
       <LinkSmart Value="True"/>
     </Linking>
     <Other>
-      <CompilerMessages>
-        <MsgFileName Value=""/>
-      </CompilerMessages>
       <CustomOptions Value="-dCGI"/>
-      <CompilerPath Value="$(CompPath)"/>
       <ExecuteBefore>
         <Command Value="hgversion$(ExeExt)"/>
         <CompileReasons Run="False"/>

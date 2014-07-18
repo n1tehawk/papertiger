@@ -513,7 +513,7 @@ begin
         if not (fileexists(ImageFile)) then
         begin
           TigerLog.WriteLog(etWarning, 'GetImage: cannot read image "' + ImageFile +
-            '". Hack: trying again with mangled ImageDirectory');
+            '". Hack: trying again with mangled ImageDirectory '+FSettings.ImageDirectory);
           ImageFile := FSettings.ImageDirectory + ExtractFileName(ImageFile);
         end;
         MemStream := TMemoryStream.Create;

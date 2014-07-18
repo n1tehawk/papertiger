@@ -49,12 +49,12 @@ function HttpRequestWithData(var AData: TJSONData; const AUrl: string;
   const AMethod: TRequestMethod = rmPost;
   const AContentType: string = 'application/json'): THttpResult;
 // Perform a post etc with JSON data in the request body and return the result body as a memory stream
-// AContentType is filled with return data content type
+// If no AContentType specified when calling, application/json is used
+// AContentType is filled with return data content type;
 function HttpRequestWithDataStream(var AData: TJSONData; const AUrl: string;
+  var AContentType: string;
   const ReturnStream: TMemoryStream;
-  const AMethod: TRequestMethod = rmPost;
-  var AContentType: string = 'application/json'
-  ): THttpResult;
+  const AMethod: TRequestMethod = rmPost): THttpResult;
 var
   SSLHelper: TSSLHelper;
 
@@ -240,9 +240,9 @@ begin
 end;
 
 function HttpRequestWithDataStream(var AData: TJSONData; const AUrl: string;
+  var AContentType: string;
   const ReturnStream: TMemoryStream;
-  const AMethod: TRequestMethod;
-  var AContentType: string): THttpResult;
+  const AMethod: TRequestMethod): THttpResult;
 var
   VMethod: string;
   VHttp: TFPHTTPClient;
@@ -260,8 +260,8 @@ begin
     end;
     if Assigned(AData) then
     begin
-       if AContentType='' then
-         AContentType:='application/json';
+      if AContentType='' then
+        AContentType:='application/json';
       VHttp.RequestBody := TMemoryStream.Create;
       VJSON := AData.AsJSON;
       VHttp.RequestBody.Write(Pointer(VJSON)^, Length(VJSON));

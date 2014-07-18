@@ -35,6 +35,7 @@ object Form1: TForm1
     Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRangeSelect, goColSizing, goSmoothScroll]
     RowCount = 1
     TabOrder = 0
+    OnDblClick = DocumentsGridDblClick
   end
   object RefreshDocumentsButton: TButton
     Left = 285
@@ -120,6 +121,11 @@ object Form1: TForm1
     top = 416
     object mnuFile: TMenuItem
       Caption = 'File'
+      object mnuRefresh: TMenuItem
+        Caption = 'Refresh'
+        Hint = 'Connects to server and refreshes documents list'
+        OnClick = mnuRefreshClick
+      end
       object mnuQuit: TMenuItem
         Caption = 'Quit'
         OnClick = mnuQuitClick
