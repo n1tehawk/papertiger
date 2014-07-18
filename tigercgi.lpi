@@ -93,6 +93,7 @@
       <Unit5>
         <Filename Value="ocr.pas"/>
         <IsPartOfProject Value="True"/>
+        <UnitName Value="ocr"/>
       </Unit5>
       <Unit6>
         <Filename Value="tigercgi_image.pas"/>

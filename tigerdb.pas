@@ -43,7 +43,8 @@ uses
   pqconnection {PostgreSQL},
   sqlite3conn {SQLite},
   fpjson,
-  dateutils;
+  dateutils,
+  md5;
 
 {$i tigercommondefs.inc}
 
@@ -100,7 +101,9 @@ type
     // Set NeedsOCR to true or false for specified document, indicating
     // OCR needs to be performed (or not).
     function SetNeedsOCR(DocumentID: integer; NeedsOCR: boolean): boolean;
-    // Sets path+filename for PDF associated with document. Returns result.
+    // Sets path+filename for PDF associated with document.
+    // Also calculates and saves PDF hash
+    // Returns result.
     function SetPDFPath(DocumentID: integer; PDFPath: string): boolean;
     constructor Create;
     destructor Destroy; override;
@@ -708,12 +711,26 @@ begin
     if FReadWriteTransaction.Active = false then
       FReadWriteTransaction.StartTransaction;
     FWriteQuery.Close;
-    FWriteQuery.SQL.Text := 'UPDATE DOCUMENTS SET PDFPATH=:PDFPATH WHERE ID=' + IntToStr(DocumentID);
+    FWriteQuery.SQL.Text := 'UPDATE DOCUMENTS SET PDFPATH=:PDFPATH, DOCUMENTHASH=:DOCUMENTHASH WHERE ID=' + IntToStr(DocumentID);
 
     if PDFPath = '' then // NULL
-      FWriteQuery.ParamByName('PDFPATH').Clear
+    begin
+      FWriteQuery.ParamByName('PDFPATH').Clear;
+      FWriteQuery.ParamByName('DOCUMENTHASH').Clear;
+    end
     else
+    begin
       FWriteQuery.ParamByName('PDFPATH').AsString := PDFPath;
+      try
+        FWriteQuery.ParamByName('DOCUMENTHASH').AsString:=MD5Print(MD5File(PDFPath));
+      except
+        on E: Exception do
+        begin
+          TigerLog.WriteLog(etError,'SetPDFPath: error calculating hash for document '+PDFPath+'. Exception '+E.Message);
+          FWriteQuery.ParamByName('DOCUMENTHASH').Clear;
+        end;
+      end;
+    end;
     FWriteQuery.ExecSQL;
     FWriteQuery.Close;
     FReadWriteTransaction.Commit;
