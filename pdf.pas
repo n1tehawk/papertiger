@@ -59,6 +59,7 @@ type
 
 // Concatenates all pdf files in PDF list into OutputPDF
 // If only one pdf, just copies to OutputPDF
+// Overwrites OutputPDF if present
 // Returns success or failure
 function ConcatenatePDF(PDFList: TStrings; var OutputPDF: string): boolean;
 
@@ -93,8 +94,13 @@ begin
 
   if FileExists(OutputPDF) then
   begin
-    TigerLog.WriteLog(etWarning,'ConcatenatePDF: OutputPDF file '+OutputPDF+' already exists. Not going to overwrite it.');
-    exit(false);
+    //todo: debug
+    TigerLog.WriteLog(etDebug,'ConcatenatePDF: OutputPDF file '+OutputPDF+' already exists. Going to overwrite.');
+    if not(DeleteFile(OutputPDF)) then
+    begin
+      TigerLog.WriteLog(etError,'ConcatenatePDF: OutputPDF: error trying to delete existing file '+OutputPDF);
+      exit;
+    end;
   end;
 
   if PDFList.Count=1 then

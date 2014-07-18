@@ -41,11 +41,7 @@
             </Checks>
           </CodeGeneration>
           <Other>
-            <CompilerMessages>
-              <MsgFileName Value=""/>
-            </CompilerMessages>
             <CustomOptions Value="-dDEBUG"/>
-            <CompilerPath Value="$(CompPath)"/>
             <ExecuteBefore>
               <Command Value="hgversion$(ExeExt)"/>
               <CompileReasons Run="False"/>
@@ -69,7 +65,6 @@
       <Unit0>
         <Filename Value="tigerserver.lpr"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="tigerserver"/>
       </Unit0>
       <Unit1>
         <Filename Value="tigerservercore.pas"/>
@@ -104,7 +99,6 @@
       <Unit7>
         <Filename Value="tigerutil.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="tigerutil"/>
       </Unit7>
       <Unit8>
         <Filename Value="tigersettings.pas"/>
@@ -129,10 +123,6 @@
       </Debugging>
     </Linking>
     <Other>
-      <CompilerMessages>
-        <MsgFileName Value=""/>
-      </CompilerMessages>
-      <CompilerPath Value="$(CompPath)"/>
       <ExecuteBefore>
         <Command Value="hgversion$(ExeExt)"/>
         <CompileReasons Run="False"/>
