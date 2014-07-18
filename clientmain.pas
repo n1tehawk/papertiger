@@ -332,7 +332,7 @@ begin
     // fail silently
     exit;
   end;
-  DocumentID := StrToIntDef(DocumentsGrid.Cells[0, DocumentsGrid.Row],-1);
+  DocumentID := StrToIntDef(DocumentsGrid.Cells[0, DocumentsGrid.Row],INVALIDID);
   if DocumentID>=0 then
     ShowPDF(DocumentID);
 end;
@@ -547,7 +547,7 @@ begin
   VData := TJSONObject.Create;
   ResponseStream := TMemoryStream.Create;
   try
-    DocumentID := StrToIntDef(DocumentsGrid.Cells[0, DocumentsGrid.Row],-1);
+    DocumentID := StrToIntDef(DocumentsGrid.Cells[0, DocumentsGrid.Row],INVALIDID);
     ImageOrder := 1; //todo: add support for multi tiff images, e.g. using next/previous button & capturing errors
     (VData as TJSONObject).Add('documentid', DocumentID);
     (VData as TJSONObject).Add('imageorder', ImageOrder); //sort order number
@@ -603,7 +603,7 @@ begin
     ShowMessage('No document selected. Please select a document in the grid first.');
     exit;
   end;
-  DocumentID := StrToIntDef(DocumentsGrid.Cells[0, DocumentsGrid.Row],-1);
+  DocumentID := StrToIntDef(DocumentsGrid.Cells[0, DocumentsGrid.Row],INVALIDID);
 
   ShowPDF(DocumentID);
 end;
@@ -868,7 +868,7 @@ begin
   end
   else
   begin
-    DocumentID := StrToIntDef(DocumentsGrid.Cells[0, DocumentsGrid.Row],-1);
+    DocumentID := StrToIntDef(DocumentsGrid.Cells[0, DocumentsGrid.Row],INVALIDID);
   end;
 
   // Ask user if he is sure, using document name instead of ID if possible
@@ -887,7 +887,7 @@ begin
     MultipleFailure := false;
     for i:=DocumentsGrid.Selection.Bottom downto DocumentsGrid.Selection.Top do
     begin
-      DocumentID := StrToIntDef(DocumentsGrid.Cells[0,i],-1);
+      DocumentID := StrToIntDef(DocumentsGrid.Cells[0,i],INVALIDID);
       if not(DeleteSingleDocument(DocumentID,true)) then
         MultipleFailure := true;
     end;
@@ -911,7 +911,7 @@ begin
   end
   else
   begin
-    DocumentID := StrToIntDef(DocumentsGrid.Cells[0, DocumentsGrid.Row],-1);
+    DocumentID := StrToIntDef(DocumentsGrid.Cells[0, DocumentsGrid.Row],INVALIDID);
   end;
 
   OpenDialog1.Execute;
