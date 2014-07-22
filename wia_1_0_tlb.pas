@@ -1,6 +1,6 @@
 Unit WIA_1_0_TLB;
 
-//  Imported WIA on 03/04/2014 09:08:56 from C:\Windows\System32\wiaaut.dll
+//  Imported WIA on 22/07/2014 13:22:43 from C:\Windows\System32\wiaaut.dll
 
 {$mode delphi}{$H+}
 
