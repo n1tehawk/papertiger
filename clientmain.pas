@@ -386,43 +386,45 @@ begin
     exit;
   end;
 
-    if FSettings.ScanProtocol='' then
+  if FSettings.ScanProtocol='' then
+  begin
+    // Remote scan
+    for CurrentPage := 1 to NumberPages do
     begin
-      // Remote scan
-      for CurrentPage := 1 to NumberPages do
+      if CurrentPage > 1 then
       begin
-        if CurrentPage > 1 then
-        begin
-          ShowMessage('Please put page ' + IntToStr(CurrentPage) + ' in the scanner.');
-        end;
+        ShowMessage('Please put page ' + IntToStr(CurrentPage) + ' in the scanner.');
+      end;
 
+      try
+        Screen.Cursor := crHourglass;
         try
-          Screen.Cursor := crHourglass;
-          try
-            RequestResult := HTTPRequest(FSettings.CGIURL + 'image?documentid=' + IntToStr(DocumentID), CommJSON, rmPost);
-            if RequestResult.Code <> 200 then
-            begin
-              Screen.Cursor := crDefault;
-              ShowMessage('Error from server after scan request; HTTP result code: ' + IntToStr(RequestResult.Code) + '/' + RequestResult.Text);
-              exit;
-            end;
-          except
-            on E: Exception do
-            begin
-              Screen.Cursor := crDefault;
-              ShowMessage('Error interpreting response from server after scan request. Technical details: ' + E.Message);
-              exit;
-            end;
+          RequestResult := HTTPRequest(FSettings.CGIURL + 'image?documentid=' + IntToStr(DocumentID), CommJSON, rmPost);
+          if RequestResult.Code <> 200 then
+          begin
+            Screen.Cursor := crDefault;
+            ShowMessage('Error from server after scan request; HTTP result code: ' + IntToStr(RequestResult.Code) + '/' + RequestResult.Text);
+            exit;
           end;
-        finally
+        except
+          on E: Exception do
+          begin
+            Screen.Cursor := crDefault;
+            ShowMessage('Error interpreting response from server after scan request. Technical details: ' + E.Message);
+            exit;
+          end;
+        end;
+      finally
+        begin
           Screen.Cursor := crDefault;
         end;
       end; //all pages scanned now
     end
-    else
-    begin
-      // Local scan
-      case Uppercase(FSettings.ScanProtocol) of
+  end
+  else
+  begin
+    // Local scan
+    case Uppercase(FSettings.ScanProtocol) of
       {$IFDEF WINDOWS}
       'WIA':
       begin
@@ -510,7 +512,7 @@ begin
       begin
         // todo: support local SANE
         raise Exception.CreateFmt('No support for scan protocol %s yet. Please fix the code.',[FSettings.ScanProtocol]);
-      end
+      end;
       else
       begin
         raise Exception.CreateFmt('Unknown scan protocol %s. Please fix your configuration file or update the code.',[FSettings.ScanProtocol]);
