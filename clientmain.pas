@@ -167,6 +167,7 @@ begin
     limg.DataDescription := GetDescriptionFromDevice(0, wi, he);
     pack := GetAuthenticPixels(img, 0, 0, wi, he, nil);
     for j := 0 to he - 1 do
+    begin
       for i := 0 to wi - 1 do
       begin
         colo.red := pack^.red;
@@ -176,6 +177,7 @@ begin
         limg.Colors[i, j] := colo;
         Inc(pack);
       end;
+    end;
     Bmp.LoadFromIntfImage(limg);
   finally
     limg.Free;
@@ -816,7 +818,7 @@ begin
   if (ImageFile <> '') and
     (FileExistsUTF8(ImageFile)) then
   begin
-    // Specify documentid to attach the image to
+    // Specify documentid to attach the image to and other options
     CommJSON := TJSONObject.Create(['documentid', DocumentID, 'forceblackwhite', ForceBlackWhite]);
     MemStream := TMemoryStream.Create;
     try

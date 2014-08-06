@@ -80,7 +80,7 @@ var
 // Converts image in memory to black and white CCIT Group 4 compressed image
 // Calling function should clean up memory pointed to by OlImageMemoryPtr if needed
 // Returns success status
-function ConvertMemCCITGroup4(OldImageMemoryPtr: Pointer; OldImageSize: integer;
+function ConvertMemTIFFCCITGroup4(OldImageMemoryPtr: Pointer; OldImageSize: integer;
   NewImageMemoryPtr: Pointer; var NewImageSize: integer): boolean;
 
 // Copy file to same or other filesystem, overwriting existing files
@@ -102,10 +102,9 @@ implementation
 uses math;
 
 {$IFDEF USEMAGICK}
-function ConvertMemCCITGroup4(OldImageMemoryPtr: Pointer; OldImageSize: integer;
+function ConvertMemTIFFCCITGroup4(OldImageMemoryPtr: Pointer; OldImageSize: integer;
   NewImageMemoryPtr: Pointer; var NewImageSize: integer): boolean;
-// Let imagemagick convert an image and return a bitmap.
-// Adapted from code from theo on the Lazarus forum.
+// Let imagemagick convert a TIFF image to CCIT Group 4
 var
   status: MagickBooleanType;
   wand: PMagickWand;
@@ -123,6 +122,15 @@ begin
       description := MagickRelinquishMemory(description);
     end;
 
+    // Force TIFF format so this can also be used for converting from e.g. BMP or JPG
+    status := MagickSetImageFormat(wand,'TIFF');
+    if (status = MagickFalse) then
+    begin
+      description := MagickGetException(wand, @severity);
+      raise Exception.Create(Format('LoadMagickBitmap: an error ocurred. Description: %s', [description]));
+      description := MagickRelinquishMemory(description);
+    end;
+
     status := MagickSetImageCompression(wand,Group4Compression);
     if (status = MagickFalse) then
     begin
@@ -130,6 +138,7 @@ begin
       raise Exception.Create(Format('LoadMagickBitmap: an error ocurred. Description: %s', [description]));
       description := MagickRelinquishMemory(description);
     end;
+
     // Get result into new memory segment
     NewImageSize:=0;
     NewImageMemoryPtr:=MagickGetImageBlob(wand,Pointer(NewImageSize));

@@ -265,7 +265,7 @@ begin
         if ForceBlackWhite then
         begin
           MemStream.Position := 0;
-          if ConvertMemCCITGroup4(MemStream.Memory,MemStream.Size,BWImagePointer,BWImageSize) then
+          if ConvertMemTIFFCCITGroup4(MemStream.Memory,MemStream.Size,BWImagePointer,BWImageSize) then
           begin
             MemStream.Free;
             MemStream:=TMemoryStream.Create;
