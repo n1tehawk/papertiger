@@ -24,8 +24,9 @@ unit tigerutil;
 }
 
 
-
 {$i tigerserver.inc}
+// Use imagemagick bindings
+{$DEFINE USEMAGICK}
 {$IFDEF MSWINDOWS}
 {$R fclel.res} //needed for message files to get Windows to display event log contents correctly
 // Not needed for *nix
@@ -34,7 +35,11 @@ unit tigerutil;
 interface
 
 uses
-  Classes, SysUtils, eventlog;
+  Classes, SysUtils, eventlog
+  {$IFDEF USEMAGICK}
+  ,magick_wand, ImageMagick {for image conversion}
+  {$ENDIF USEMAGICK}
+  ;
 
 type
   // Orientation of scanned image versus the "right side up".
@@ -72,6 +77,12 @@ and lookup/translation
 var
   TigerLog: TLogger; //Created by unit initialization so available for every referencing unit
 
+// Converts image in memory to black and white CCIT Group 4 compressed image
+// Calling function should clean up memory pointed to by OlImageMemoryPtr if needed
+// Returns success status
+function ConvertMemCCITGroup4(OldImageMemoryPtr: Pointer; OldImageSize: integer;
+  NewImageMemoryPtr: Pointer; var NewImageSize: integer): boolean;
+
 // Copy file to same or other filesystem, overwriting existing files
 function FileCopy(Source, Target: string): boolean;
 
@@ -85,8 +96,51 @@ function FindInStream(Stream: TStream; Start: int64; SearchFor: string): int64;
 //Shows non-debug messages on screen; also shows debug messages if DEBUG defined
 procedure infoln(Message: string; Level: TEventType);
 
+
+
 implementation
 uses math;
+
+{$IFDEF USEMAGICK}
+function ConvertMemCCITGroup4(OldImageMemoryPtr: Pointer; OldImageSize: integer;
+  NewImageMemoryPtr: Pointer; var NewImageSize: integer): boolean;
+// Let imagemagick convert an image and return a bitmap.
+// Adapted from code from theo on the Lazarus forum.
+var
+  status: MagickBooleanType;
+  wand: PMagickWand;
+  description: PChar;
+  severity: ExceptionType;
+begin
+  result:=false;
+  wand := NewMagickWand;
+  try
+    status := MagickReadImageBlob(wand, OldImageMemoryPtr, OldImageSize);
+    if (status = MagickFalse) then
+    begin
+      description := MagickGetException(wand, @severity);
+      raise Exception.Create(Format('LoadMagickBitmap: an error ocurred. Description: %s', [description]));
+      description := MagickRelinquishMemory(description);
+    end;
+
+    status := MagickSetImageCompression(wand,Group4Compression);
+    if (status = MagickFalse) then
+    begin
+      description := MagickGetException(wand, @severity);
+      raise Exception.Create(Format('LoadMagickBitmap: an error ocurred. Description: %s', [description]));
+      description := MagickRelinquishMemory(description);
+    end;
+    // Get result into new memory segment
+    NewImageSize:=0;
+    NewImageMemoryPtr:=MagickGetImageBlob(wand,Pointer(NewImageSize));
+    if NewImageMemoryPtr<>nil then
+      result:=true;
+    //Calling function should clean up original memory
+  finally
+    wand := DestroyMagickWand(wand);
+  end;
+end;
+{$ENDIF USEMAGICK}
 
 function FileCopy(Source, Target: string): boolean;
 // Copies source to target; overwrites target.

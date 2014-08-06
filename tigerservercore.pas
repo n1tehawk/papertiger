@@ -97,13 +97,15 @@ type
     function AddDocument(DocumentName: string = ''): integer;
     // Adds the tiff image to given documentID.
     // Add at end of any existing images, unless ImageOrder>0.
+    // ForceBlackWhite forces conversion to black and white/lineart format
     // Returns either image ID or INVALIDID (when failed).
-    function AddImage(ImageData: TStream; ImageName: string; DocumentID: integer; ImageOrder: integer): integer;
+    function AddImage(ImageData: TStream; ImageName: string; DocumentID: integer; ImageOrder: integer; ForceBlackWhite: boolean): integer;
     // Adds the tiff image to given documentID.
     // Rotates it first if the user asked for it, and checks for sane bug
     // Add at end of any existing images, unless ImageOrder>0.
+    // ForceBlackWhite forces conversion to black and white/lineart format
     // Returns image ID, or INVALIDID when failed.
-    function AddImage(ImageFile: string; DocumentID: integer; ImageOrder: integer): integer;
+    function AddImage(ImageFile: string; DocumentID: integer; ImageOrder: integer; ForceBlackWhite: boolean): integer;
     // Whether to scan in black and white, gray or colo(u)r.
     property ColorType: ScanType read FColorType write FColorType;
     // Language to be used for OCR. Will not be saved in settings
@@ -211,11 +213,13 @@ begin
   end;
 end;
 
-function TTigerServerCore.AddImage(ImageData: TStream; ImageName: string; DocumentID: integer; ImageOrder: integer): integer;
+function TTigerServerCore.AddImage(ImageData: TStream; ImageName: string; DocumentID: integer; ImageOrder: integer; ForceBlackWhite: boolean): integer;
 const
   SaneBuggyText = 'Failed cupsGetDevices' + Chr($0A); //linefeed
 var
   MemStream: TMemoryStream;
+  BWImagePointer: Pointer; //points to new image memory if converted to B&W
+  BWImageSize: integer;
   Message: string;
   ImageFile, ImageHash: string;
 begin
@@ -257,6 +261,24 @@ begin
           TigerLog.WriteLog(etDebug, 'TTigerServerCore.AddImage: fixed sane bug 313851 for file ' + ImageName);
         end;
 
+        // Convert to black and white if asked
+        if ForceBlackWhite then
+        begin
+          MemStream.Position := 0;
+          if ConvertMemCCITGroup4(MemStream.Memory,MemStream.Size,BWImagePointer,BWImageSize) then
+          begin
+            MemStream.Free;
+            MemStream:=TMemoryStream.Create;
+            // Copy over existing image - would rather have a way to point memstream at existing image in memory
+            MemStream.WriteBuffer(BWImagePointer^,BWImageSize);
+          end
+          else
+          begin
+            TigerLog.WriteLog(etError, 'AddImage: error converting image file to black and white.');
+          end;
+        end;
+
+
         // Don't overwrite existing images:
         if (not (ImageData is TFileStream)) or ((ImageData is TFileStream) and
           (ExpandFileName((ImageData as TFileStream).FileName) <> ImageFile)) then
@@ -265,6 +287,7 @@ begin
           // Client could just send the same image name every time...
           MemStream.Position := 0;
           MemStream.SaveToFile(ImageFile);
+          //todo: add support for black/white?
         end;
         MemStream.Position := 0;
         ImageHash := MD5Print(MD5Buffer(MemStream.Memory^, MemStream.Size));
@@ -289,9 +312,10 @@ begin
   end;
 end;
 
-function TTigerServerCore.AddImage(ImageFile: string; DocumentID: integer; ImageOrder: integer): integer;
+function TTigerServerCore.AddImage(ImageFile: string; DocumentID: integer; ImageOrder: integer; ForceBlackWhite: boolean): integer;
 var
   ImageStream: TFileStream;
+  Scanner: TScanner;
 begin
   Result := 0;
   if not (FileExists(ImageFile)) then
@@ -303,7 +327,7 @@ begin
   try
     ImageStream := TFileStream.Create(ImageFile, fmOpenRead);
     try
-      Result := AddImage(ImageStream, ExtractFileName(ImageFile), DocumentID, ImageOrder)
+      Result := AddImage(ImageStream, ExtractFileName(ImageFile), DocumentID, ImageOrder, ForceBlackWhite);
     except
       on E: Exception do
       begin

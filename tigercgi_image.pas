@@ -75,7 +75,7 @@ DELETE http://server/cgi-bin/tigercgi/image/               //delete all images?!
 GET    http://server/cgi-bin/tigercgi/image/               //list of images
 GET    http://server/cgi-bin/tigercgi/image/ with documentid, imageorder in JSON: get imageID of requested image
 POST   http://server/cgi-bin/tigercgi/image?documentid=55  // let server scan new image, return imageid
-POST   http://server/cgi-bin/tigercgi/image with document id in JSON, with image posted as form data: upload image, return imageid
+POST   http://server/cgi-bin/tigercgi/image with document id in JSON, with image posted as form data: upload image, return imageid (counterpart of client UploadImage function)
 DELETE http://server/cgi-bin/tigercgi/image/304            //remove image with id 304
 GET    http://server/cgi-bin/tigercgi/image/304            //get image with id 304
 PUT    http://server/cgi-bin/tigercgi/image/304            //edit image with id 304
@@ -83,6 +83,7 @@ PUT    http://server/cgi-bin/tigercgi/image/304            //edit image with id 
 var
   ContentStream: TStringStream;
   DocumentID: integer;
+  ForceBlackWhite: boolean; //force conversion to black and white image as requested
   ImageArray: TJSONArray;
   ImageID: integer;
   ImageOrder: integer;
@@ -92,6 +93,7 @@ var
   StrippedPath: string; // e.g. http://server/cgi-bin/tigercgi/image/123 becomes image/123
   Parser: TJSONParser;
 begin
+  ForceBlackWhite := False;
   IsValidRequest := False;
   {
   pathinfo apparently returns something like
@@ -253,21 +255,25 @@ begin
 
         //todo: debug
         tigerlog.writelog(etdebug,'contentfields is: '+ARequest.ContentFields.Text);
-        //arequest.content has  --008C7F0A_multipart_boundary#015#012Content-Disposition: form-data; name="JSO...until the end
+        // arequest.content has  --008C7F0A_multipart_boundary#015#012Content-Disposition: form-data; name="JSO...until the end
         ARequest.ContentFields.NameValueSeparator:='=';
         if ARequest.ContentFields.Values['JSON']<>'' then //found form part with JSON data
         begin
           Parser := TJSONParser.Create(ARequest.ContentFields.Values['JSON'], true);
           try
             try
-              // expect this format:
-              // { "documentid" : 55 }
+              // expect this format (forceblackwhite is optional):
+              // { "documentid" : 55, "forceblackwhite" : yes }
               InputJSON := TJSONObject(Parser.Parse);
               if (InputJSON.Find('documentid',jtNumber)<>nil) then
               begin
                 DocumentID := InputJSON.Integers['documentid'];
                 IsValidRequest:=true; //preliminary; will be tested below
               end;
+              if (InputJSON.Find('forceblackwhite',jtBoolean)<>nil) then
+                ForceBlackWhite := InputJSON.Booleans['forceblackwhite']
+              else
+                ForceBlackWhite := false;
             except
               DocumentID := INVALIDID;
             end;
@@ -285,6 +291,10 @@ begin
             TigerLog.WriteLog(etDebug,'Module image: upload image attempt without valid JSON part (with documentid).');
             IsValidRequest:=false;
           end;
+          if ARequest.QueryFields.Values['forceblackwhite']<>'' then
+            ForceBlackWhite:=StrToBoolDef(Arequest.QueryFields.Values['forceblackwhite'],false)
+          else
+            ForceBlackWhite:=false;
         end;
 
         begin
@@ -298,7 +308,7 @@ begin
                 //todo: debug
                 TigerLog.WriteLog(etDebug,'Module image: going to add file named '+ARequest.Files[0].FileName);
                 ImageID := FTigerCore.AddImage(ARequest.Files[0].Stream,
-                  ARequest.Files[0].FileName, DocumentID, -1);
+                  ARequest.Files[0].FileName, DocumentID, -1, ForceBlackWhite);
                 if ImageID <> INVALIDID then
                   IsValidRequest := True
                 else
