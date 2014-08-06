@@ -71,7 +71,7 @@
         <PackageName Value="LCL"/>
       </Item1>
     </RequiredPackages>
-    <Units Count="10">
+    <Units Count="9">
       <Unit0>
         <Filename Value="tigerclient.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -118,12 +118,8 @@
       <Unit8>
         <Filename Value="wia_1_0_tlb.pas"/>
         <IsPartOfProject Value="True"/>
-      </Unit8>
-      <Unit9>
-        <Filename Value="wia_1_0_tlb.pas"/>
-        <IsPartOfProject Value="True"/>
         <UnitName Value="WIA_1_0_TLB"/>
-      </Unit9>
+      </Unit8>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

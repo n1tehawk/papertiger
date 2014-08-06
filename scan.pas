@@ -34,7 +34,7 @@ uses
 {$DEFINE USE_IMAGEMAGICK}
 {$IFDEF USE_IMAGEMAGICK}
 const
-ConvertCommand='convert'; //Imagemagick's version
+CONVERTCOMMAND='convert'; //Imagemagick's version
 {$ENDIF}
 
 
@@ -113,7 +113,7 @@ var
   TempImage:string;
 begin
   result:=false;
-  if ConvertCommand='' then
+  if CONVERTCOMMAND='' then
   begin
     TigerLog.WriteLog(etError, 'CCITTGroup4Compress: no conversion program available');
     exit(false); //fail silently
@@ -121,7 +121,7 @@ begin
 
   TempImage:=GetTempFileName('','FX');
   //for now, imagemagick support only
-  if ExecuteCommand(ConvertCommand + ' -compress Group4 "'+FileName+'" "'+TempImage+'" ', false) = 0 then
+  if ExecuteCommand(CONVERTCOMMAND + ' -compress Group4 "'+FileName+'" "'+TempImage+'" ', false) = 0 then
   begin
     if FileCopy(TempImage,FileName) then
       result:=true;
