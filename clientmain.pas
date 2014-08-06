@@ -110,11 +110,15 @@ type
       Image: TBitmap; var Cancel: Boolean);
     {$ENDIF}
     // Uploads image to server for given documentid.
+    // If ForceBlackWhite, forces conversion at server and to lineart/black and white.
+    // Useful if local scanners only scan in e.g. grayscale.
     // If Quiet, will only give error messages.
     // Returns success status
     function UploadImage(const DocumentID: integer;
       ImageFile: string;
-      Quiet: boolean=false): boolean;
+      ForceBlackWhite: boolean;
+      Quiet: boolean=false
+      ): boolean;
   public
     { public declarations }
   end;
@@ -619,7 +623,7 @@ begin
   OpenDialog1.Execute;
   ImageFile := OpenDialog1.FileName;
   // Upload and OCR
-  if UploadImage(DocumentID, ImageFile) then
+  if UploadImage(DocumentID, ImageFile, false) then
     ProcessDocument(DocumentID);
 end;
 
@@ -795,6 +799,7 @@ end;
 
 function TForm1.UploadImage(const DocumentID: integer;
   ImageFile: string;
+  ForceBlackWhite: boolean;
   Quiet: boolean=false): boolean;
 var
   MemStream: TMemoryStream;
@@ -812,7 +817,7 @@ begin
     (FileExistsUTF8(ImageFile)) then
   begin
     // Specify documentid to attach the image to
-    CommJSON := TJSONObject.Create(['documentid', DocumentID]);
+    CommJSON := TJSONObject.Create(['documentid', DocumentID, 'forceblackwhite', ForceBlackWhite]);
     MemStream := TMemoryStream.Create;
     try
       MemStream.LoadFromFile(ImageFile);
@@ -919,7 +924,7 @@ begin
   OpenDialog1.Execute;
   ImageFile := OpenDialog1.FileName;
   // Upload and OCR
-  if UploadImage(DocumentID, ImageFile) then
+  if UploadImage(DocumentID, ImageFile, false) then
     ProcessDocument(DocumentID);
 end;
 

@@ -55,10 +55,6 @@ type
     // sane inserts Failed cupsGetDevices and an LF before the tiff data
     // Useful both when scanning and when using ready made files
     procedure FixSaneBug313851(TIFFile: string);
-    // Compresses file with group 4 fax compression. Only useful for black and white/
-    // lineart images
-    // Returns success or failure
-    function CCITTGroup4Compress(FileName: string): boolean;
   public
     // Black & white, grayscale or colour scan?
     property ColorType: ScanType read FColorType write FColorType;
@@ -72,6 +68,10 @@ type
     property ScanDevice: string read FScanDevice write FScanDevice;
     // Interrogate scanner software for a list of installed devices
     procedure ShowDevices(var DeviceList: TStringList);
+    // Compresses file with group 4 fax compression. Only useful for black and white/
+    // lineart images
+    // Returns success or failure
+    function CCITTGroup4Compress(ImageFile: string): boolean;
     // Scan paper to image; returns success
     function Scan: boolean;
     constructor Create;
@@ -108,7 +108,7 @@ begin
   end;
 end;
 
-function TScanner.CCITTGroup4Compress(FileName: string): boolean;
+function TScanner.CCITTGroup4Compress(ImageFile: string): boolean;
 var
   TempImage:string;
 begin
