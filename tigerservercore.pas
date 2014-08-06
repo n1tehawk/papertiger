@@ -271,6 +271,7 @@ begin
             MemStream:=TMemoryStream.Create;
             // Copy over existing image - would rather have a way to point memstream at existing image in memory
             MemStream.WriteBuffer(BWImagePointer^,BWImageSize);
+            //todo: clean up old memory (old image & new image)
           end
           else
           begin
