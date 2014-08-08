@@ -264,9 +264,17 @@ begin
         // Convert to black and white if asked
         if ForceBlackWhite then
         begin
-          MemStream.Position := 0;
           if ConvertMemTIFFCCITGroup4(MemStream.Memory,MemStream.Size,BWImagePointer,BWImageSize) then
           begin
+            { todo: avoid copying memstream by allowing to change .Memory
+            Make TCustomMemoryStream.SetPointer virtual.
+            Override it in your customized class and turn it public. Maybe:
+            procedure TYourMemoryStream.SetPointer(Ptr: Pointer; ASize: PtrInt);override;
+            begin
+              Clear;
+              inherited;
+            end;
+            }
             MemStream.Free;
             MemStream:=TMemoryStream.Create;
             // Copy over existing image - would rather have a way to point memstream at existing image in memory
