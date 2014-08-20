@@ -80,8 +80,9 @@ var
 // Converts image in memory to black and white CCIT Group 4 compressed image
 // Calling function should clean up memory pointed to by OlImageMemoryPtr if needed
 // Returns success status
+//todo: don't use this  as is it currently crashes imagemagick!!!
 function ConvertMemTIFFCCITGroup4(OldImageMemoryPtr: Pointer; OldImageSize: integer;
-  NewImageMemoryPtr: Pointer; var NewImageSize: integer): boolean;
+  var NewImageMemoryPtr: Pointer; var NewImageSize: integer): boolean;
 
 // Copy file to same or other filesystem, overwriting existing files
 function FileCopy(Source, Target: string): boolean;
@@ -103,41 +104,36 @@ uses math;
 
 {$IFDEF USEMAGICK}
 function ConvertMemTIFFCCITGroup4(OldImageMemoryPtr: Pointer; OldImageSize: integer;
-  NewImageMemoryPtr: Pointer; var NewImageSize: integer): boolean;
+  var NewImageMemoryPtr: Pointer; var NewImageSize: integer): boolean;
 // Let imagemagick convert a TIFF image to CCIT Group 4
 var
   status: MagickBooleanType;
   wand: PMagickWand;
   description: PChar;
   severity: ExceptionType;
+
+  procedure MagickCommand(const status: MagickBooleanType; CommandDescription: string);
+  begin
+    if (status = MagickFalse) then
+    begin
+      description := MagickGetException(wand, @severity);
+      raise Exception.Create(Format
+        ('ConvertMemTIFFCCITGroup4: an error ocurred running %s. Description: %s',
+        [CommandDescription,description]));
+      description := MagickRelinquishMemory(description);
+    end;
+  end;
+
 begin
   result:=false;
   wand := NewMagickWand;
   try
-    status := MagickReadImageBlob(wand, OldImageMemoryPtr, OldImageSize);
-    if (status = MagickFalse) then
-    begin
-      description := MagickGetException(wand, @severity);
-      raise Exception.Create(Format('LoadMagickBitmap: an error ocurred. Description: %s', [description]));
-      description := MagickRelinquishMemory(description);
-    end;
+    MagickCommand(MagickReadImageBlob(wand, OldImageMemoryPtr, OldImageSize),'MagickReadImageBlob');
 
     // Force TIFF format so this can also be used for converting from e.g. BMP or JPG
-    status := MagickSetImageFormat(wand,'TIFF');
-    if (status = MagickFalse) then
-    begin
-      description := MagickGetException(wand, @severity);
-      raise Exception.Create(Format('LoadMagickBitmap: an error ocurred. Description: %s', [description]));
-      description := MagickRelinquishMemory(description);
-    end;
+    MagickCommand(MagickSetImageFormat(wand,'TIFF'),'GetImageFormat');
 
-    status := MagickSetImageCompression(wand,Group4Compression);
-    if (status = MagickFalse) then
-    begin
-      description := MagickGetException(wand, @severity);
-      raise Exception.Create(Format('LoadMagickBitmap: an error ocurred. Description: %s', [description]));
-      description := MagickRelinquishMemory(description);
-    end;
+    MagickCommand(MagickSetImageCompression(wand,Group4Compression),'MagickSetImageCompression');
 
     // Get result into new memory segment
     NewImageSize:=0;
