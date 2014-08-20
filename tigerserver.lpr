@@ -322,7 +322,7 @@ type
       DocumentID := FTigerCore.AddDocument('Document ' + FormatDateTime('yyyymmddhhnnss', Now));
       if DocumentID <> INVALIDID then
       begin
-        if FTigerCore.AddImage(ExpandFileName(GetOptionValue('i', 'image')), DocumentID, 0) <> INVALIDID then
+        if (FTigerCore.AddImage(ExpandFileName(GetOptionValue('i', 'image')), DocumentID, 0, (FTigerCore.ColorType=ScanType.stLineArt)) <> INVALIDID) then
         begin
           PDF := FTigerCore.ProcessImages(DocumentID, 0, true);
           if PDF = '' then

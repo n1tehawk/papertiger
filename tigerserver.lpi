@@ -42,6 +42,7 @@
           </CodeGeneration>
           <Other>
             <CustomOptions Value="-dDEBUG"/>
+            <CompilerPath Value="$(CompPath)"/>
             <ExecuteBefore>
               <Command Value="hgversion$(ExeExt)"/>
               <CompileReasons Run="False"/>
@@ -123,6 +124,7 @@
       </Debugging>
     </Linking>
     <Other>
+      <CompilerPath Value="$(CompPath)"/>
       <ExecuteBefore>
         <Command Value="hgversion$(ExeExt)"/>
         <CompileReasons Run="False"/>

@@ -10,7 +10,9 @@ e.g. ssleay32.dll,libeay32.dll installed or in your program directory.
 interface
 
 uses
-  FPHTTPClient, FPJSON, JSONParser, SysUtils, Classes, ssockets, sslsockets;
+  FPHTTPClient, FPJSON, JSONParser, SysUtils, Classes, ssockets
+  {$IF FPC_FULLVERSION>=207071}, sslsockets{$ENDIF}
+  ;
 
 type
   THttpResult = record
@@ -28,8 +30,10 @@ type
   public
     // Creates TFPHTTPClient including correct settings for certificate file if used
     function CreateHTTPClient: TFPHTTPClient;
+    {$IF FPC_FULLVERSION>=207071}
     // Callback for setting up SSL client certificate
     procedure SSLClientCertSetup(Sender : TObject; Const UseSSL : Boolean; Out AHandler : TSocketHandler);
+    {$ENDIF}
     //TLS/SSL client certificate if used
     property ClientCertificate: string read FClientCertificate write FClientCertificate;
     constructor Create;
@@ -294,12 +298,15 @@ end;
 function TSSLHelper.CreateHTTPClient: TFPHTTPClient;
 begin
   result:=TFPHTTPClient.Create(nil);
+  {$IF FPC_FULLVERSION>=207071}
   if FClientCertificate<>'' then
   begin
     result.OnGetSocketHandler:=@SSLClientCertSetup;
   end;
+  {$ENDIF}
 end;
 
+{$IF FPC_FULLVERSION>=207071}
 procedure TSSLHelper.SSLClientCertSetup(Sender: TObject; const UseSSL: Boolean;
   out AHandler: TSocketHandler);
 begin
@@ -313,6 +320,7 @@ begin
     (AHandler as TSSLSocketHandler).Certificate.FileName:=FClientCertificate;
   end;
 end;
+{$ENDIF}
 
 constructor TSSLHelper.Create;
 begin

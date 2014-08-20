@@ -262,7 +262,8 @@ begin
         end;
 
         // Convert to black and white if asked
-        if ForceBlackWhite then
+        //todo: debug: disable this because it crashes
+        if (true=false) and ForceBlackWhite then
         begin
           if ConvertMemTIFFCCITGroup4(MemStream.Memory,MemStream.Size,BWImagePointer,BWImageSize) then
           begin
