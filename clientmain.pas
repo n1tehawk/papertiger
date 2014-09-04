@@ -105,7 +105,7 @@ type
     // Shows pdf for relevant document
     procedure ShowPDF(DocumentID: integer);
     {$IFDEF WINDOWS}
-    // Callback for acquisition
+    // Callback for acquisition if using Twain
     procedure TwainTwainAcquire(Sender: TObject; const {%H-}Index: Integer;
       Image: TBitmap; var Cancel: Boolean);
     {$ENDIF}
@@ -464,6 +464,7 @@ begin
       begin
         TwainScanner:=TDelphiTwain.Create;
         try
+          TwainScanner.TransferMode:=ttmMemory;
           TwainScanner.OnTwainAcquire:=@TwainTwainAcquire;
           if not(TwainScanner.LoadLibrary) then
           begin
@@ -489,6 +490,10 @@ begin
 
               // Load source, select transfer method and enable (display interface)}
               TwainScanner.SelectedSource.Loaded := True;
+              TwainScanner.SelectedSource.SetIXResolution(300);
+              TwainScanner.SelectedSource.SetIYResolution(300);
+              TwainScanner.SelectedSource.SetIBitDepth(1);
+
               TwainScanner.SelectedSource.ShowUI := True;//display interface
               TwainScanner.SelectedSource.Enabled := True;
 
@@ -499,6 +504,8 @@ begin
                 Application.ProcessMessages;
                 Sleep(1000);
               end;
+              //todo: debug
+              showmessage('going to upload image '+FAcquiredImage);
               // Document should be in FAcquiredImage
               if not(UploadImage(DocumentID,FAcquiredImage,true)) then
                 raise Exception.Create('Error uploading image to server.');
@@ -788,14 +795,20 @@ end;
 procedure TForm1.TwainTwainAcquire(Sender: TObject; const Index: Integer;
   Image: TBitmap; var Cancel: Boolean);
 var
-  ImageFile: string;
+  FileName: string;
+  StartDate: TDateTime;
+  StartDateString: string;
 begin
   FAcquiredImage:='';
-  ImageFile:=Sysutils.GetTempFilename('','scn');
-  ImageFile:=ChangeFileExt(ImageFile,'.tiff');
-  Image.SaveToFile(ImageFile); //todo: adjust for multipage, format etc
+  // Default to current date/time to get hopefully unique filename as it will
+  // be passed to the server
+  StartDate := Now(); //local time
+  StartDateString := FormatDateTime('yyyymmddhhnnss', StartDate);
+  FileName:=Sysutils.GetTempFilename('',StartDateString);
+  FileName:=ChangeFileExt(FileName,'.bmp');
+  Image.SaveToFile(FileName);
   Cancel:=true; //only want 1 image!??
-  FAcquiredImage:=ImageFile;
+  FAcquiredImage:=FileName;
 end;
 {$ENDIF}
 
