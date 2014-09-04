@@ -95,12 +95,12 @@ type
   public
     // Adds new, empty document (with name if specified), returns document ID
     function AddDocument(DocumentName: string = ''): integer;
-    // Adds the tiff image to given documentID.
+    // Adds the tiff or bmp (converted to tiff) image to given documentID.
     // Add at end of any existing images, unless ImageOrder>0.
     // ForceBlackWhite forces conversion to black and white/lineart format
     // Returns either image ID or INVALIDID (when failed).
     function AddImage(ImageData: TStream; ImageName: string; DocumentID: integer; ImageOrder: integer; ForceBlackWhite: boolean): integer;
-    // Adds the tiff image to given documentID.
+    // Adds the tiff or bmp (converted to tiff) image to given documentID.
     // Rotates it first if the user asked for it, and checks for sane bug
     // Add at end of any existing images, unless ImageOrder>0.
     // ForceBlackWhite forces conversion to black and white/lineart format
@@ -244,6 +244,24 @@ begin
       //raise Exception.CreateFmt('Image directory %s does not exist and cannot be created.', [FSettings.ImageDirectory]);
     end;
 
+{$IFDEF HELLFREEZESOVER}
+    //todo: debug: use if needed later
+    // Convert bmp to tiff - trust sender's representation of file type
+    if LowerCase(ExtractFileExt(ImageName))='.bmp' then
+    begin
+      MemStream:=TMemoryStream.Create;
+      ImageData.Position := 0;
+      ConvertStreamBMP_TIFF(ImageData,MemStream);
+      // Leave MemStream open so it can be saved below
+    end
+    else
+    begin
+      // Process tiff
+      //todo: debug: insert code below
+      // Leave MemStream open so it can be saved below
+    end;
+{$ENDIF HELLFREEZESOVER}
+
     // Get image into file system; don't overwrite existing files (see below)
     // Extract only filename part from image name and add to storage path
     ImageFile := ExpandFileName(FSettings.ImageDirectory + ExtractFileName(ImageName));
@@ -263,7 +281,7 @@ begin
 
         // Convert to black and white if asked
         //todo: debug: disable this because it crashes
-        if (true=false) and ForceBlackWhite then
+        if ForceBlackWhite then
         begin
           if ConvertMemTIFFCCITGroup4(MemStream.Memory,MemStream.Size,BWImagePointer,BWImageSize) then
           begin
@@ -297,7 +315,6 @@ begin
           // Client could just send the same image name every time...
           MemStream.Position := 0;
           MemStream.SaveToFile(ImageFile);
-          //todo: add support for black/white?
         end;
         MemStream.Position := 0;
         ImageHash := MD5Print(MD5Buffer(MemStream.Memory^, MemStream.Size));

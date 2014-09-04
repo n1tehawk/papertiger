@@ -77,6 +77,13 @@ and lookup/translation
 var
   TigerLog: TLogger; //Created by unit initialization so available for every referencing unit
 
+{$IFDEF HELLFREEZESOVER}
+  //todo: debug: use if needed later
+// Converts bmp image in stream to tiff image in memory stream
+// Memory stream must exist before calling this function
+function ConvertStreamBMP_TIFF(Source: TStream; Destination: TMemoryStream): boolean;
+{$ENDIF HELLFREEZESOVER}
+
 // Converts image in memory to black and white CCIT Group 4 compressed image
 // Calling function should clean up memory pointed to by OlImageMemoryPtr if needed
 // Returns success status
@@ -103,37 +110,48 @@ implementation
 uses math;
 
 {$IFDEF USEMAGICK}
-function ConvertMemTIFFCCITGroup4(OldImageMemoryPtr: Pointer; OldImageSize: integer;
-  var NewImageMemoryPtr: Pointer; var NewImageSize: integer): boolean;
-// Let imagemagick convert a TIFF image to CCIT Group 4
-var
-  status: MagickBooleanType;
+// Imagemagick command+error handling
+procedure MagickCommand(CallingFunction: string;
   wand: PMagickWand;
+  const status: MagickBooleanType;
+  CommandDescription: string);
+var
   description: PChar;
   severity: ExceptionType;
-
-  procedure MagickCommand(const status: MagickBooleanType; CommandDescription: string);
+begin
+  if (status = MagickFalse) then
   begin
-    if (status = MagickFalse) then
-    begin
-      description := MagickGetException(wand, @severity);
-      raise Exception.Create(Format
-        ('ConvertMemTIFFCCITGroup4: an error ocurred running %s. Description: %s',
-        [CommandDescription,description]));
-      description := MagickRelinquishMemory(description);
-    end;
+    description := MagickGetException(wand, @severity);
+    raise Exception.Create(Format
+      ('%s: an error ocurred running %s. Description: %s',
+      [CallingFunction, CommandDescription,description]));
+    description := MagickRelinquishMemory(description);
   end;
+end;
+{$ENDIF USEMAGICK}
 
+{$IFDEF HELLFREEZESOVER}
+//todo: debug: use if needed later
+{$IFDEF USEMAGICK}
+function ConvertStreamBMP_TIFF(Source: TStream; Destination: TMemoryStream): boolean;
+const
+  CallF='ConvertStreamBMP_TIFF';
+var
+  wand: PMagickWand;
 begin
   result:=false;
+  if not(assigned(Destination)) then
+    raise Exception.Create('ConvertStreamBMP_TIFF: Destination memorystream must be assigned before calling. Please fix the code.');
+  if not(assigned(Source)) then
+    raise Exception.Create('ConvertStreamBMP_TIFF: Source stream must be assigned before calling. Please fix the code.');
   wand := NewMagickWand;
   try
-    MagickCommand(MagickReadImageBlob(wand, OldImageMemoryPtr, OldImageSize),'MagickReadImageBlob');
+    MagickCommand(CallF,wand,MagickReadImageBlob(wand, OldImageMemoryPtr, OldImageSize),'MagickReadImageBlob');
 
     // Force TIFF format so this can also be used for converting from e.g. BMP or JPG
-    MagickCommand(MagickSetImageFormat(wand,'TIFF'),'GetImageFormat');
+    MagickCommand(CallF,wand,MagickSetImageFormat(wand,'TIFF'),'GetImageFormat');
 
-    MagickCommand(MagickSetImageCompression(wand,Group4Compression),'MagickSetImageCompression');
+    MagickCommand(CallF,wand,MagickSetImageCompression(wand,Group4Compression),'MagickSetImageCompression');
 
     // Get result into new memory segment
     NewImageSize:=0;
@@ -143,6 +161,49 @@ begin
     //Calling function should clean up original memory
   finally
     wand := DestroyMagickWand(wand);
+  end;
+
+  result:=true;
+end;
+{$ENDIF USEMAGICK}
+{$ENDIF HELLFREEZESOVER}
+
+{$IFDEF USEMAGICK}
+function ConvertMemTIFFCCITGroup4(OldImageMemoryPtr: Pointer; OldImageSize: integer;
+  var NewImageMemoryPtr: Pointer; var NewImageSize: integer): boolean;
+// Let imagemagick convert a TIFF image to CCIT Group 4
+const
+  CallF='ConvertMemTIFFCCITGroup4';
+var
+  wand: PMagickWand;
+begin
+  result:=false;
+  wand := NewMagickWand;
+  try
+    //todo: debug: remove logging
+    MagickCommand(CallF,wand,MagickReadImageBlob(wand, OldImageMemoryPtr, OldImageSize),'MagickReadImageBlob');
+    TigerLog.WriteLog('1');
+
+    // Force TIFF format so this can also be used for converting from e.g. BMP or JPG
+    MagickCommand(CallF,wand,MagickSetImageFormat(wand,'TIFF'),'GetImageFormat');
+    TigerLog.WriteLog('2');
+
+    MagickCommand(CallF,wand,MagickSetImageCompression(wand,Group4Compression),'MagickSetImageCompression');
+    TigerLog.WriteLog('3');
+
+    // Get result into new memory segment
+    NewImageSize:=0;
+    NewImageMemoryPtr:=MagickGetImageBlob(wand,Pointer(NewImageSize));
+    TigerLog.WriteLog('4');
+    if NewImageMemoryPtr<>nil then
+    begin
+      result:=true;
+      TigerLog.WriteLog('5');
+    end;
+    //Calling function should clean up original memory
+  finally
+    wand := DestroyMagickWand(wand);
+    TigerLog.WriteLog('6');
   end;
 end;
 {$ENDIF USEMAGICK}

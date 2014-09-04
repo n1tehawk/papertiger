@@ -48,7 +48,6 @@
           </Linking>
           <Other>
             <CustomOptions Value="-dDEBUG -O-1"/>
-            <CompilerPath Value="$(CompPath)"/>
             <ExecuteBefore>
               <Command Value="hgversion$(ExeExt)"/>
               <CompileReasons Run="False"/>
@@ -72,7 +71,7 @@
         <PackageName Value="LCL"/>
       </Item1>
     </RequiredPackages>
-    <Units Count="9">
+    <Units Count="11">
       <Unit0>
         <Filename Value="tigerclient.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -88,7 +87,6 @@
       <Unit2>
         <Filename Value="3rdparty\httpclient.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="HttpClient"/>
       </Unit2>
       <Unit3>
         <Filename Value="imageformunit.pas"/>
@@ -96,7 +94,6 @@
         <ComponentName Value="ImageForm"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-        <UnitName Value="imageformunit"/>
       </Unit3>
       <Unit4>
         <Filename Value="3rdparty\ljgridutils\src\ljgridutils.pas"/>
@@ -105,7 +102,6 @@
       <Unit5>
         <Filename Value="tigersettings.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="tigersettings"/>
       </Unit5>
       <Unit6>
         <Filename Value="tigercommondefs.inc"/>
@@ -114,13 +110,21 @@
       <Unit7>
         <Filename Value="wia.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="wia"/>
       </Unit7>
       <Unit8>
         <Filename Value="wia_1_0_tlb.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="WIA_1_0_TLB"/>
       </Unit8>
+      <Unit9>
+        <Filename Value="3rdparty\DelphiTwain\DelphiTwain.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="DelphiTwain"/>
+      </Unit9>
+      <Unit10>
+        <Filename Value="3rdparty\DelphiTwain\DelphiTwain_VCL.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="DelphiTwain_VCL"/>
+      </Unit10>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
@@ -151,7 +155,6 @@
       </Options>
     </Linking>
     <Other>
-      <CompilerPath Value="$(CompPath)"/>
       <ExecuteBefore>
         <Command Value="hgversion$(ExeExt)"/>
         <CompileReasons Run="False"/>

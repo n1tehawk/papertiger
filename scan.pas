@@ -219,6 +219,7 @@ var
 begin
   inherited Create;
   FColorType := stLineArt; //Lineart is suitable for OCR for black & white docments?!?
+  // A good default filename
   FFileName := SysUtils.GetTempFileName(GetTempDir(false), 'SCN') + TesseractTIFFExtension;
   FResolution := 300;
   //todo: check whether sane works by --version ??
