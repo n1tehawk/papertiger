@@ -89,7 +89,7 @@ function ConvertStreamBMP_TIFF(Source: TStream; Destination: TMemoryStream): boo
 // Returns success status
 //todo: don't use this  as is it currently crashes imagemagick!!!
 function ConvertMemTIFFCCITGroup4(OldImageMemoryPtr: Pointer; OldImageSize: integer;
-  var NewImageMemoryPtr: Pointer; var NewImageSize: integer): boolean;
+  out NewImageMemoryPtr: Pointer; out NewImageSize: integer): boolean;
 
 // Copy file to same or other filesystem, overwriting existing files
 function FileCopy(Source, Target: string): boolean;
@@ -170,12 +170,13 @@ end;
 
 {$IFDEF USEMAGICK}
 function ConvertMemTIFFCCITGroup4(OldImageMemoryPtr: Pointer; OldImageSize: integer;
-  var NewImageMemoryPtr: Pointer; var NewImageSize: integer): boolean;
+  out NewImageMemoryPtr: Pointer; out NewImageSize: integer): boolean;
 // Let imagemagick convert a TIFF image to CCIT Group 4
 const
   CallF='ConvertMemTIFFCCITGroup4';
 var
   wand: PMagickWand;
+  PNewImageSize: PPtrUint; //points to NewImageSize
 begin
   result:=false;
   wand := NewMagickWand;
@@ -193,16 +194,18 @@ begin
 
     // Get result into new memory segment
     NewImageSize:=0;
-    NewImageMemoryPtr:=MagickGetImageBlob(wand,Pointer(NewImageSize));
-    TigerLog.WriteLog('4');
+    PNewImageSize:=@NewImageSize;
+    NewImageMemoryPtr:=MagickGetImageBlob(wand,PNewImageSize);
+    TigerLog.WriteLog('4'); //Up to now it works
     if NewImageMemoryPtr<>nil then
     begin
+      //this doesn't anymore
       result:=true;
       TigerLog.WriteLog('5');
     end;
     //Calling function should clean up original memory
   finally
-    wand := DestroyMagickWand(wand);
+    wand := DestroyMagickWand(wand); //this does get executed
     TigerLog.WriteLog('6');
   end;
 end;

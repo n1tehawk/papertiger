@@ -87,6 +87,7 @@
       <Unit2>
         <Filename Value="3rdparty\httpclient.pas"/>
         <IsPartOfProject Value="True"/>
+        <UnitName Value="HttpClient"/>
       </Unit2>
       <Unit3>
         <Filename Value="imageformunit.pas"/>
