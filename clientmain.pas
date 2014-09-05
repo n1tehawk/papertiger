@@ -464,7 +464,8 @@ begin
       begin
         TwainScanner:=TDelphiTwain.Create;
         try
-          TwainScanner.TransferMode:=ttmMemory;
+          //doesn't seem to work.... with Black & White?!?
+          //TwainScanner.TransferMode:=ttmMemory;
           TwainScanner.OnTwainAcquire:=@TwainTwainAcquire;
           if not(TwainScanner.LoadLibrary) then
           begin

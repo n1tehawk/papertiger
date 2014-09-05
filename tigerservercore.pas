@@ -294,11 +294,25 @@ begin
               inherited;
             end;
             }
+            //todo: debug
+            TigerLog.writelog('memstream memory: '+inttostr(integer(@memstream.memory)));
+            TigerLog.writelog('bwimagepointer: '+inttostr(integer(BWImagePointer)));
+            MemStream.SetSize(BWImageSize);
+            MemStream.Position:=0;
+
+            {
+            // now we're releasing the same memory where the target is!?!
+            // we should really recalc memstream size
             MemStream.Free;
+
             MemStream:=TMemoryStream.Create;
+            //todo: debug
+            TigerLog.WriteLog('b1');
             // Copy over existing image - would rather have a way to point memstream at existing image in memory
             MemStream.WriteBuffer(BWImagePointer^,BWImageSize);
+            TigerLog.WriteLog('b2');
             //todo: clean up old memory (old image & new image)
+            }
           end
           else
           begin
