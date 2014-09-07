@@ -186,6 +186,41 @@ begin
 end;
 {$ENDIF USEMAGICK}
 
+{$IFDEF USEMAGICK}
+procedure LoadMagickBitmap(InputFile, OutputFile: string);
+// Let imagemagick convert an image file to TIFF Fax compressed B/W
+var
+  status: MagickBooleanType;
+  wand: PMagickWand;
+  img: Pimage;
+  pack: PPixelPacket;
+  i, j, wi, he: integer;
+  colo: TFPColor;
+  description: PChar;
+  severity: ExceptionType;
+begin
+  wand := NewMagickWand;
+  try
+    status := MagickReadImage(wand,PChar(InputFile));
+
+    if (status = MagickFalse) then
+    begin
+      description := MagickGetException(wand, @severity);
+      raise Exception.Create(Format('LoadMagickBitmap: an error ocurred. Description: %s', [description]));
+      description := MagickRelinquishMemory(description);
+    end;
+    img := GetImageFromMagickWand(wand);
+    he := MagickGetImageHeight(wand);
+    wi := MagickGetImageWidth(wand);
+    pack := GetAuthenticPixels(img, 0, 0, wi, he, nil);
+
+  finally
+    wand := DestroyMagickWand(wand);
+  end;
+end;
+{$ENDIF USEMAGICK}
+
+
 { TForm1 }
 
 procedure TForm1.mnuAboutClick(Sender: TObject);
