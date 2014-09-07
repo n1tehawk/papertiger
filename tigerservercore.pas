@@ -243,7 +243,7 @@ begin
       exit;
       //raise Exception.CreateFmt('Image directory %s does not exist and cannot be created.', [FSettings.ImageDirectory]);
     end;
-
+//todo: first convert bmp to tiff so the filename we're using is correct
 {$IFDEF HELLFREEZESOVER}
     //todo: debug: use if needed later
     // Convert bmp to tiff - trust sender's representation of file type

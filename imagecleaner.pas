@@ -323,4 +323,14 @@ begin
   {$ENDIF}
 end;
 
+initialization
+  {$IFDEF USEMAGICK}
+  MagickWandGenesis;
+  {$ENDIF}
+
+finalization;
+  {$IFDEF USEMAGICK}
+  MagickWandTerminus;
+  {$ENDIF}
+
 end.

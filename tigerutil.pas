@@ -195,6 +195,7 @@ begin
     // Get result into new memory segment
     NewImageSize:=0;
     PNewImageSize:=@NewImageSize;
+    // or rather use GetImageFromMagickWand?!?! see code in client
     NewImageMemoryPtr:=MagickGetImageBlob(wand,PNewImageSize);
     TigerLog.WriteLog('4'); //Up to now it works
     if NewImageMemoryPtr<>nil then
