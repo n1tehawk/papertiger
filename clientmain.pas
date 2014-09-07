@@ -187,7 +187,7 @@ end;
 {$ENDIF USEMAGICK}
 
 {$IFDEF USEMAGICK}
-procedure LoadMagickBitmap(InputFile, OutputFile: string);
+procedure ConvertTIFFCCIT4(InputFile, OutputFile: string);
 // Let imagemagick convert an image file to TIFF Fax compressed B/W
 var
   status: MagickBooleanType;
@@ -198,21 +198,36 @@ var
   colo: TFPColor;
   description: PChar;
   severity: ExceptionType;
+  procedure HandleError;
+  begin
+    description := MagickGetException(wand, @severity);
+    raise Exception.Create(Format('LoadMagickBitmap: an error ocurred. Description: %s', [description]));
+    description := MagickRelinquishMemory(description);
+  end;
 begin
   wand := NewMagickWand;
   try
     status := MagickReadImage(wand,PChar(InputFile));
+    if (status = MagickFalse) then HandleError;
 
-    if (status = MagickFalse) then
-    begin
-      description := MagickGetException(wand, @severity);
-      raise Exception.Create(Format('LoadMagickBitmap: an error ocurred. Description: %s', [description]));
-      description := MagickRelinquishMemory(description);
-    end;
-    img := GetImageFromMagickWand(wand);
-    he := MagickGetImageHeight(wand);
-    wi := MagickGetImageWidth(wand);
-    pack := GetAuthenticPixels(img, 0, 0, wi, he, nil);
+    status := MagickSetImageFormat(wand,'TIFF');
+    if (status = MagickFalse) then HandleError;
+
+    // convert to black & white/lineart
+    { perhaps needed for some images: remove the alpha channel:
+    MagickSetImageMatte(magick_wand,MagickFalse);
+    MagickQuantizeImage(magick_wand,2,GRAYColorspace,0,MagickFalse,MagickFalse);
+    }
+    status := MagickSetImageType(wand,BilevelType);
+    if (status = MagickFalse) then HandleError;
+
+    // Compress with CCIT group 4 compression (fax compression); best for B&W
+    //todo: still no compression
+    status := MagickSetImageCompression(wand,Group4Compression);
+    if (status = MagickFalse) then HandleError;
+
+    status := MagickWriteImage(wand,PChar(OutputFile));
+    if (status = MagickFalse) then HandleError;
 
   finally
     wand := DestroyMagickWand(wand);
@@ -852,8 +867,10 @@ begin
   FileName:=Sysutils.GetTempFilename('',StartDateString);
   FileName:=ChangeFileExt(FileName,'.bmp');
   Image.SaveToFile(FileName);
+  // Convert to tiff
+  ConvertTIFFCCIT4(FileName,ChangeFileExt(FileName,'.tiff'));
+  FileName:=ChangeFileExt(FileName,'.tiff');
   Cancel:=true; //only want 1 image per page
-  todo: convert to tiff group 4 using imagemagick
   FAcquiredImage:=FileName;
 end;
 {$ENDIF}
