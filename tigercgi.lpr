@@ -6,7 +6,7 @@ uses
   fpCGI, tigerutil, tigercgimain,
   { Modules that handle of URLs:}
   tigercgi_server, tigercgi_document, tigercgi_image,
-  tigerservercore, tigerdb, scan, ocr;
+  tigerservercore, tigerdb, scan, ocr, imagecleaner;
 
 begin
   Application.Initialize;

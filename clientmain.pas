@@ -493,7 +493,8 @@ begin
               TwainScanner.SelectedSource.Loaded := True;
               TwainScanner.SelectedSource.SetIXResolution(300);
               TwainScanner.SelectedSource.SetIYResolution(300);
-              TwainScanner.SelectedSource.SetIBitDepth(1);
+              //todo: below doesn't seem to have any effect.
+              TwainScanner.SelectedSource.SetIBitDepth(1); //black and white/lineart
 
               TwainScanner.SelectedSource.ShowUI := True;//display interface
               TwainScanner.SelectedSource.Enabled := True;
@@ -701,7 +702,6 @@ begin
       ImageForm.Hide;
       if (pos('image/tiff',ContentType)>0) then
       begin
-        // TIFF image
         {$IFDEF USEMAGICK}
         // Use imagemagick to load tiff
         LoadMagickBitmap(ImageStream.Memory,ImageStream.Size,ImageForm.ScanImage.Picture.Bitmap);
@@ -714,22 +714,31 @@ begin
         // Convert to a viewable bitmap with our modified FPC tiff routines supporting black & white tiff
         Imageform.ScanImage.Picture.LoadFromStreamWithFileExt(ImageStream, '.tiffcustom1bit');
         {$ENDIF}
-        {$ENDIF} //usemagick
+        {$ENDIF USEMAGICK}
       end
       else if (pos('image/jpeg',ContentType)>0) then
       begin
-        // JPG image
         {$IFDEF USEMAGICK}
-        // Use imagemagick to load tiff
+        // Use imagemagick to load file
         LoadMagickBitmap(ImageStream.Memory,ImageStream.Size,ImageForm.ScanImage.Picture.Bitmap);
         {$ELSE}
         // Built in JPEG support
         Imageform.ScanImage.Picture.LoadFromStreamWithFileExt(ImageStream, '.jpg');
-        {$ENDIF} //usemagick
+        {$ENDIF USEMAGICK}
+      end
+      else if (pos('image/png',ContentType)>0) then
+      begin
+        {$IFDEF USEMAGICK}
+        // Use imagemagick to load file
+        LoadMagickBitmap(ImageStream.Memory,ImageStream.Size,ImageForm.ScanImage.Picture.Bitmap);
+        {$ELSE}
+        // Built in PNG support
+        Imageform.ScanImage.Picture.LoadFromStreamWithFileExt(ImageStream, '.png');
+        {$ENDIF USEMAGICK}
       end
       else
       begin
-        ShowMessage('Asked for image; received unknown file type. Technical details: '+ContentType);
+        ShowMessage('Asked for image; received unknown file type ('+ContentType+')');
         exit;
       end;
       ImageForm.Show;
@@ -808,7 +817,8 @@ begin
   FileName:=Sysutils.GetTempFilename('',StartDateString);
   FileName:=ChangeFileExt(FileName,'.bmp');
   Image.SaveToFile(FileName);
-  Cancel:=true; //only want 1 image!??
+  Cancel:=true; //only want 1 image per page
+  todo: convert to tiff group 4 using imagemagick
   FAcquiredImage:=FileName;
 end;
 {$ENDIF}
@@ -943,6 +953,16 @@ begin
   if UploadImage(DocumentID, ImageFile, false) then
     ProcessDocument(DocumentID);
 end;
+
+initialization
+  {$IFDEF USEMAGICK}
+  MagickWandGenesis;
+  {$ENDIF}
+
+finalization;
+  {$IFDEF USEMAGICK}
+  MagickWandTerminus;
+  {$ENDIF}
 
 end.
 
