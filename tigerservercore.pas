@@ -283,7 +283,7 @@ begin
         //todo: debug: disable this because it crashes
         if ForceBlackWhite then
         begin
-          if ConvertMemTIFFCCITGroup4(MemStream.Memory,MemStream.Size,BWImagePointer,BWImageSize) then
+          if ConvertMemTIFFCCITTGroup4(MemStream.Memory,MemStream.Size,BWImagePointer,BWImageSize) then
           begin
             { todo: avoid copying memstream by allowing to change .Memory
             Make TCustomMemoryStream.SetPointer virtual.
