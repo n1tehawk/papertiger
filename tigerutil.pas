@@ -84,6 +84,9 @@ var
 function ConvertStreamBMP_TIFF(Source: TStream; Destination: TMemoryStream): boolean;
 {$ENDIF HELLFREEZESOVER}
 
+// Converts image file to black and white CCIT Group 4 compressed image
+procedure ConvertTIFFCCIT4(InputFile, OutputFile: string);
+
 // Converts image in memory to black and white CCIT Group 4 compressed image
 // Calling function should clean up memory pointed to by OlImageMemoryPtr if needed
 // Returns success status
@@ -167,6 +170,55 @@ begin
 end;
 {$ENDIF USEMAGICK}
 {$ENDIF HELLFREEZESOVER}
+
+{$IFDEF USEMAGICK}
+procedure ConvertTIFFCCIT4(InputFile, OutputFile: string);
+// Let imagemagick convert an image file to TIFF Fax compressed B/W
+var
+  status: MagickBooleanType;
+  wand: PMagickWand;
+  img: Pimage;
+  pack: PPixelPacket;
+  i, j, wi, he: integer;
+  description: PChar;
+  severity: ExceptionType;
+  procedure HandleError;
+  begin
+    description := MagickGetException(wand, @severity);
+    raise Exception.Create(Format('LoadMagickBitmap: an error ocurred. Description: %s', [description]));
+    description := MagickRelinquishMemory(description);
+  end;
+begin
+  wand := NewMagickWand;
+  try
+    status := MagickReadImage(wand,PChar(InputFile));
+    if (status = MagickFalse) then HandleError;
+
+    status := MagickSetImageFormat(wand,'TIFF');
+    if (status = MagickFalse) then HandleError;
+
+    // convert to black & white/lineart
+    { perhaps needed for some images: remove the alpha channel:
+    MagickSetImageMatte(magick_wand,MagickFalse);
+    MagickQuantizeImage(magick_wand,2,GRAYColorspace,0,MagickFalse,MagickFalse);
+    }
+    status := MagickSetImageType(wand,BilevelType);
+    if (status = MagickFalse) then HandleError;
+
+    // Compress with CCIT group 4 compression (fax compression); best for B&W
+    //todo: still no compression
+    status := MagickSetImageCompression(wand,Group4Compression);
+    if (status = MagickFalse) then HandleError;
+
+    status := MagickWriteImage(wand,PChar(OutputFile));
+    if (status = MagickFalse) then HandleError;
+
+  finally
+    wand := DestroyMagickWand(wand);
+  end;
+end;
+{$ENDIF USEMAGICK}
+
 
 {$IFDEF USEMAGICK}
 function ConvertMemTIFFCCITGroup4(OldImageMemoryPtr: Pointer; OldImageSize: integer;
@@ -422,10 +474,16 @@ end;
 initialization
   begin
     TigerLog := TLogger.Create;
+    {$IFDEF USEMAGICK}
+    MagickWandGenesis;
+    {$ENDIF}
   end;
 
 finalization
   begin
+    {$IFDEF USEMAGICK}
+    MagickWandTerminus;
+    {$ENDIF}
     TigerLog.Free;
   end;
 end.
