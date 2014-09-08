@@ -819,7 +819,7 @@ begin
   FileName:=ChangeFileExt(FileName,'.bmp');
   Image.SaveToFile(FileName);
   // Convert to tiff
-  ConvertTIFFCCIT4(FileName,ChangeFileExt(FileName,'.tiff'));
+  ConvertTIFFCCITT4(FileName,ChangeFileExt(FileName,'.tiff'));
   FileName:=ChangeFileExt(FileName,'.tiff');
   Cancel:=true; //only want 1 image per page
   FAcquiredImage:=FileName;

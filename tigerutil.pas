@@ -85,13 +85,13 @@ function ConvertStreamBMP_TIFF(Source: TStream; Destination: TMemoryStream): boo
 {$ENDIF HELLFREEZESOVER}
 
 // Converts image file to black and white CCIT Group 4 compressed image
-procedure ConvertTIFFCCIT4(InputFile, OutputFile: string);
+procedure ConvertTIFFCCITT4(InputFile, OutputFile: string);
 
 // Converts image in memory to black and white CCIT Group 4 compressed image
 // Calling function should clean up memory pointed to by OlImageMemoryPtr if needed
 // Returns success status
 //todo: don't use this  as is it currently crashes imagemagick!!!
-function ConvertMemTIFFCCITGroup4(OldImageMemoryPtr: Pointer; OldImageSize: integer;
+function ConvertMemTIFFCCITTGroup4(OldImageMemoryPtr: Pointer; OldImageSize: integer;
   out NewImageMemoryPtr: Pointer; out NewImageSize: integer): boolean;
 
 // Copy file to same or other filesystem, overwriting existing files
@@ -172,14 +172,11 @@ end;
 {$ENDIF HELLFREEZESOVER}
 
 {$IFDEF USEMAGICK}
-procedure ConvertTIFFCCIT4(InputFile, OutputFile: string);
+procedure ConvertTIFFCCITT4(InputFile, OutputFile: string);
 // Let imagemagick convert an image file to TIFF Fax compressed B/W
 var
   status: MagickBooleanType;
   wand: PMagickWand;
-  img: Pimage;
-  pack: PPixelPacket;
-  i, j, wi, he: integer;
   description: PChar;
   severity: ExceptionType;
   procedure HandleError;
@@ -221,7 +218,7 @@ end;
 
 
 {$IFDEF USEMAGICK}
-function ConvertMemTIFFCCITGroup4(OldImageMemoryPtr: Pointer; OldImageSize: integer;
+function ConvertMemTIFFCCITTGroup4(OldImageMemoryPtr: Pointer; OldImageSize: integer;
   out NewImageMemoryPtr: Pointer; out NewImageSize: integer): boolean;
 // Let imagemagick convert a TIFF image to CCIT Group 4
 const
