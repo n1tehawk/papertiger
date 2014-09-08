@@ -182,7 +182,7 @@ var
   procedure HandleError;
   begin
     description := MagickGetException(wand, @severity);
-    raise Exception.Create(Format('LoadMagickBitmap: an error ocurred. Description: %s', [description]));
+    raise Exception.Create(Format('ConvertTIFFCCITT4: an error ocurred. Description: %s', [description]));
     description := MagickRelinquishMemory(description);
   end;
 begin

@@ -222,14 +222,17 @@ function TImageCleaner.Rotate(Degrees: integer; SourceFile,
   DestinationFile: string): boolean;
 // Rotates uses either exactimage tools econvert or imagemagick
 var
+  AdditionalMessage: string;
   ErrorCode: integer;
   Overwrite: boolean;
   TempFile: string;
 begin
   result:=false;
+  if Degrees=0 then
+    AdditionalMessage:=' - it also selects correct compression';
   TigerLog.WriteLog(etDebug,
     'TImageCleaner.Rotate: going to rotate '+SourceFile+' to '+
-    DestinationFile+' over '+inttostr(Degrees)+' degrees');
+    DestinationFile+' over '+inttostr(Degrees)+' degrees'+AdditionalMessage);
 
   Overwrite:=(ExpandFileName(SourceFile)=ExpandFileName(DestinationFile));
   if Overwrite then

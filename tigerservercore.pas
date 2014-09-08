@@ -281,7 +281,7 @@ begin
 
         // Convert to black and white if asked
         //todo: debug: disable this because it crashes
-        if ForceBlackWhite then
+        if (true=false) and (ForceBlackWhite) then
         begin
           if ConvertMemTIFFCCITTGroup4(MemStream.Memory,MemStream.Size,BWImagePointer,BWImageSize) then
           begin
@@ -319,7 +319,6 @@ begin
             TigerLog.WriteLog(etError, 'AddImage: error converting image file to black and white.');
           end;
         end;
-
 
         // Don't overwrite existing images:
         if (not (ImageData is TFileStream)) or ((ImageData is TFileStream) and
