@@ -87,6 +87,9 @@ function ConvertStreamBMP_TIFF(Source: TStream; Destination: TMemoryStream): boo
 // Converts image file to black and white CCIT Group 4 compressed image
 procedure ConvertTIFFCCITT4(InputFile, OutputFile: string);
 
+// Checks if an image is a TIFF black and white CCIT Group 4 compressed image
+function IsTIFFCCITT4(InputFile: string): boolean;
+
 // Converts image in memory to black and white CCIT Group 4 compressed image
 // Calling function should clean up memory pointed to by OlImageMemoryPtr if needed
 // Returns success status
@@ -194,6 +197,13 @@ begin
     status := MagickSetImageFormat(wand,'TIFF');
     if (status = MagickFalse) then HandleError;
 
+    // Perhaps this helps?
+    //todo: not supported in pascalmagick?
+    {
+    status := MagickSetOption(wand,'tiff:rows-per-strip','1');
+    if (status = MagickFalse) then HandleError;
+    }
+
     // convert to black & white/lineart
     { perhaps needed for some images: remove the alpha channel:
     MagickSetImageMatte(magick_wand,MagickFalse);
@@ -222,7 +232,59 @@ begin
 end;
 {$ENDIF USEMAGICK}
 
+{$IFDEF USEMAGICK}
+function IsTIFFCCITT4(InputFile: string): boolean;
+// Check if an image file to TIFF Fax compressed B/W
+var
+  ResultPChar: PChar;
+  Compression: CompressionType;
+  status: MagickBooleanType;
+  wand: PMagickWand;
+  description: PChar;
+  severity: ExceptionType;
+  procedure HandleError;
+  begin
+    description := MagickGetException(wand, @severity);
+    raise Exception.Create(Format('ConvertTIFFCCITT4: an error ocurred. Description: %s', [description]));
+    description := MagickRelinquishMemory(description);
+  end;
+  function ConvertCompressionType: string;
+  begin
+    case Compression of
+      UndefinedCompression: result := 'Undefined';
+      NoCompression: result := 'None';
+      BZipCompression: result := 'BZip';
+      FaxCompression: result := 'Fax'; //Group 3
+      Group4Compression: result := 'Group4';
+      JPEGCompression: result := 'JPEG';
+      JPEG2000Compression: result := 'JPEG2000';
+      LosslessJPEGCompression: result := 'LosslessJPEG';
+      LZWCompression: result := 'LZW';
+      RLECompression: result := 'RLE';
+      ZipCompression: result := 'Zip';
+    else result:= 'Unknown; error in code'
+    end;
+  end;
 
+begin
+  wand := NewMagickWand;
+  try
+    //todo: debug: remove writeln debug stuff
+    status := MagickReadImage(wand,PChar(InputFile));
+    if (status = MagickFalse) then HandleError;
+
+    ResultPchar := MagickGetImageFormat(wand);
+    writeln('image format: ',resultpchar);
+
+    Compression := UndefinedCompression;
+    Compression := MagickGetImageCompression(wand);
+    writeln(ConvertCompressionType);
+    result := (Compression=Group4Compression);
+  finally
+    wand := DestroyMagickWand(wand);
+  end;
+end;
+{$ENDIF}
 {$IFDEF USEMAGICK}
 function ConvertMemTIFFCCITTGroup4(OldImageMemoryPtr: Pointer; OldImageSize: integer;
   out NewImageMemoryPtr: Pointer; out NewImageSize: integer): boolean;
