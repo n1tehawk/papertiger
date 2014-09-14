@@ -207,10 +207,11 @@ begin
     status := MagickSetImageCompression(wand,Group4Compression);
     if (status = MagickFalse) then HandleError;
 
-    //Marco's suggestion
+    {
+    // Marco's suggestion
     status := MagickSetImageCompressionQuality(wand,100);
     if (status = MagickFalse) then HandleError;
-
+    }
 
     status := MagickWriteImage(wand,PChar(OutputFile));
     if (status = MagickFalse) then HandleError;
