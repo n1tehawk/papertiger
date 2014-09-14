@@ -213,15 +213,15 @@ begin
     if (status = MagickFalse) then HandleError;
 
     // Compress with CCIT group 4 compression (fax compression); best for B&W
-    //todo: still no compression
     status := MagickSetImageCompression(wand,Group4Compression);
     if (status = MagickFalse) then HandleError;
 
-    {
-    // Marco's suggestion
-    status := MagickSetImageCompressionQuality(wand,100);
+    // Apparently set(image)compresionquality and
+    // stripimage are necessary to actually compress
+    status := MagickSetImageCompressionQuality(wand,0); //0 or 100 doesn't matter - no compression
     if (status = MagickFalse) then HandleError;
-    }
+    status := MagickStripImage(wand);
+    if (status = MagickFalse) then HandleError;
 
     status := MagickWriteImage(wand,PChar(OutputFile));
     if (status = MagickFalse) then HandleError;
