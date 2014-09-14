@@ -15,5 +15,9 @@ begin
   if FileExists(outputfile) then
     DeleteFile(outputfile);
   tigerutil.ConvertTIFFCCITT4(InputFile,OutputFile);
+  if tigerutil.IsTIFFCCITT4(OutputFile) then
+    writeln('Success: Group 4 compression')
+  else
+    writeln('Failure');
 end.
 
