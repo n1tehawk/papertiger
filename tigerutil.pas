@@ -213,7 +213,9 @@ begin
     if (status = MagickFalse) then HandleError;
 
     // Compress with CCIT group 4 compression (fax compression); best for B&W
-    status := MagickSetImageCompression(wand,Group4Compression);
+    //Group4Compression seems defined as 4 which apparently doesn't match imagemagick source
+    //http://mantis.freepascal.org/view.php?id=26723
+    status := MagickSetImageCompression(wand,CompressionType(7));
     if (status = MagickFalse) then HandleError;
 
     // Apparently set(image)compresionquality and
@@ -248,38 +250,20 @@ var
     raise Exception.Create(Format('ConvertTIFFCCITT4: an error ocurred. Description: %s', [description]));
     description := MagickRelinquishMemory(description);
   end;
-  function ConvertCompressionType: string;
-  begin
-    case Compression of
-      UndefinedCompression: result := 'Undefined';
-      NoCompression: result := 'None';
-      BZipCompression: result := 'BZip';
-      FaxCompression: result := 'Fax'; //Group 3
-      Group4Compression: result := 'Group4';
-      JPEGCompression: result := 'JPEG';
-      JPEG2000Compression: result := 'JPEG2000';
-      LosslessJPEGCompression: result := 'LosslessJPEG';
-      LZWCompression: result := 'LZW';
-      RLECompression: result := 'RLE';
-      ZipCompression: result := 'Zip';
-    else result:= 'Unknown; error in code'
-    end;
-  end;
 
 begin
   wand := NewMagickWand;
   try
-    //todo: debug: remove writeln debug stuff
     status := MagickReadImage(wand,PChar(InputFile));
     if (status = MagickFalse) then HandleError;
 
     ResultPchar := MagickGetImageFormat(wand);
-    writeln('image format: ',resultpchar);
 
     Compression := UndefinedCompression;
     Compression := MagickGetImageCompression(wand);
-    writeln(ConvertCompressionType);
-    result := (Compression=Group4Compression);
+    //Group4Compression enum has the wrong number
+    //http://mantis.freepascal.org/view.php?id=26723
+    result := (Compression=CompressionType(7));
   finally
     wand := DestroyMagickWand(wand);
   end;
