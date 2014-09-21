@@ -100,6 +100,7 @@
       <Unit7>
         <Filename Value="tigerutil.pas"/>
         <IsPartOfProject Value="True"/>
+        <UnitName Value="tigerutil"/>
       </Unit7>
       <Unit8>
         <Filename Value="tigersettings.pas"/>
