@@ -213,14 +213,18 @@ begin
     if (status = MagickFalse) then HandleError;
 
     // Compress with CCIT group 4 compression (fax compression); best for B&W
+    {$IF FPC_FULLVERSION<20701}
     //Group4Compression seems defined as 4 which apparently doesn't match imagemagick source
     //http://mantis.freepascal.org/view.php?id=26723
     status := MagickSetImageCompression(wand,CompressionType(7));
+    {$ELSE}
+    status := MagickSetImageCompression(wand,Group4Compression);
+    {$ENDIF}
     if (status = MagickFalse) then HandleError;
 
     // Apparently set(image)compresionquality and
     // stripimage are necessary to actually compress
-    status := MagickSetImageCompressionQuality(wand,0); //0 or 100 doesn't matter - no compression
+    status := MagickSetImageCompressionQuality(wand,0);
     if (status = MagickFalse) then HandleError;
     status := MagickStripImage(wand);
     if (status = MagickFalse) then HandleError;
@@ -261,14 +265,19 @@ begin
 
     Compression := UndefinedCompression;
     Compression := MagickGetImageCompression(wand);
+    {$IF FPC_FULLVERSION<20701}
     //Group4Compression enum has the wrong number
     //http://mantis.freepascal.org/view.php?id=26723
     result := (Compression=CompressionType(7));
+    {$ELSE}
+    result := (Compression=CompressionType(Group4Compression));
+    {$ENDIF}
   finally
     wand := DestroyMagickWand(wand);
   end;
 end;
 {$ENDIF}
+
 {$IFDEF USEMAGICK}
 function ConvertMemTIFFCCITTGroup4(OldImageMemoryPtr: Pointer; OldImageSize: integer;
   out NewImageMemoryPtr: Pointer; out NewImageSize: integer): boolean;
@@ -289,8 +298,13 @@ begin
     // Force TIFF format so this can also be used for converting from e.g. BMP or JPG
     MagickCommand(CallF,wand,MagickSetImageFormat(wand,'TIFF'),'GetImageFormat');
     TigerLog.WriteLog('2');
-
+    {$IF FPC_FULLVERSION<20701}
+    //Group4Compression enum has the wrong number
+    //http://mantis.freepascal.org/view.php?id=26723
+    MagickCommand(CallF,wand,MagickSetImageCompression(wand,CompressionType(7)),'MagickSetImageCompression');
+    {$ELSE}
     MagickCommand(CallF,wand,MagickSetImageCompression(wand,Group4Compression),'MagickSetImageCompression');
+    {$ENDIF}
     TigerLog.WriteLog('3');
 
     // Get result into new memory segment
