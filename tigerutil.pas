@@ -128,10 +128,13 @@ begin
   if (status = MagickFalse) then
   begin
     description := MagickGetException(wand, @severity);
-    raise Exception.Create(Format
-      ('%s: an error ocurred running %s. Description: %s',
-      [CallingFunction, CommandDescription,description]));
-    description := MagickRelinquishMemory(description);
+    try
+      raise Exception.Create(Format
+        ('%s: an error ocurred running %s. Description: %s',
+        [CallingFunction, CommandDescription,description]));
+    finally
+      description := MagickRelinquishMemory(description);
+    end;
   end;
 end;
 {$ENDIF USEMAGICK}
@@ -185,8 +188,11 @@ var
   procedure HandleError;
   begin
     description := MagickGetException(wand, @severity);
-    raise Exception.Create(Format('ConvertTIFFCCITT4: an error ocurred. Description: %s', [description]));
-    description := MagickRelinquishMemory(description);
+    try
+      raise Exception.Create(Format('ConvertTIFFCCITT4: an error ocurred. Description: %s', [description]));
+    finally
+      description := MagickRelinquishMemory(description);
+    end;
   end;
 begin
   wand := NewMagickWand;
@@ -204,11 +210,11 @@ begin
     if (status = MagickFalse) then HandleError;
     }
 
-    // convert to black & white/lineart
     { perhaps needed for some images: remove the alpha channel:
     MagickSetImageMatte(magick_wand,MagickFalse);
     MagickQuantizeImage(magick_wand,2,GRAYColorspace,0,MagickFalse,MagickFalse);
     }
+    // convert to black & white/lineart
     status := MagickSetImageType(wand,BilevelType);
     if (status = MagickFalse) then HandleError;
 
@@ -251,8 +257,11 @@ var
   procedure HandleError;
   begin
     description := MagickGetException(wand, @severity);
-    raise Exception.Create(Format('ConvertTIFFCCITT4: an error ocurred. Description: %s', [description]));
-    description := MagickRelinquishMemory(description);
+    try
+      raise Exception.Create(Format('ConvertTIFFCCITT4: an error ocurred. Description: %s', [description]));
+    finally
+      description := MagickRelinquishMemory(description);
+    end;
   end;
 
 begin
